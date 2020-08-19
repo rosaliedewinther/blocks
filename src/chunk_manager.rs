@@ -10,11 +10,11 @@ use crate::player::Player;
 pub const CHUNKSIZE: usize = 16;
 
 pub struct ChunkManager{
-    pub chunks: HashMap<Pos, Chunk>,
-    pub to_load: Vec<Pos>,
-    pub to_unload: Vec<Pos>,
-    pub to_rebuild: Vec<Pos>,
-    pub visible: Vec<Pos>,
+    pub chunks: HashMap<Pos<i32>, Chunk>,
+    pub to_load: Vec<Pos<i32>>,
+    pub to_unload: Vec<Pos<i32>>,
+    pub to_rebuild: Vec<Pos<i32>>,
+    pub visible: Vec<Pos<i32>>,
 }
 
 impl ChunkManager{
@@ -27,7 +27,7 @@ impl ChunkManager{
             visible: Vec::new()
         }
     }
-    pub fn get_block(&self, pos: &Pos) -> Option<&Block>{
+    pub fn get_block(&self, pos: &Pos<i32>) -> Option<&Block>{
         let chunk_pos = Pos{x:pos.x/ CHUNKSIZE as i32, y:pos.y/ CHUNKSIZE as i32, z:pos.z/ CHUNKSIZE as i32 };
         let local_pos = Pos{x:pos.x% CHUNKSIZE as i32, y:pos.y% CHUNKSIZE as i32, z:pos.z% CHUNKSIZE as i32 };
         return match self.chunks.get(&chunk_pos) {
@@ -38,20 +38,24 @@ impl ChunkManager{
             }
         }
     }
-    pub fn load_chunk(&mut self, pos: Pos){
+    pub fn load_chunk(&mut self, pos: Pos<i32>){
         self.to_load.push(pos);
     }
 
     pub fn update(&mut self, dt: &f32){
+        println!("updating alllllll chunks");
         self.gen_chunks();
+        println!("done gen");
         for (pos, chunk) in &mut self.chunks {
             chunk.update(dt);
         }
     }
 
     pub fn gen_chunks(&mut self){
+        println!("gen_chunks");
         let mut started = Instant::now();
         while started.elapsed().as_secs_f64() < 0.01{
+            println!("starting chunk gen");
             if self.to_load.len() == 0 {
                 return
             }

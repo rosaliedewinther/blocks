@@ -1,21 +1,18 @@
 use device_query::{DeviceQuery, DeviceState, Keycode, MouseState};
-use crate::utils::{get_rotation_matrix_z, get_rotation_matrix_y, get_rotation_matrix_x, get_rotation_matrix_up, negative_ceil};
+use crate::utils::{get_rotation_matrix_z, get_rotation_matrix_y, get_rotation_matrix_x, negative_ceil};
 use nalgebra::{Matrix3, Vector3};
 use enigo::{Enigo, MouseControllable};
 use std::f32::consts::PI;
+use crate::input::Input;
 
 
 pub struct Player{
     pub position: [f32; 3],
     pub direction: Vector3<f32>,
     pub up: [f32; 3],
-    pub device_state: DeviceState,
+    pub input: Input,
     pub speed: f32,
-    pub sensitivity_modifier: f32,
-    pub prev_mouse_cords: (i32, i32),
-    pub enigo: Enigo
 }
-
 
 impl Player{
     pub fn new() -> Player{
@@ -23,81 +20,66 @@ impl Player{
             position: [0.0f32,0.0f32,0.0f32],
             direction: Vector3::new(0f32,0.0f32,1.0f32),
             up: [0f32,1.0f32,0f32],
-            device_state: DeviceState::new(),
             speed: 100f32,
-            sensitivity_modifier: 0.5,
-            prev_mouse_cords: (0,0),
-            enigo: Enigo::new()
+            input: Input::new()
         }
     }
 
     pub fn handle_input(&mut self, dt: &f32){
-        let keys: Vec<Keycode> = self.device_state.get_keys();
-        self.change_position(&keys, &Keycode::A, 1.5f32*PI, -*dt*self.speed);
-        self.change_position(&keys, &Keycode::D, 0.5f32*PI, *dt*self.speed);
-        self.change_position(&keys, &Keycode::W, 0f32*PI, *dt*self.speed);
-        self.change_position(&keys, &Keycode::S, 1f32*PI, -*dt*self.speed);
-        if keys.contains(&Keycode::Space){
+        self.input.update();
+        self.change_position(Keycode::A, 1.5f32*PI, -*dt*self.speed);
+        self.change_position(Keycode::D, 0.5f32*PI, *dt*self.speed);
+        self.change_position(Keycode::W, 0f32*PI, *dt*self.speed);
+        self.change_position(Keycode::S, 1f32*PI, -*dt*self.speed);
+        if self.input.key_pressed(Keycode::Space){
             self.position[1] += *dt*self.speed
         }
-        if keys.contains(&Keycode::LShift){
+        if self.input.key_pressed(Keycode::LShift){
             self.position[1] += -*dt*self.speed
         }
 
-        let current_mouse_pos = self.device_state.query_pointer();
-        let xdiff = (current_mouse_pos.coords.0 - self.prev_mouse_cords.0) as f32 * dt * self.sensitivity_modifier;
-        let ydiff = (self.prev_mouse_cords.1 - current_mouse_pos.coords.1) as f32 * dt * self.sensitivity_modifier;
-        if self.prev_mouse_cords == (0,0) {
-            self.prev_mouse_cords = current_mouse_pos.coords;
-            return;
-        }
-        self.enigo.mouse_move_to(500, 200);
-        self.prev_mouse_cords = self.device_state.query_pointer().coords;
-        println!("x: {} y: {}", xdiff, ydiff);
+        let mut mouse_change = self.input.mouse_change();
+        let xdiff = mouse_change.0*dt;
+        let ydiff = -mouse_change.1*dt;
 
         if ydiff < 0f32 {
-            self.change_direction_vertical(&keys, &Keycode::Down, ydiff);
+            self.change_direction_vertical(ydiff);
         } else {
-            self.change_direction_vertical(&keys, &Keycode::Up, ydiff);
+            self.change_direction_vertical(ydiff);
         }
         if xdiff < 0f32 {
-            self.change_direction_horizontal(&keys, &Keycode::Right, &get_rotation_matrix_y(xdiff));
+            self.change_direction_horizontal(&get_rotation_matrix_y(xdiff));
         } else {
-            self.change_direction_horizontal(&keys, &Keycode::Left, &get_rotation_matrix_y(xdiff));
+            self.change_direction_horizontal(&get_rotation_matrix_y(xdiff));
         }
     }
 
-    pub fn change_position(&mut self, keys: &Vec<Keycode>, key: &Keycode, rotation_degree: f32, change: f32){
-        if keys.contains(key){
+    pub fn change_position(&mut self, key: Keycode, rotation_degree: f32, change: f32){
+        if self.input.key_pressed(key){
             let move_vec = get_rotation_matrix_y(rotation_degree) * &self.direction;
             let to_extend = 1f32/(move_vec[0].powf(2f32).abs() + move_vec[2].powf(2f32).abs()).sqrt();
             self.position[0] += move_vec[0]*to_extend;
             self.position[2] += move_vec[2]*to_extend;
-            //self.position[i] += change;
         }
     }
-    pub fn change_direction_horizontal(&mut self, keys: &Vec<Keycode>, key: &Keycode, mat: &Matrix3<f32>){
-        //if keys.contains(key){
-            self.direction = mat*&self.direction;
-        //}
+    pub fn change_direction_horizontal(&mut self, mat: &Matrix3<f32>){
+        self.direction = mat*&self.direction;
     }
-    pub fn change_direction_vertical(&mut self, keys: &Vec<Keycode>, key: &Keycode, change: f32){
-        //if keys.contains(key){
-            let mut backup_dir = self.direction.clone();
-            backup_dir[1] = 0f32;
-            let angle = (backup_dir[2]/backup_dir[0]).atan();
-            if backup_dir[0].is_sign_negative(){
-                self.direction = get_rotation_matrix_y(-angle) * get_rotation_matrix_z(-change) * get_rotation_matrix_y(angle) * &self.direction;
-            } else {
-                self.direction = get_rotation_matrix_y(-angle) * get_rotation_matrix_z(change) * get_rotation_matrix_y(angle) * &self.direction;
-            }
-            if backup_dir[0].is_sign_positive() != self.direction[0].is_sign_positive(){
-                self.direction[0] = backup_dir[0];
-            }
-            if backup_dir[2].is_sign_positive() != self.direction[2].is_sign_positive(){
-                self.direction[2] = backup_dir[2];
-            }
-        //}
+    pub fn change_direction_vertical(&mut self, change: f32){
+        let mut backup_dir = self.direction.clone();
+        backup_dir[1] = 0f32;
+        let angle = (backup_dir[2]/backup_dir[0]).atan();
+        if backup_dir[0].is_sign_negative(){
+            self.direction = get_rotation_matrix_y(-angle) * get_rotation_matrix_z(-change) * get_rotation_matrix_y(angle) * &self.direction;
+        } else {
+            self.direction = get_rotation_matrix_y(-angle) * get_rotation_matrix_z(change) * get_rotation_matrix_y(angle) * &self.direction;
+        }
+        if backup_dir[0].is_sign_positive() != self.direction[0].is_sign_positive(){
+            self.direction[0] = backup_dir[0];
+        }
+        if backup_dir[2].is_sign_positive() != self.direction[2].is_sign_positive(){
+            self.direction[2] = backup_dir[2];
+        }
     }
 
 

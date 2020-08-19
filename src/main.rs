@@ -9,12 +9,15 @@ use std::time::{SystemTime, Instant};
 use crate::chunk_manager::ChunkManager;
 use crate::player::Player;
 use device_query::Keycode;
+use std::ops;
+use std::ops::Add;
 
 mod block;
 mod chunk;
 mod chunk_manager;
 mod player;
 mod utils;
+mod input;
 
 #[derive(Copy, Clone, Debug)]
 pub struct Vertex {
@@ -33,17 +36,35 @@ pub struct DrawInfo<'a>{
 }
 
 #[derive(Hash, Eq, PartialEq, Debug, Copy, Clone)]
-pub struct Pos{
-    pub x: i32,
-    pub y: i32,
-    pub z: i32
+pub struct Pos<T>{
+    pub x: T,
+    pub y: T,
+    pub z: T
 }
 
-impl Pos{
-    pub fn get_diff(&self, x_diff: i32, y_diff: i32, z_diff: i32) -> Pos{
+impl<T: std::ops::Add<Output = T> + Copy> Pos<T>{
+    pub fn get_diff(&self, x_diff: T, y_diff: T, z_diff: T) -> Pos<T>{
         Pos{x: self.x+x_diff, y: self.y+y_diff, z: self.z+z_diff}
     }
 }
+
+impl<T: std::ops::Sub<Output = T> + Copy> ops::Sub<T> for Pos<T> {
+    type Output = Pos<T>;
+
+    fn sub(self, val: T) -> Pos<T> {
+        Pos{x: self.x-val, y: self.y-val, z: self.z-val}
+    }
+}
+
+pub fn quad(pos1: Pos<f32>, pos2: Pos<f32>, vec: &mut Vec<Vertex>, col: Color){
+    vec.push(Vertex { position: [pos1.x,  pos1.y,  pos1.z],  color: col });
+    vec.push(Vertex { position: [pos1.x,  pos2.y,  pos1.z],  color: col });
+    vec.push(Vertex { position: [pos2.x,  pos1.y,  pos2.z],  color: col });
+    vec.push(Vertex { position: [pos1.x,  pos1.y,  pos1.z],  color: col });
+    vec.push(Vertex { position: [pos2.x,  pos2.y,  pos2.z],  color: col });
+    vec.push(Vertex { position: [pos2.x,  pos1.y,  pos2.z],  color: col });
+}
+
 
 fn draw_vertices(draw_info: &mut DrawInfo, target: &mut Frame, vertex_buffer: &VertexBuffer<Vertex>, player: &Player){
     let utime: f32 = draw_info.program_start.elapsed().unwrap().as_secs_f32();
@@ -196,19 +217,13 @@ fn main() {
     let event_loop = glutin::event_loop::EventLoop::new();
     let display = create_display(&event_loop);
 
-
-    // building the vertex buffer, which contains all the vertices that we will draw
-
-    // building the index buffer
-
-    // compiling shaders and linking them together
     let program = gen_program(&display);
     let mut draw_info = DrawInfo{display: display, program: program, program_start: SystemTime::now(), draw_params: gen_draw_params(true)};
     let mut player = Player::new();
     info!("generating chunk main");
     let mut c = ChunkManager::new();
-    for x in 0..1{
-        for y in 0..100{
+    for x in 0..2{
+        for y in 0..20{
             for z in 0..2 {
                 c.load_chunk(Pos{x,y,z });
             }
@@ -228,8 +243,6 @@ fn main() {
     info!("starting main loop");
     // the main loop
     event_loop.run(move |event, _, control_flow| {
-
-
         *control_flow = match event {
             glutin::event::Event::WindowEvent { event, .. } => match event {
                 // Break from the main loop when the window is closed.
@@ -253,17 +266,21 @@ fn main() {
             _ => glutin::event_loop::ControlFlow::Poll,
         };
         if 1f32/rerender_timer.elapsed().as_secs_f32() < 60f32{
+            rerender_timer = Instant::now();
             let dt = timer.elapsed().as_secs_f32();
             timer = Instant::now();
+            println!("input");
             player.handle_input(&dt);
+            println!("update player");
             player.update(&dt);
+            println!("update chunks");
             c.update(&dt);
+            println!("update chunks done");
             let mut target = draw_info.display.draw();
             target.clear_color_and_depth((0.0, 0.0, 0.0, 0.0), 1.0);
             c.render_chunks(&mut draw_info, &mut target, &player);
             target.finish().unwrap();
-            println!("vertices: {} rendering time: {}", c.count_verticecs(), rerender_timer.elapsed().as_secs_f32());
-            rerender_timer = Instant::now();
+            println!("vertices: {} rendering time: {} ms", c.count_verticecs(), rerender_timer.elapsed().as_secs_f32()*1000f32);
         }
     });
 }

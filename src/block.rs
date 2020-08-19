@@ -1,4 +1,4 @@
-use crate::{Vertex, Color, Pos};
+use crate::{Vertex, Color, Pos, quad};
 use rand::Rng;
 use rand::distributions::{Distribution, Standard};
 use crate::chunk::BlockSides;
@@ -59,74 +59,75 @@ impl Block {
         return Block::new(rand::random());
     }
 
-    pub fn get_mesh(&mut self, pos: &Pos, sides: & BlockSides) -> Vec<Vertex> {
+    pub fn get_mesh(&mut self, pos: &Pos<i32>, sides: & BlockSides) -> Vec<Vertex> {
         let mut mesh = Vec::new();
+        let posf = Pos{x:pos.x as f32-0.5, y:pos.y as f32-0.5, z:pos.z as f32-0.5};
         if sides.right{
-            self.mesh_right(&pos, &mut mesh);
+            self.mesh_right(posf, &mut mesh);
         }
         if sides.left{
-            self.mesh_left(&pos, &mut mesh);
+            self.mesh_left(posf, &mut mesh);
         }
         if sides.top{
-            self.mesh_top(&pos, &mut mesh);
+            self.mesh_top(posf, &mut mesh);
         }
         if sides.bot{
-            self.mesh_bottom(&pos, &mut mesh);
+            self.mesh_bottom(posf, &mut mesh);
         }
         if sides.back{
-            self.mesh_back(&pos, &mut mesh);
+            self.mesh_back(posf, &mut mesh);
         }
         if sides.front{
-            self.mesh_front(&pos, &mut mesh);
+            self.mesh_front(posf, &mut mesh);
         }
         return mesh;
     }
-    pub fn mesh_front(&mut self, pos: &Pos, vec: &mut Vec<Vertex>){
-        vec.push(Vertex { position: [pos.x as f32-0.5,      pos.y as f32-0.5,      pos.z as f32-0.5], color: self.col });
-        vec.push(Vertex { position: [(pos.x+1) as f32-0.5,  pos.y as f32-0.5,      pos.z as f32-0.5], color: self.col });
-        vec.push(Vertex { position: [pos.x as f32-0.5,      (pos.y+1) as f32-0.5,  pos.z as f32-0.5], color: self.col });
-        vec.push(Vertex { position: [(pos.x+1) as f32-0.5,  pos.y as f32-0.5,      pos.z as f32-0.5], color: self.col });
-        vec.push(Vertex { position: [(pos.x+1) as f32-0.5,  (pos.y+1) as f32-0.5,  pos.z as f32-0.5], color: self.col });
-        vec.push(Vertex { position: [pos.x as f32-0.5,      (pos.y+1) as f32-0.5,  pos.z as f32-0.5], color: self.col });
+    pub fn mesh_front(&mut self, pos: Pos<f32>, vec: &mut Vec<Vertex>){
+        vec.push(Vertex { position: [pos.x,      pos.y,      pos.z], color: self.col });
+        vec.push(Vertex { position: [pos.x+1f32, pos.y,      pos.z], color: self.col });
+        vec.push(Vertex { position: [pos.x,      pos.y+1f32, pos.z], color: self.col });
+        vec.push(Vertex { position: [pos.x+1f32, pos.y,      pos.z], color: self.col });
+        vec.push(Vertex { position: [pos.x+1f32, pos.y+1f32, pos.z], color: self.col });
+        vec.push(Vertex { position: [pos.x,      pos.y+1f32, pos.z], color: self.col });
     }
-    pub fn mesh_back(&mut self, pos: &Pos, vec: &mut Vec<Vertex>){
-        vec.push(Vertex { position: [pos.x as f32-0.5,      pos.y as f32-0.5,      (pos.z+1) as f32-0.5], color: self.col });
-        vec.push(Vertex { position: [pos.x as f32-0.5,      (pos.y+1) as f32-0.5,  (pos.z+1) as f32-0.5], color: self.col });
-        vec.push(Vertex { position: [(pos.x+1) as f32-0.5,  pos.y as f32-0.5,      (pos.z+1) as f32-0.5], color: self.col });
-        vec.push(Vertex { position: [(pos.x+1) as f32-0.5,  pos.y as f32-0.5,      (pos.z+1) as f32-0.5], color: self.col });
-        vec.push(Vertex { position: [pos.x as f32-0.5,      (pos.y+1) as f32-0.5,  (pos.z+1) as f32-0.5], color: self.col });
-        vec.push(Vertex { position: [(pos.x+1) as f32-0.5,  (pos.y+1) as f32-0.5,  (pos.z+1) as f32-0.5], color: self.col });
+    pub fn mesh_back(&mut self, pos: Pos<f32>, vec: &mut Vec<Vertex>){
+        vec.push(Vertex { position: [pos.x,      pos.y,      pos.z+1f32], color: self.col });
+        vec.push(Vertex { position: [pos.x,      pos.y+1f32, pos.z+1f32], color: self.col });
+        vec.push(Vertex { position: [pos.x+1f32, pos.y,      pos.z+1f32], color: self.col });
+        vec.push(Vertex { position: [pos.x+1f32, pos.y,      pos.z+1f32], color: self.col });
+        vec.push(Vertex { position: [pos.x,      pos.y+1f32, pos.z+1f32], color: self.col });
+        vec.push(Vertex { position: [pos.x+1f32, pos.y+1f32, pos.z+1f32], color: self.col });
     }
-    pub fn mesh_left(&mut self, pos: &Pos, vec: &mut Vec<Vertex>){
-        vec.push(Vertex { position: [pos.x as f32-0.5,  pos.y as f32-0.5,      pos.z as f32-0.5],     color: self.col });
-        vec.push(Vertex { position: [pos.x as f32-0.5,  (pos.y+1) as f32-0.5,  pos.z as f32-0.5],     color: self.col });
-        vec.push(Vertex { position: [pos.x as f32-0.5,  pos.y as f32-0.5,      (pos.z+1) as f32-0.5], color: self.col });
-        vec.push(Vertex { position: [pos.x as f32-0.5,  (pos.y+1) as f32-0.5,  (pos.z+1) as f32-0.5], color: self.col });
-        vec.push(Vertex { position: [pos.x as f32-0.5,  pos.y as f32-0.5,      (pos.z+1) as f32-0.5], color: self.col });
-        vec.push(Vertex { position: [pos.x as f32-0.5,  (pos.y+1) as f32-0.5,  pos.z as f32-0.5],     color: self.col });
+    pub fn mesh_left(&mut self, pos: Pos<f32>, vec: &mut Vec<Vertex>){
+        vec.push(Vertex { position: [pos.x, pos.y,      pos.z],      color: self.col });
+        vec.push(Vertex { position: [pos.x, pos.y+1f32, pos.z],      color: self.col });
+        vec.push(Vertex { position: [pos.x, pos.y,      pos.z+1f32], color: self.col });
+        vec.push(Vertex { position: [pos.x, pos.y+1f32, pos.z+1f32], color: self.col });
+        vec.push(Vertex { position: [pos.x, pos.y,      pos.z+1f32], color: self.col });
+        vec.push(Vertex { position: [pos.x, pos.y+1f32, pos.z],      color: self.col });
     }
-    pub fn mesh_right(&mut self, pos: &Pos, vec: &mut Vec<Vertex>){
-        vec.push(Vertex { position: [(pos.x+1) as f32-0.5,  pos.y as f32-0.5,      pos.z as f32-0.5],     color: self.col });
-        vec.push(Vertex { position: [(pos.x+1) as f32-0.5,  pos.y as f32-0.5,      (pos.z+1) as f32-0.5], color: self.col });
-        vec.push(Vertex { position: [(pos.x+1) as f32-0.5,  (pos.y+1) as f32-0.5,  pos.z as f32-0.5],     color: self.col });
-        vec.push(Vertex { position: [(pos.x+1) as f32-0.5,  (pos.y+1) as f32-0.5,  (pos.z+1) as f32-0.5], color: self.col });
-        vec.push(Vertex { position: [(pos.x+1) as f32-0.5,  (pos.y+1) as f32-0.5,  pos.z as f32-0.5],     color: self.col });
-        vec.push(Vertex { position: [(pos.x+1) as f32-0.5,  pos.y as f32-0.5,      (pos.z+1) as f32-0.5], color: self.col });
+    pub fn mesh_right(&mut self, pos: Pos<f32>, vec: &mut Vec<Vertex>){
+        vec.push(Vertex { position: [pos.x+1f32, pos.y,      pos.z],      color: self.col });
+        vec.push(Vertex { position: [pos.x+1f32, pos.y,      pos.z+1f32], color: self.col });
+        vec.push(Vertex { position: [pos.x+1f32, pos.y+1f32, pos.z],      color: self.col });
+        vec.push(Vertex { position: [pos.x+1f32, pos.y+1f32, pos.z+1f32], color: self.col });
+        vec.push(Vertex { position: [pos.x+1f32, pos.y+1f32, pos.z],      color: self.col });
+        vec.push(Vertex { position: [pos.x+1f32, pos.y,      pos.z+1f32], color: self.col });
     }
-    pub fn mesh_top(&mut self, pos: &Pos, vec: &mut Vec<Vertex>){
-        vec.push(Vertex { position: [pos.x as f32-0.5,      (pos.y+1) as f32-0.5,  pos.z as f32-0.5],     color: self.col });
-        vec.push(Vertex { position: [(pos.x+1) as f32-0.5,  (pos.y+1) as f32-0.5,  pos.z as f32-0.5],     color: self.col });
-        vec.push(Vertex { position: [pos.x as f32-0.5,      (pos.y+1) as f32-0.5,  (pos.z+1) as f32-0.5], color: self.col });
-        vec.push(Vertex { position: [(pos.x+1) as f32-0.5,  (pos.y+1) as f32-0.5,  (pos.z+1) as f32-0.5], color: self.col });
-        vec.push(Vertex { position: [pos.x as f32-0.5,      (pos.y+1) as f32-0.5,  (pos.z+1) as f32-0.5], color: self.col });
-        vec.push(Vertex { position: [(pos.x+1) as f32-0.5,  (pos.y+1) as f32-0.5,  pos.z as f32-0.5],     color: self.col });
+    pub fn mesh_top(&mut self, pos: Pos<f32>, vec: &mut Vec<Vertex>){
+        vec.push(Vertex { position: [pos.x,      pos.y+1f32,  pos.z],      color: self.col });
+        vec.push(Vertex { position: [pos.x+1f32, pos.y+1f32,  pos.z],      color: self.col });
+        vec.push(Vertex { position: [pos.x,      pos.y+1f32,  pos.z+1f32], color: self.col });
+        vec.push(Vertex { position: [pos.x+1f32, pos.y+1f32,  pos.z+1f32], color: self.col });
+        vec.push(Vertex { position: [pos.x,      pos.y+1f32,  pos.z+1f32], color: self.col });
+        vec.push(Vertex { position: [pos.x+1f32, pos.y+1f32,  pos.z],      color: self.col });
     }
-    pub fn mesh_bottom(&mut self, pos: &Pos, vec: &mut Vec<Vertex>){
-        vec.push(Vertex { position: [pos.x as f32-0.5,      pos.y as f32-0.5,  pos.z as f32-0.5],     color: self.col });
-        vec.push(Vertex { position: [pos.x as f32-0.5,      pos.y as f32-0.5,  (pos.z+1) as f32-0.5], color: self.col });
-        vec.push(Vertex { position: [(pos.x+1) as f32-0.5,  pos.y as f32-0.5,  pos.z as f32-0.5],     color: self.col });
-        vec.push(Vertex { position: [(pos.x+1) as f32-0.5,  pos.y as f32-0.5,  (pos.z+1) as f32-0.5], color: self.col });
-        vec.push(Vertex { position: [(pos.x+1) as f32-0.5,  pos.y as f32-0.5,  pos.z as f32-0.5],     color: self.col });
-        vec.push(Vertex { position: [pos.x as f32-0.5,      pos.y as f32-0.5,  (pos.z+1) as f32-0.5], color: self.col });
+    pub fn mesh_bottom(&mut self, pos: Pos<f32>, vec: &mut Vec<Vertex>){
+        vec.push(Vertex { position: [pos.x,      pos.y,  pos.z],      color: self.col });
+        vec.push(Vertex { position: [pos.x,      pos.y,  pos.z+1f32], color: self.col });
+        vec.push(Vertex { position: [pos.x+1f32, pos.y,  pos.z],      color: self.col });
+        vec.push(Vertex { position: [pos.x+1f32, pos.y,  pos.z+1f32], color: self.col });
+        vec.push(Vertex { position: [pos.x+1f32, pos.y,  pos.z],      color: self.col });
+        vec.push(Vertex { position: [pos.x,      pos.y,  pos.z+1f32], color: self.col });
     }
 }

@@ -22,13 +22,6 @@ pub fn get_rotation_matrix_y(angle: f32) -> Matrix3<f32>{
         -angle.sin(),   0f32,   angle.cos()
     )
 }
-pub fn get_rotation_matrix_up(angle: f32) -> Matrix3<f32>{
-    Matrix3::new(
-        angle.cos(),    angle.sin(),    0f32,
-        angle.sin(),    1f32,    angle.sin(),
-        0f32,           angle.sin(),   angle.cos()
-    )
-}
 
 pub fn negative_ceil(val: f32) -> f32{
     if val < 0f32 {

@@ -5,6 +5,7 @@ use std::time::Instant;
 use crate::chunk_manager::CHUNKSIZE;
 use log::{info, warn};
 use crate::player::Player;
+use arrayvec::ArrayVec;
 
 #[derive(Debug, Clone)]
 pub struct BlockSides{
@@ -23,13 +24,13 @@ impl BlockSides{
 }
 
 pub struct Chunk{
-    pub blocks: [[[Block;CHUNKSIZE];CHUNKSIZE];CHUNKSIZE],
+    pub blocks: Vec<Vec<Vec<Block>>>,
     pub vertex_buffer: Option<VertexBuffer<Vertex>>,
     pub update_vertices: bool
 }
 
 impl Chunk{
-    pub fn render(&mut self, mut draw_info: &mut DrawInfo, mut target: & mut Frame, chunk_pos: &Pos, player: &Player) {
+    pub fn render(&mut self, mut draw_info: &mut DrawInfo, mut target: & mut Frame, chunk_pos: &Pos<i32>, player: &Player) {
         if self.vertex_buffer.is_none(){
             warn!("chunk does not have vertex buffer in pos: {:?}", chunk_pos);
             return;
@@ -48,12 +49,17 @@ impl Chunk{
         self.vertex_buffer.as_ref().unwrap().len() as i32
     }
     pub fn generate() -> Chunk{
-        let mut arr: [[[Block;CHUNKSIZE];CHUNKSIZE];CHUNKSIZE] = Default::default();
+        println!("in chunk generation");
+        let mut arr: Vec<Vec<Vec<Block>>> = Vec::new();
         for i in 0..CHUNKSIZE{
+            arr.push(Vec::new());
             for j in 0..CHUNKSIZE{
+                arr[i].push(Vec::new());
                 for k in 0..CHUNKSIZE {
                     if i%2==0 && j%2 == 0 && k%2==0 {
-                        arr[i][j][k] = block::Block::rand_new();
+                        arr[i][j].push(block::Block::rand_new());
+                    } else {
+                        arr[i][j].push(block::Block::new(BlockType::Air));
                     }
                 }
             }
@@ -66,8 +72,8 @@ impl Chunk{
         return;
     }
 
-    pub fn redo_meshes(&mut self, draw_info: &DrawInfo, chunk_pos: &Pos) {
-        info!("redo matches");
+    pub fn redo_meshes(&mut self, draw_info: &DrawInfo, chunk_pos: &Pos<i32>) {
+        info!("redo meshes");
         let last_iteration = Instant::now();
         let mut temp_vertex_buffer = Vec::new();
         for x in 0..CHUNKSIZE{
@@ -101,16 +107,17 @@ impl Chunk{
                 }
             }
         }
+        info!("adding vertices to vertex buffer");
         self.vertex_buffer = Some(glium::VertexBuffer::new(&draw_info.display, &temp_vertex_buffer).unwrap());
         info!("redid meshes in: {} seconds", last_iteration.elapsed().as_secs_f64());
     }
-    pub fn get_blocktype(&self, pos: &Pos) -> BlockType{
+    pub fn get_blocktype(&self, pos: &Pos<i32>) -> BlockType{
         if pos.x < 0 || pos.x > (CHUNKSIZE - 1) as i32 || pos.y < 0 || pos.y > (CHUNKSIZE - 1) as i32 || pos.z < 0 || pos.z > (CHUNKSIZE - 1) as i32{
             return BlockType::Air;
         }
         self.blocks[pos.x as usize][pos.y as usize][pos.z as usize].block_type
     }
-    pub fn set_block(&mut self, block: Block, pos: &Pos){
+    pub fn set_block(&mut self, block: Block, pos: &Pos<i32>){
         if pos.x < 0 && pos.x > (CHUNKSIZE - 1) as i32 && pos.y < 0 && pos.y > (CHUNKSIZE - 1) as i32 && pos.z < 0 && pos.z > (CHUNKSIZE - 1) as i32{
             warn!("tried to place block outside chunk with pos: {:?}", pos);
             return;
