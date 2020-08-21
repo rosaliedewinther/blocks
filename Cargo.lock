@@ -1479,6 +1479,7 @@ dependencies = [
  "image",
  "log",
  "nalgebra",
+ "num-traits",
  "rand",
 ]
 

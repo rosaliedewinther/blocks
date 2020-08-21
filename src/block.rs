@@ -21,7 +21,7 @@ pub struct Block {
 
 impl Distribution<BlockType> for Standard {
     fn sample<R: Rng + ?Sized>(&self, rng: &mut R) -> BlockType {
-        match rng.gen_range(0, 6) {
+        match rng.gen_range(1, 5) {
             0 => BlockType::Water,
             1 => BlockType::Dirt,
             2 => BlockType::Sand,

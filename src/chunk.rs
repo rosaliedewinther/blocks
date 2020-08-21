@@ -2,7 +2,7 @@ use crate::block::{Block, BlockType};
 use crate::{DrawInfo, block, Pos, Vertex};
 use glium::VertexBuffer;
 use std::time::Instant;
-use crate::chunk_manager::CHUNKSIZE;
+use crate::chunk_manager::{CHUNKSIZE, ChunkManager};
 use log::{info, warn};
 
 #[derive(Debug, Clone)]
@@ -50,7 +50,7 @@ impl Chunk{
         return false;
     }
 
-    pub fn get_vertex_buffer(&self, draw_info: &DrawInfo, chunk_pos: &Pos<i32>) -> Option<VertexBuffer<Vertex>> {
+    pub fn get_vertex_buffer(&self, draw_info: &DrawInfo, chunk_pos: &Pos<i32>, chunk_manager: &ChunkManager) -> Option<VertexBuffer<Vertex>> {
         info!("redo meshes");
         let last_iteration = Instant::now();
         let mut temp_vertex_buffer = Vec::new();
@@ -63,22 +63,22 @@ impl Chunk{
                         continue;
                     }
                     let mut sides = BlockSides::new();
-                    if self.should_render_side(&local_pos.get_diff(1,0,0)){
+                    if self.should_render_side(&global_pos.get_diff(1,0,0), chunk_manager){
                         sides.right = true;
                     }
-                    if self.should_render_side(&local_pos.get_diff(-1,0,0)){
+                    if self.should_render_side(&global_pos.get_diff(-1,0,0), chunk_manager){
                         sides.left = true
                     }
-                    if self.should_render_side(&local_pos.get_diff(0,1,0)){
+                    if self.should_render_side(&global_pos.get_diff(0,1,0), chunk_manager){
                         sides.top = true
                     }
-                    if self.should_render_side(&local_pos.get_diff(0,-1,0)){
+                    if self.should_render_side(&global_pos.get_diff(0,-1,0), chunk_manager){
                         sides.bot = true
                     }
-                    if self.should_render_side(&local_pos.get_diff(0,0,1)){
+                    if self.should_render_side(&global_pos.get_diff(0,0,1), chunk_manager){
                         sides.back = true
                     }
-                    if self.should_render_side(&local_pos.get_diff(0,0,-1)){
+                    if self.should_render_side(&global_pos.get_diff(0,0,-1), chunk_manager){
                         sides.front = true
                     }
                     let block: &Block = &self.blocks[x][y][z];
@@ -102,12 +102,20 @@ impl Chunk{
         }
         self.blocks[pos.x as usize][pos.y as usize][pos.z as usize] = block;
     }
-    pub fn should_render_side(&self, pos: &Pos<i32>) -> bool {
-        if pos.x < 0 || pos.x > (CHUNKSIZE - 1) as i32 || pos.y < 0 || pos.y > (CHUNKSIZE - 1) as i32 || pos.z < 0 || pos.z > (CHUNKSIZE - 1) as i32{
+    pub fn get_block(&self, pos: &Pos<i32>) -> Option<&Block>{
+        let edited_pos = pos.wrap(CHUNKSIZE as i32);
+        if edited_pos.x < 0 || edited_pos.x > (CHUNKSIZE - 1) as i32 || edited_pos.y < 0 || edited_pos.y > (CHUNKSIZE - 1) as i32 || edited_pos.z < 0 || edited_pos.z > (CHUNKSIZE - 1) as i32{
+            warn!("tried to access invalid block: {:?}", edited_pos);
+            return None;
+        }
+        return Some(&self.blocks[edited_pos.x as usize][edited_pos.y as usize][edited_pos.z as usize]);
+    }
+    pub fn should_render_side(&self, pos: &Pos<i32>, chunk_manager: &ChunkManager) -> bool {
+        let block = chunk_manager.get_block(pos);
+        if block.is_none(){
             return true;
         }
-        let b = &self.blocks[pos.x as usize][pos.y as usize][pos.z as usize];
-        if b.block_type == BlockType::Air || b.col[3] != 1.0 {
+        if block.unwrap().block_type == BlockType::Air || block.unwrap().col[3] != 1.0 {
             return true;
         }
         return false;

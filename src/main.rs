@@ -40,9 +40,24 @@ pub struct Pos<T>{
     pub z: T
 }
 
-impl<T: std::ops::Add<Output = T> + Copy> Pos<T>{
+impl<T: std::ops::Add<Output = T> + Copy + std::ops::Rem<Output = T> + std::cmp::PartialOrd + std::ops::Sub<Output = T> + Default + num_traits::sign::Signed> Pos<T>{
     pub fn get_diff(&self, x_diff: T, y_diff: T, z_diff: T) -> Pos<T>{
         Pos{x: self.x+x_diff, y: self.y+y_diff, z: self.z+z_diff}
+    }
+    pub fn wrap(&self, val: T) -> Pos<T>{
+        let mut x = self.x%val;
+        if x < T::default(){
+            x=val-x.abs();
+        }
+        let mut y = self.y%val;
+        if y < T::default(){
+            y=val-y.abs();
+        }
+        let mut z = self.z%val;
+        if z < T::default(){
+            z=val-z.abs();
+        }
+        Pos{x,y,z}
     }
 }
 
@@ -172,7 +187,7 @@ fn gen_draw_params() -> DrawParameters<'static>{
             write: true,
             .. Default::default()
         },
-        backface_culling: glium::draw_parameters::BackfaceCullingMode::CullClockwise,
+        //backface_culling: glium::draw_parameters::BackfaceCullingMode::CullClockwise,
         blend: Blend::alpha_blending(),
         .. Default::default()
     }
@@ -210,9 +225,9 @@ fn main() {
     let mut player = Player::new();
     info!("generating chunk main");
     let mut c = ChunkManager::new();
-    for x in 0..1{
-        for y in 0..1{
-            for z in 0..1 {
+    for x in 0..2{
+        for y in 0..2{
+            for z in 0..2 {
                 c.load_chunk(Pos{x,y,z });
             }
         }
@@ -264,7 +279,7 @@ fn main() {
             target.clear_color_and_depth((0.0, 0.0, 0.0, 0.0), 1.0);
             c.render_chunks(&mut draw_info, &mut target, &player);
             target.finish().unwrap();
-            println!("vertices: {} rendering time: {} ms", c.count_verticecs(), rerender_timer.elapsed().as_secs_f32()*1000f32);
+            //println!("vertices: {} rendering time: {} ms", c.count_verticecs(), rerender_timer.elapsed().as_secs_f32()*1000f32);
         }
     });
 }

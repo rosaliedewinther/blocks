@@ -33,9 +33,8 @@ impl ChunkManager{
         let chunk_pos = Pos{x:pos.x/ CHUNKSIZE as i32, y:pos.y/ CHUNKSIZE as i32, z:pos.z/ CHUNKSIZE as i32 };
         let local_pos = Pos{x:pos.x% CHUNKSIZE as i32, y:pos.y% CHUNKSIZE as i32, z:pos.z% CHUNKSIZE as i32 };
         return match self.chunks.get(&chunk_pos) {
-            Some(c) => Some (&c.blocks[local_pos.x as usize][local_pos.y as usize][local_pos.z as usize]),
+            Some(c) => c.get_block(&local_pos),
             None => {
-                warn!("could not get block from position: {:?}", pos);
                 None
             }
         }
@@ -43,7 +42,6 @@ impl ChunkManager{
     pub fn load_chunk(&mut self, pos: Pos<i32>){
         self.to_load.push(pos);
     }
-
     pub fn update(&mut self, dt: &f32,  draw_info: &DrawInfo){
         self.gen_chunks();
         for (pos, chunk) in &mut self.chunks {
@@ -54,19 +52,14 @@ impl ChunkManager{
 
         for (pos, chunk) in &self.chunks {
             let vertex_buffer_opt = self.vertex_buffers.get(pos);
-            if vertex_buffer_opt.is_none(){
-                self.vertex_buffers.insert(*pos, chunk.get_vertex_buffer(draw_info, pos));
-            } else if vertex_buffer_opt.unwrap().is_none(){
-                self.vertex_buffers.insert(*pos, chunk.get_vertex_buffer(draw_info, pos));
+            if vertex_buffer_opt.is_none() || vertex_buffer_opt.unwrap().is_none(){
+                self.vertex_buffers.insert(*pos, chunk.get_vertex_buffer(draw_info, pos, &self));
             }
         }
     }
-
     pub fn gen_chunks(&mut self){
-        println!("gen_chunks");
         let started = Instant::now();
         while started.elapsed().as_secs_f64() < 0.01{
-            println!("starting chunk gen");
             if self.to_load.len() == 0 {
                 return
             }
@@ -78,6 +71,39 @@ impl ChunkManager{
             info!("generating chunk at: {:?}", &pos);
             self.chunks.insert(pos.clone(), Chunk::generate());
             info!("done generating chunk at:  {:?}", &pos);
+            self.reset_surronding_vertex_buffers(&pos);
+        }
+    }
+    pub fn reset_surronding_vertex_buffers(&mut self, pos: &Pos<i32>){
+        if self.vertex_buffers.contains_key(&pos.get_diff(0,0,1)){
+            println!("refreshign: {:?}", &pos.get_diff(0,0,1));
+            let mut vertex_buffer = self.vertex_buffers.get_mut(&pos.get_diff(0,0,1));
+            vertex_buffer = None;
+        }
+        if self.vertex_buffers.contains_key(&pos.get_diff(0,0,-1)){
+            println!("refreshign: {:?}", &pos.get_diff(0,0,-1));
+            let mut vertex_buffer = self.vertex_buffers.get_mut(&pos.get_diff(0,0,-1));
+            vertex_buffer = None;
+        }
+        if self.vertex_buffers.contains_key(&pos.get_diff(0,1,0)){
+            println!("refreshign: {:?}", &pos.get_diff(0,1,0));
+            let mut vertex_buffer = self.vertex_buffers.get_mut(&pos.get_diff(0,1,0));
+            vertex_buffer = None;
+        }
+        if self.vertex_buffers.contains_key(&pos.get_diff(0,-1,0)){
+            println!("refreshign: {:?}", &pos.get_diff(0,-1,0));
+            let mut vertex_buffer = self.vertex_buffers.get_mut(&pos.get_diff(0,-1,0));
+            vertex_buffer = None;
+        }
+        if self.vertex_buffers.contains_key(&pos.get_diff(1,0,0)){
+            println!("refreshign: {:?}", &pos.get_diff(1,0,0));
+            let mut vertex_buffer = self.vertex_buffers.get_mut(&pos.get_diff(1,0,0));
+            vertex_buffer = None;
+        }
+        if self.vertex_buffers.contains_key(&pos.get_diff(-1,0,0)){
+            println!("refreshign: {:?}", &pos.get_diff(-1,0,0));
+            let mut vertex_buffer = self.vertex_buffers.get_mut(&pos.get_diff(-1,0,0));
+            vertex_buffer = None;
         }
     }
     pub fn render_chunks(&self, mut draw_info: &mut DrawInfo, mut frame: &mut Frame, player: &Player){
