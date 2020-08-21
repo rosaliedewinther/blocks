@@ -2,15 +2,13 @@
 extern crate glium;
 use log::info;
 
-use glium::{glutin, Display, VertexBuffer, IndexBuffer, Program, Surface, Frame, DrawParameters};
+use glium::{glutin, Display, VertexBuffer, IndexBuffer, Program, Surface, Frame, DrawParameters, Blend};
 use glium::index::PrimitiveType;
 use glutin::event_loop::EventLoop;
 use std::time::{SystemTime, Instant};
 use crate::chunk_manager::ChunkManager;
 use crate::player::Player;
-use device_query::Keycode;
 use std::ops;
-use std::ops::Add;
 
 mod block;
 mod chunk;
@@ -159,7 +157,7 @@ fn gen_program(display: &Display) -> Program {
                 in vec4 vColor;
                 out vec4 f_color;
                 void main() {
-                    f_color = vColor * (time/10);
+                    f_color = vColor;
                 }
             "
         },
@@ -167,26 +165,16 @@ fn gen_program(display: &Display) -> Program {
     return program;
 }
 
-fn gen_draw_params(backface_culling: bool) -> DrawParameters<'static>{
-    if backface_culling{
-        glium::DrawParameters {
-            depth: glium::Depth {
-                test: glium::DepthTest::IfLess,
-                write: true,
-                .. Default::default()
-            },
-            backface_culling: glium::draw_parameters::BackfaceCullingMode::CullClockwise,
+fn gen_draw_params() -> DrawParameters<'static>{
+    glium::DrawParameters {
+        depth: glium::Depth {
+            test: glium::DepthTest::IfLess,
+            write: true,
             .. Default::default()
-        }
-    } else {
-        glium::DrawParameters {
-            depth: glium::Depth {
-                test: glium::DepthTest::IfLess,
-                write: true,
-                ..Default::default()
-            },
-            ..Default::default()
-        }
+        },
+        backface_culling: glium::draw_parameters::BackfaceCullingMode::CullClockwise,
+        blend: Blend::alpha_blending(),
+        .. Default::default()
     }
 }
 
@@ -218,13 +206,13 @@ fn main() {
     let display = create_display(&event_loop);
 
     let program = gen_program(&display);
-    let mut draw_info = DrawInfo{display: display, program: program, program_start: SystemTime::now(), draw_params: gen_draw_params(true)};
+    let mut draw_info = DrawInfo{display: display, program: program, program_start: SystemTime::now(), draw_params: gen_draw_params()};
     let mut player = Player::new();
     info!("generating chunk main");
     let mut c = ChunkManager::new();
-    for x in 0..2{
-        for y in 0..20{
-            for z in 0..2 {
+    for x in 0..1{
+        for y in 0..1{
+            for z in 0..1 {
                 c.load_chunk(Pos{x,y,z });
             }
         }
@@ -269,13 +257,9 @@ fn main() {
             rerender_timer = Instant::now();
             let dt = timer.elapsed().as_secs_f32();
             timer = Instant::now();
-            println!("input");
             player.handle_input(&dt);
-            println!("update player");
             player.update(&dt);
-            println!("update chunks");
-            c.update(&dt);
-            println!("update chunks done");
+            c.update(&dt, &draw_info);
             let mut target = draw_info.display.draw();
             target.clear_color_and_depth((0.0, 0.0, 0.0, 0.0), 1.0);
             c.render_chunks(&mut draw_info, &mut target, &player);

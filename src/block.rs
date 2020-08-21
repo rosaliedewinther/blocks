@@ -1,4 +1,4 @@
-use crate::{Vertex, Color, Pos, quad};
+use crate::{Vertex, Color, Pos};
 use rand::Rng;
 use rand::distributions::{Distribution, Standard};
 use crate::chunk::BlockSides;
@@ -22,11 +22,11 @@ pub struct Block {
 impl Distribution<BlockType> for Standard {
     fn sample<R: Rng + ?Sized>(&self, rng: &mut R) -> BlockType {
         match rng.gen_range(0, 6) {
-            0 => BlockType::Grass,
+            0 => BlockType::Water,
             1 => BlockType::Dirt,
             2 => BlockType::Sand,
             3 => BlockType::Stone,
-            4 => BlockType::Water,
+            4 => BlockType::Grass,
             5 => BlockType::Air,
             _ => BlockType::Stone
         }
@@ -45,7 +45,7 @@ impl Block {
         Block {
             col:match &block_type {
                 BlockType::Grass => [0.0,1.0,0.0,1.0f32],
-                BlockType::Water => [0.0,0.0,1.0,0.1f32],
+                BlockType::Water => [0.0,0.0,1.0,0.5f32],
                 BlockType::Dirt => [0.5,0.25,0.0,1.0f32],
                 BlockType::Stone => [1.0,0.8,0.8,1.0f32],
                 BlockType::Sand => [1.0,0.1,0.0,1.0f32],
@@ -59,7 +59,7 @@ impl Block {
         return Block::new(rand::random());
     }
 
-    pub fn get_mesh(&mut self, pos: &Pos<i32>, sides: & BlockSides) -> Vec<Vertex> {
+    pub fn get_mesh(&self, pos: &Pos<i32>, sides: & BlockSides) -> Vec<Vertex> {
         let mut mesh = Vec::new();
         let posf = Pos{x:pos.x as f32-0.5, y:pos.y as f32-0.5, z:pos.z as f32-0.5};
         if sides.right{
@@ -82,7 +82,7 @@ impl Block {
         }
         return mesh;
     }
-    pub fn mesh_front(&mut self, pos: Pos<f32>, vec: &mut Vec<Vertex>){
+    pub fn mesh_front(&self, pos: Pos<f32>, vec: &mut Vec<Vertex>){
         vec.push(Vertex { position: [pos.x,      pos.y,      pos.z], color: self.col });
         vec.push(Vertex { position: [pos.x+1f32, pos.y,      pos.z], color: self.col });
         vec.push(Vertex { position: [pos.x,      pos.y+1f32, pos.z], color: self.col });
@@ -90,7 +90,7 @@ impl Block {
         vec.push(Vertex { position: [pos.x+1f32, pos.y+1f32, pos.z], color: self.col });
         vec.push(Vertex { position: [pos.x,      pos.y+1f32, pos.z], color: self.col });
     }
-    pub fn mesh_back(&mut self, pos: Pos<f32>, vec: &mut Vec<Vertex>){
+    pub fn mesh_back(&self, pos: Pos<f32>, vec: &mut Vec<Vertex>){
         vec.push(Vertex { position: [pos.x,      pos.y,      pos.z+1f32], color: self.col });
         vec.push(Vertex { position: [pos.x,      pos.y+1f32, pos.z+1f32], color: self.col });
         vec.push(Vertex { position: [pos.x+1f32, pos.y,      pos.z+1f32], color: self.col });
@@ -98,7 +98,7 @@ impl Block {
         vec.push(Vertex { position: [pos.x,      pos.y+1f32, pos.z+1f32], color: self.col });
         vec.push(Vertex { position: [pos.x+1f32, pos.y+1f32, pos.z+1f32], color: self.col });
     }
-    pub fn mesh_left(&mut self, pos: Pos<f32>, vec: &mut Vec<Vertex>){
+    pub fn mesh_left(&self, pos: Pos<f32>, vec: &mut Vec<Vertex>){
         vec.push(Vertex { position: [pos.x, pos.y,      pos.z],      color: self.col });
         vec.push(Vertex { position: [pos.x, pos.y+1f32, pos.z],      color: self.col });
         vec.push(Vertex { position: [pos.x, pos.y,      pos.z+1f32], color: self.col });
@@ -106,7 +106,7 @@ impl Block {
         vec.push(Vertex { position: [pos.x, pos.y,      pos.z+1f32], color: self.col });
         vec.push(Vertex { position: [pos.x, pos.y+1f32, pos.z],      color: self.col });
     }
-    pub fn mesh_right(&mut self, pos: Pos<f32>, vec: &mut Vec<Vertex>){
+    pub fn mesh_right(&self, pos: Pos<f32>, vec: &mut Vec<Vertex>){
         vec.push(Vertex { position: [pos.x+1f32, pos.y,      pos.z],      color: self.col });
         vec.push(Vertex { position: [pos.x+1f32, pos.y,      pos.z+1f32], color: self.col });
         vec.push(Vertex { position: [pos.x+1f32, pos.y+1f32, pos.z],      color: self.col });
@@ -114,7 +114,7 @@ impl Block {
         vec.push(Vertex { position: [pos.x+1f32, pos.y+1f32, pos.z],      color: self.col });
         vec.push(Vertex { position: [pos.x+1f32, pos.y,      pos.z+1f32], color: self.col });
     }
-    pub fn mesh_top(&mut self, pos: Pos<f32>, vec: &mut Vec<Vertex>){
+    pub fn mesh_top(&self, pos: Pos<f32>, vec: &mut Vec<Vertex>){
         vec.push(Vertex { position: [pos.x,      pos.y+1f32,  pos.z],      color: self.col });
         vec.push(Vertex { position: [pos.x+1f32, pos.y+1f32,  pos.z],      color: self.col });
         vec.push(Vertex { position: [pos.x,      pos.y+1f32,  pos.z+1f32], color: self.col });
@@ -122,7 +122,7 @@ impl Block {
         vec.push(Vertex { position: [pos.x,      pos.y+1f32,  pos.z+1f32], color: self.col });
         vec.push(Vertex { position: [pos.x+1f32, pos.y+1f32,  pos.z],      color: self.col });
     }
-    pub fn mesh_bottom(&mut self, pos: Pos<f32>, vec: &mut Vec<Vertex>){
+    pub fn mesh_bottom(&self, pos: Pos<f32>, vec: &mut Vec<Vertex>){
         vec.push(Vertex { position: [pos.x,      pos.y,  pos.z],      color: self.col });
         vec.push(Vertex { position: [pos.x,      pos.y,  pos.z+1f32], color: self.col });
         vec.push(Vertex { position: [pos.x+1f32, pos.y,  pos.z],      color: self.col });

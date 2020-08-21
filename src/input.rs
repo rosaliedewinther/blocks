@@ -1,6 +1,5 @@
 use device_query::{DeviceState, Keycode};
 use enigo::{Enigo, MouseControllable};
-use crate::player::Player;
 
 pub struct Input{
     pub sensitivity_modifier: f32,

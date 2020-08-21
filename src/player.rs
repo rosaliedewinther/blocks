@@ -1,7 +1,6 @@
-use device_query::{DeviceQuery, DeviceState, Keycode, MouseState};
-use crate::utils::{get_rotation_matrix_z, get_rotation_matrix_y, get_rotation_matrix_x, negative_ceil};
+use device_query::Keycode;
+use crate::utils::{get_rotation_matrix_z, get_rotation_matrix_y};
 use nalgebra::{Matrix3, Vector3};
-use enigo::{Enigo, MouseControllable};
 use std::f32::consts::PI;
 use crate::input::Input;
 
@@ -20,17 +19,17 @@ impl Player{
             position: [0.0f32,0.0f32,0.0f32],
             direction: Vector3::new(0f32,0.0f32,1.0f32),
             up: [0f32,1.0f32,0f32],
-            speed: 100f32,
+            speed: 10f32,
             input: Input::new()
         }
     }
 
     pub fn handle_input(&mut self, dt: &f32){
         self.input.update();
-        self.change_position(Keycode::A, 1.5f32*PI, -*dt*self.speed);
+        self.change_position(Keycode::A, 1.5f32*PI, *dt*self.speed);
         self.change_position(Keycode::D, 0.5f32*PI, *dt*self.speed);
         self.change_position(Keycode::W, 0f32*PI, *dt*self.speed);
-        self.change_position(Keycode::S, 1f32*PI, -*dt*self.speed);
+        self.change_position(Keycode::S, 1f32*PI, *dt*self.speed);
         if self.input.key_pressed(Keycode::Space){
             self.position[1] += *dt*self.speed
         }
@@ -58,8 +57,8 @@ impl Player{
         if self.input.key_pressed(key){
             let move_vec = get_rotation_matrix_y(rotation_degree) * &self.direction;
             let to_extend = 1f32/(move_vec[0].powf(2f32).abs() + move_vec[2].powf(2f32).abs()).sqrt();
-            self.position[0] += move_vec[0]*to_extend;
-            self.position[2] += move_vec[2]*to_extend;
+            self.position[0] += change*move_vec[0]*to_extend;
+            self.position[2] += change*move_vec[2]*to_extend;
         }
     }
     pub fn change_direction_horizontal(&mut self, mat: &Matrix3<f32>){

@@ -1,11 +1,9 @@
 use crate::block::{Block, BlockType};
-use crate::{DrawInfo, draw_vertices, block, Pos, Vertex};
-use glium::{Frame, VertexBuffer};
+use crate::{DrawInfo, block, Pos, Vertex};
+use glium::VertexBuffer;
 use std::time::Instant;
 use crate::chunk_manager::CHUNKSIZE;
 use log::{info, warn};
-use crate::player::Player;
-use arrayvec::ArrayVec;
 
 #[derive(Debug, Clone)]
 pub struct BlockSides{
@@ -24,30 +22,10 @@ impl BlockSides{
 }
 
 pub struct Chunk{
-    pub blocks: Vec<Vec<Vec<Block>>>,
-    pub vertex_buffer: Option<VertexBuffer<Vertex>>,
-    pub update_vertices: bool
+    pub blocks: Vec<Vec<Vec<Block>>>
 }
 
 impl Chunk{
-    pub fn render(&mut self, mut draw_info: &mut DrawInfo, mut target: & mut Frame, chunk_pos: &Pos<i32>, player: &Player) {
-        if self.vertex_buffer.is_none(){
-            warn!("chunk does not have vertex buffer in pos: {:?}", chunk_pos);
-            return;
-        }
-        let vert_buffer = &self.vertex_buffer.as_ref().unwrap();
-        if vert_buffer.len() == 0{
-            return;
-        }
-        draw_vertices(&mut draw_info, &mut target, vert_buffer, player);
-    }
-    pub fn get_total_vertices(&self) -> i32 {
-        if self.vertex_buffer.is_none(){
-            warn!("chunk does not have vertex buffer");
-            return 0;
-        }
-        self.vertex_buffer.as_ref().unwrap().len() as i32
-    }
     pub fn generate() -> Chunk{
         println!("in chunk generation");
         let mut arr: Vec<Vec<Vec<Block>>> = Vec::new();
@@ -55,8 +33,8 @@ impl Chunk{
             arr.push(Vec::new());
             for j in 0..CHUNKSIZE{
                 arr[i].push(Vec::new());
-                for k in 0..CHUNKSIZE {
-                    if i%2==0 && j%2 == 0 && k%2==0 {
+                for _ in 0..CHUNKSIZE {
+                    if true {
                         arr[i][j].push(block::Block::rand_new());
                     } else {
                         arr[i][j].push(block::Block::new(BlockType::Air));
@@ -64,15 +42,15 @@ impl Chunk{
                 }
             }
         }
-        let c = Chunk{blocks: arr, vertex_buffer: None, update_vertices: false};
+        let c = Chunk{blocks: arr};
         return c;
     }
 
-    pub fn update(&mut self, dt: &f32){
-        return;
+    pub fn update(&mut self, dt: &f32) -> bool{
+        return false;
     }
 
-    pub fn redo_meshes(&mut self, draw_info: &DrawInfo, chunk_pos: &Pos<i32>) {
+    pub fn get_vertex_buffer(&self, draw_info: &DrawInfo, chunk_pos: &Pos<i32>) -> Option<VertexBuffer<Vertex>> {
         info!("redo meshes");
         let last_iteration = Instant::now();
         let mut temp_vertex_buffer = Vec::new();
@@ -85,31 +63,31 @@ impl Chunk{
                         continue;
                     }
                     let mut sides = BlockSides::new();
-                    if self.get_blocktype(&local_pos.get_diff(1,0,0)) == BlockType::Air{
+                    if self.should_render_side(&local_pos.get_diff(1,0,0)){
                         sides.right = true;
                     }
-                    if self.get_blocktype(&local_pos.get_diff(-1,0,0)) == BlockType::Air{
+                    if self.should_render_side(&local_pos.get_diff(-1,0,0)){
                         sides.left = true
                     }
-                    if self.get_blocktype(&local_pos.get_diff(0,1,0)) == BlockType::Air{
+                    if self.should_render_side(&local_pos.get_diff(0,1,0)){
                         sides.top = true
                     }
-                    if self.get_blocktype(&local_pos.get_diff(0,-1,0)) == BlockType::Air{
+                    if self.should_render_side(&local_pos.get_diff(0,-1,0)){
                         sides.bot = true
                     }
-                    if self.get_blocktype(&local_pos.get_diff(0,0,1)) == BlockType::Air{
+                    if self.should_render_side(&local_pos.get_diff(0,0,1)){
                         sides.back = true
                     }
-                    if self.get_blocktype(&local_pos.get_diff(0,0,-1)) == BlockType::Air{
+                    if self.should_render_side(&local_pos.get_diff(0,0,-1)){
                         sides.front = true
                     }
-                    temp_vertex_buffer.extend(self.blocks[x][y][z].get_mesh(&global_pos, &sides).iter());
+                    let block: &Block = &self.blocks[x][y][z];
+                    temp_vertex_buffer.extend(block.get_mesh(&global_pos, &sides).iter());
                 }
             }
         }
-        info!("adding vertices to vertex buffer");
-        self.vertex_buffer = Some(glium::VertexBuffer::new(&draw_info.display, &temp_vertex_buffer).unwrap());
         info!("redid meshes in: {} seconds", last_iteration.elapsed().as_secs_f64());
+        return Some(glium::VertexBuffer::new(&draw_info.display, &temp_vertex_buffer).unwrap());
     }
     pub fn get_blocktype(&self, pos: &Pos<i32>) -> BlockType{
         if pos.x < 0 || pos.x > (CHUNKSIZE - 1) as i32 || pos.y < 0 || pos.y > (CHUNKSIZE - 1) as i32 || pos.z < 0 || pos.z > (CHUNKSIZE - 1) as i32{
@@ -123,6 +101,15 @@ impl Chunk{
             return;
         }
         self.blocks[pos.x as usize][pos.y as usize][pos.z as usize] = block;
-        self.vertex_buffer = None;
+    }
+    pub fn should_render_side(&self, pos: &Pos<i32>) -> bool {
+        if pos.x < 0 || pos.x > (CHUNKSIZE - 1) as i32 || pos.y < 0 || pos.y > (CHUNKSIZE - 1) as i32 || pos.z < 0 || pos.z > (CHUNKSIZE - 1) as i32{
+            return true;
+        }
+        let b = &self.blocks[pos.x as usize][pos.y as usize][pos.z as usize];
+        if b.block_type == BlockType::Air || b.col[3] != 1.0 {
+            return true;
+        }
+        return false;
     }
 }
