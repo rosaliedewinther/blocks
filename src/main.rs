@@ -6,9 +6,10 @@ use glium::{glutin, Display, VertexBuffer, IndexBuffer, Program, Surface, Frame,
 use glium::index::PrimitiveType;
 use glutin::event_loop::EventLoop;
 use std::time::{SystemTime, Instant};
-use crate::chunk_manager::ChunkManager;
+use crate::chunk_manager::{ChunkManager, CHUNKSIZE};
 use crate::player::Player;
 use std::ops;
+use crate::block::Block;
 
 mod block;
 mod chunk;
@@ -34,50 +35,66 @@ pub struct DrawInfo<'a>{
 }
 
 #[derive(Hash, Eq, PartialEq, Debug, Copy, Clone)]
-pub struct Pos<T>{
-    pub x: T,
-    pub y: T,
-    pub z: T
+pub struct GlobalBlockPos{
+    pub x: i32,
+    pub y: i32,
+    pub z: i32
+}
+#[derive(Hash, Eq, PartialEq, Debug, Copy, Clone)]
+pub struct LocalBlockPos{
+    pub x: i32,
+    pub y: i32,
+    pub z: i32
+}
+#[derive(Debug, Copy, Clone)]
+pub struct ObjectPos{
+    pub x: f32,
+    pub y: f32,
+    pub z: f32
+}
+#[derive(Hash, Eq, PartialEq, Debug, Copy, Clone)]
+pub struct ChunkPos{
+    pub x: i32,
+    pub y: i32,
+    pub z: i32
 }
 
-impl<T: std::ops::Add<Output = T> + Copy + std::ops::Rem<Output = T> + std::cmp::PartialOrd + std::ops::Sub<Output = T> + Default + num_traits::sign::Signed> Pos<T>{
-    pub fn get_diff(&self, x_diff: T, y_diff: T, z_diff: T) -> Pos<T>{
-        Pos{x: self.x+x_diff, y: self.y+y_diff, z: self.z+z_diff}
+impl GlobalBlockPos{
+    pub fn get_diff(&self, x_diff: i32, y_diff: i32, z_diff: i32) -> GlobalBlockPos{
+        GlobalBlockPos {x: self.x+x_diff, y: self.y+y_diff, z: self.z+z_diff}
     }
-    pub fn wrap(&self, val: T) -> Pos<T>{
-        let mut x = self.x%val;
-        if x < T::default(){
-            x=val-x.abs();
-        }
-        let mut y = self.y%val;
-        if y < T::default(){
-            y=val-y.abs();
-        }
-        let mut z = self.z%val;
-        if z < T::default(){
-            z=val-z.abs();
-        }
-        Pos{x,y,z}
+    pub fn new()-> GlobalBlockPos{
+        GlobalBlockPos{x:0,y:0,z:0}
+    }
+    pub fn get_local_pos(&self) -> LocalBlockPos{
+        LocalBlockPos {x:self.x% CHUNKSIZE as i32, y:self.y% CHUNKSIZE as i32, z:self.z% CHUNKSIZE as i32 }
+    }
+    pub fn get_chunk_pos(&self) -> ChunkPos{
+        ChunkPos {x:self.x/ CHUNKSIZE as i32, y:self.y/ CHUNKSIZE as i32, z:self.z/ CHUNKSIZE as i32 }
+    }
+    pub fn get_block_centre(&self) -> ObjectPos{
+        ObjectPos {x:self.x as f32-0.5, y:self.y as f32-0.5, z:self.z as f32-0.5}
+    }
+    pub fn new_from_chunk_local(chunk_pos: &ChunkPos, local_pos: &LocalBlockPos)->GlobalBlockPos{
+        GlobalBlockPos{x:chunk_pos.x* CHUNKSIZE as i32 +local_pos.x, y:chunk_pos.y* CHUNKSIZE as i32 +local_pos.y, z:chunk_pos.z* CHUNKSIZE as i32 +local_pos.z}
     }
 }
-
-impl<T: std::ops::Sub<Output = T> + Copy> ops::Sub<T> for Pos<T> {
-    type Output = Pos<T>;
-
-    fn sub(self, val: T) -> Pos<T> {
-        Pos{x: self.x-val, y: self.y-val, z: self.z-val}
+impl ChunkPos{
+    pub fn get_diff(&self, x_diff: i32, y_diff: i32, z_diff: i32) -> ChunkPos{
+        ChunkPos {x: self.x+x_diff, y: self.y+y_diff, z: self.z+z_diff}
     }
 }
+impl LocalBlockPos{
 
-pub fn quad(pos1: Pos<f32>, pos2: Pos<f32>, vec: &mut Vec<Vertex>, col: Color){
-    vec.push(Vertex { position: [pos1.x,  pos1.y,  pos1.z],  color: col });
-    vec.push(Vertex { position: [pos1.x,  pos2.y,  pos1.z],  color: col });
-    vec.push(Vertex { position: [pos2.x,  pos1.y,  pos2.z],  color: col });
-    vec.push(Vertex { position: [pos1.x,  pos1.y,  pos1.z],  color: col });
-    vec.push(Vertex { position: [pos2.x,  pos2.y,  pos2.z],  color: col });
-    vec.push(Vertex { position: [pos2.x,  pos1.y,  pos2.z],  color: col });
 }
 
+impl ops::Sub<i32> for GlobalBlockPos {
+    type Output = GlobalBlockPos;
+
+    fn sub(self, val: i32) -> GlobalBlockPos {
+        GlobalBlockPos {x: self.x-val, y: self.y-val, z: self.z-val}
+    }
+}
 
 fn draw_vertices(draw_info: &mut DrawInfo, target: &mut Frame, vertex_buffer: &VertexBuffer<Vertex>, player: &Player){
     let utime: f32 = draw_info.program_start.elapsed().unwrap().as_secs_f32();
@@ -187,7 +204,7 @@ fn gen_draw_params() -> DrawParameters<'static>{
             write: true,
             .. Default::default()
         },
-        //backface_culling: glium::draw_parameters::BackfaceCullingMode::CullClockwise,
+        backface_culling: glium::draw_parameters::BackfaceCullingMode::CullClockwise,
         blend: Blend::alpha_blending(),
         .. Default::default()
     }
@@ -225,10 +242,10 @@ fn main() {
     let mut player = Player::new();
     info!("generating chunk main");
     let mut c = ChunkManager::new();
-    for x in 0..2{
-        for y in 0..2{
-            for z in 0..2 {
-                c.load_chunk(Pos{x,y,z });
+    for x in 0..10{
+        for y in 0..10{
+            for z in 0..10 {
+                c.load_chunk(ChunkPos {x,y,z });
             }
         }
     }

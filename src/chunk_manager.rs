@@ -1,4 +1,4 @@
-use crate::{Pos, DrawInfo, Vertex, draw_vertices};
+use crate::{DrawInfo, Vertex, draw_vertices, ChunkPos, GlobalBlockPos, LocalBlockPos};
 use crate::chunk::Chunk;
 use std::collections::HashMap;
 use crate::block::Block;
@@ -10,12 +10,12 @@ use crate::player::Player;
 pub const CHUNKSIZE: usize = 16;
 
 pub struct ChunkManager{
-    pub chunks: HashMap<Pos<i32>, Chunk>,
-    pub to_load: Vec<Pos<i32>>,
-    pub to_unload: Vec<Pos<i32>>,
-    pub to_rebuild: Vec<Pos<i32>>,
-    pub visible: Vec<Pos<i32>>,
-    pub vertex_buffers: HashMap<Pos<i32>, Option<VertexBuffer<Vertex>>>
+    pub chunks: HashMap<ChunkPos, Chunk>,
+    pub to_load: Vec<ChunkPos>,
+    pub to_unload: Vec<ChunkPos>,
+    pub to_rebuild: Vec<ChunkPos>,
+    pub visible: Vec<ChunkPos>,
+    pub vertex_buffers: HashMap<ChunkPos, Option<VertexBuffer<Vertex>>>
 }
 
 impl ChunkManager{
@@ -29,17 +29,15 @@ impl ChunkManager{
             vertex_buffers: HashMap::new()
         }
     }
-    pub fn get_block(&self, pos: &Pos<i32>) -> Option<&Block>{
-        let chunk_pos = Pos{x:pos.x/ CHUNKSIZE as i32, y:pos.y/ CHUNKSIZE as i32, z:pos.z/ CHUNKSIZE as i32 };
-        let local_pos = Pos{x:pos.x% CHUNKSIZE as i32, y:pos.y% CHUNKSIZE as i32, z:pos.z% CHUNKSIZE as i32 };
-        return match self.chunks.get(&chunk_pos) {
-            Some(c) => c.get_block(&local_pos),
+    pub fn get_block(&self, pos: &GlobalBlockPos) -> Option<&Block>{
+        return match self.chunks.get(&pos.get_chunk_pos()) {
+            Some(c) => c.get_block(&pos.get_local_pos()),
             None => {
                 None
             }
         }
     }
-    pub fn load_chunk(&mut self, pos: Pos<i32>){
+    pub fn load_chunk(&mut self, pos: ChunkPos){
         self.to_load.push(pos);
     }
     pub fn update(&mut self, dt: &f32,  draw_info: &DrawInfo){
@@ -59,7 +57,7 @@ impl ChunkManager{
     }
     pub fn gen_chunks(&mut self){
         let started = Instant::now();
-        while started.elapsed().as_secs_f64() < 0.01{
+        while true /*started.elapsed().as_secs_f64() < 0.01*/{
             if self.to_load.len() == 0 {
                 return
             }
@@ -69,12 +67,12 @@ impl ChunkManager{
                 return;
             }
             info!("generating chunk at: {:?}", &pos);
-            self.chunks.insert(pos.clone(), Chunk::generate());
+            self.chunks.insert(pos.clone(), Chunk::generate(&pos));
             info!("done generating chunk at:  {:?}", &pos);
             self.reset_surronding_vertex_buffers(&pos);
         }
     }
-    pub fn reset_surronding_vertex_buffers(&mut self, pos: &Pos<i32>){
+    pub fn reset_surronding_vertex_buffers(&mut self, pos: &ChunkPos){
         if self.vertex_buffers.contains_key(&pos.get_diff(0,0,1)){
             println!("refreshign: {:?}", &pos.get_diff(0,0,1));
             let mut vertex_buffer = self.vertex_buffers.get_mut(&pos.get_diff(0,0,1));
