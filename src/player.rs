@@ -37,7 +37,7 @@ impl Player{
             self.position[1] += -*dt*self.speed
         }
 
-        let mut mouse_change = self.input.mouse_change();
+        let mouse_change = self.input.mouse_change();
         let xdiff = mouse_change.0*dt;
         let ydiff = -mouse_change.1*dt;
 

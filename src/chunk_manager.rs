@@ -1,4 +1,4 @@
-use crate::{DrawInfo, Vertex, draw_vertices, ChunkPos, GlobalBlockPos, LocalBlockPos};
+use crate::{DrawInfo, Vertex, draw_vertices, ChunkPos, GlobalBlockPos};
 use crate::chunk::Chunk;
 use std::collections::HashMap;
 use crate::block::Block;

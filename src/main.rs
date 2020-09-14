@@ -9,7 +9,6 @@ use std::time::{SystemTime, Instant};
 use crate::chunk_manager::{ChunkManager, CHUNKSIZE};
 use crate::player::Player;
 use std::ops;
-use crate::block::Block;
 
 mod block;
 mod chunk;
