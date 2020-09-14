@@ -41,36 +41,42 @@ impl ChunkManager{
         self.to_load.push(pos);
     }
     pub fn update(&mut self, dt: &f32,  draw_info: &DrawInfo){
-        self.gen_chunks();
+        let started = Instant::now();
+        while started.elapsed().as_secs_f32() < 0.001{
+            self.gen_chunk();
+        }
         for (pos, chunk) in &mut self.chunks {
+            if started.elapsed().as_secs_f32() < 0.001{
+                break;
+            }
             if chunk.update(dt){
                 self.vertex_buffers.insert(*pos, None);
             }
         }
 
         for (pos, chunk) in &self.chunks {
+            if started.elapsed().as_secs_f32() < 0.001{
+                break;
+            }
             let vertex_buffer_opt = self.vertex_buffers.get(pos);
             if vertex_buffer_opt.is_none() || vertex_buffer_opt.unwrap().is_none(){
                 self.vertex_buffers.insert(*pos, chunk.get_vertex_buffer(draw_info, pos, &self));
             }
         }
     }
-    pub fn gen_chunks(&mut self){
-        let started = Instant::now();
-        while true /*started.elapsed().as_secs_f64() < 0.01*/{
-            if self.to_load.len() == 0 {
-                return
-            }
-            let pos = self.to_load.pop().unwrap();
-            if self.chunks.contains_key(&pos){
-                warn!("chunk already exists, not generating a new one at: {:?}", &pos);
-                return;
-            }
-            info!("generating chunk at: {:?}", &pos);
-            self.chunks.insert(pos.clone(), Chunk::generate(&pos));
-            info!("done generating chunk at:  {:?}", &pos);
-            self.reset_surronding_vertex_buffers(&pos);
+    pub fn gen_chunk(&mut self){
+        if self.to_load.len() == 0 {
+            return;
         }
+        let pos = self.to_load.pop().unwrap();
+        if self.chunks.contains_key(&pos){
+            warn!("chunk already exists, not generating a new one at: {:?}", &pos);
+            return;
+        }
+        info!("generating chunk at: {:?}", &pos);
+        self.chunks.insert(pos.clone(), Chunk::generate(&pos));
+        info!("done generating chunk at:  {:?}", &pos);
+        self.reset_surronding_vertex_buffers(&pos);
     }
     pub fn reset_surronding_vertex_buffers(&mut self, pos: &ChunkPos){
         if self.vertex_buffers.contains_key(&pos.get_diff(0,0,1)){

@@ -38,7 +38,7 @@ impl Chunk{
                 for z in 0..CHUNKSIZE {
                     let local_pos = LocalBlockPos{x: x as i32,y: y as i32,z: z as i32};
                     let global_pos = GlobalBlockPos::new_from_chunk_local(&pos, &local_pos);
-                    if perlin.get([global_pos.x as f64/16f64, global_pos.y as f64/16f64, global_pos.z as f64/16f64]) > 0f64 {
+                    if perlin.get([global_pos.x as f64/16f64, global_pos.y as f64/16f64, global_pos.z as f64/16f64]) > 0.2f64 {
                         arr[x][y].push(block::Block::rand_new());
                     } else {
                         arr[x][y].push(block::Block::new(BlockType::Air));

@@ -242,9 +242,9 @@ fn main() {
     let mut player = Player::new();
     info!("generating chunk main");
     let mut c = ChunkManager::new();
-    for x in 0..10{
-        for y in 0..10{
-            for z in 0..10 {
+    for x in 0..5{
+        for y in 0..5{
+            for z in 0..5 {
                 c.load_chunk(ChunkPos {x,y,z });
             }
         }
@@ -285,7 +285,7 @@ fn main() {
             },
             _ => glutin::event_loop::ControlFlow::Poll,
         };
-        if 1f32/rerender_timer.elapsed().as_secs_f32() < 60f32{
+        if 1f32/rerender_timer.elapsed().as_secs_f32() < FRAMERATE{
             rerender_timer = Instant::now();
             let dt = timer.elapsed().as_secs_f32();
             timer = Instant::now();
