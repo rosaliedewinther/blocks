@@ -1,10 +1,13 @@
 use crate::block::{Block, BlockType};
-use crate::{DrawInfo, block, Vertex, ChunkPos, GlobalBlockPos, LocalBlockPos};
+use crate::{block};
 use glium::VertexBuffer;
 use std::time::Instant;
-use crate::chunk_manager::{CHUNKSIZE, ChunkManager};
+use crate::chunk_manager::ChunkManager;
 use log::{info, warn};
 use noise::{Perlin, NoiseFn};
+use crate::positions::{ChunkPos, LocalBlockPos, GlobalBlockPos};
+use crate::renderer::{DrawInfo, Vertex};
+use crate::constants::CHUNKSIZE;
 
 #[derive(Debug, Clone)]
 pub struct BlockSides{
@@ -102,7 +105,7 @@ impl Chunk{
     }
     pub fn set_block(&mut self, block: Block, pos: &LocalBlockPos){
         if pos.x < 0 && pos.x > (CHUNKSIZE - 1) as i32 && pos.y < 0 && pos.y > (CHUNKSIZE - 1) as i32 && pos.z < 0 && pos.z > (CHUNKSIZE - 1) as i32{
-            warn!("tried to place block outside chunk with pos: {:?}", pos);
+            warn!("tried to place block outside chunk with pos: {:?}", &pos);
             return;
         }
         self.blocks[pos.x as usize][pos.y as usize][pos.z as usize] = block;

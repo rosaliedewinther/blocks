@@ -1,4 +1,3 @@
-use crate::{DrawInfo, Vertex, draw_vertices, ChunkPos, GlobalBlockPos};
 use crate::chunk::Chunk;
 use std::collections::HashMap;
 use crate::block::Block;
@@ -6,8 +5,8 @@ use glium::{Frame, VertexBuffer};
 use log::{info, warn};
 use std::time::Instant;
 use crate::player::Player;
-
-pub const CHUNKSIZE: usize = 16;
+use crate::positions::{ChunkPos, GlobalBlockPos};
+use crate::renderer::{Vertex, DrawInfo, draw_vertices};
 
 pub struct ChunkManager{
     pub chunks: HashMap<ChunkPos, Chunk>,
@@ -50,7 +49,7 @@ impl ChunkManager{
                 break;
             }
             if chunk.update(dt){
-                self.vertex_buffers.insert(*pos, None);
+                self.vertex_buffers.insert(pos.clone(), None);
             }
         }
 
@@ -60,7 +59,7 @@ impl ChunkManager{
             }
             let vertex_buffer_opt = self.vertex_buffers.get(pos);
             if vertex_buffer_opt.is_none() || vertex_buffer_opt.unwrap().is_none(){
-                self.vertex_buffers.insert(*pos, chunk.get_vertex_buffer(draw_info, pos, &self));
+                self.vertex_buffers.insert(pos.clone(), chunk.get_vertex_buffer(draw_info, pos, &self));
             }
         }
     }

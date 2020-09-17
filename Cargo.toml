@@ -1,6 +1,6 @@
 [package]
 name = "vox"
-version = "0.1.0"
+version = "0.0.1"
 authors = ["jasperdewinther <jasper.dewinther@student.hu.nl>"]
 edition = "2018"
 
@@ -19,3 +19,4 @@ nalgebra = "0.21.1"
 enigo = "0.0.14"
 num-traits = "0.2.12"
 noise="0.6.0"
+#glium_text="0.14.0"
