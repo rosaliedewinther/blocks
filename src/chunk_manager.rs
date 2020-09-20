@@ -6,7 +6,8 @@ use log::{info, warn};
 use std::time::Instant;
 use crate::player::Player;
 use crate::positions::{ChunkPos, GlobalBlockPos};
-use crate::renderer::{Vertex, DrawInfo, draw_vertices};
+use crate::renderer::vertex::Vertex;
+use crate::renderer::glium::{DrawInfo, draw_vertices};
 
 pub struct ChunkManager{
     pub chunks: HashMap<ChunkPos, Chunk>,

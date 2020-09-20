@@ -6,8 +6,9 @@ use crate::chunk_manager::ChunkManager;
 use log::{info, warn};
 use noise::{Perlin, NoiseFn};
 use crate::positions::{ChunkPos, LocalBlockPos, GlobalBlockPos};
-use crate::renderer::{DrawInfo, Vertex};
+use crate::renderer::glium::{DrawInfo};
 use crate::constants::CHUNKSIZE;
+use crate::renderer::vertex::Vertex;
 
 #[derive(Debug, Clone)]
 pub struct BlockSides{

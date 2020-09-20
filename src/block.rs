@@ -2,7 +2,7 @@ use rand::Rng;
 use rand::distributions::{Distribution, Standard};
 use crate::chunk::BlockSides;
 use crate::positions::{GlobalBlockPos, ObjectPos};
-use crate::renderer::{Color, Vertex};
+use crate::renderer::vertex::{Color, Vertex};
 
 #[derive(PartialEq, Clone, Copy)]
 pub enum BlockType{

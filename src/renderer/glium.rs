@@ -4,15 +4,9 @@ use crate::player::Player;
 use std::f32::consts::PI;
 use glium::backend::glutin::glutin::event_loop::EventLoop;
 use crate::constants::{WIDTH, HEIGHT};
+use crate::renderer::vertex::Vertex;
 
-#[derive(Copy, Clone, Debug)]
-pub struct Vertex {
-    pub position: [f32; 3],
-    pub color: [f32; 4],
-}
-
-pub type Color = [f32; 4];
-
+implement_vertex!(Vertex, position, color);
 
 pub struct DrawInfo<'a>{
     pub display: Display,
@@ -61,7 +55,7 @@ pub fn draw_vertices(draw_info: &mut DrawInfo, target: &mut Frame, vertex_buffer
 }
 
 pub fn create_display(event_loop: &EventLoop<()>) -> Display {
-    let wb = glutin::window::WindowBuilder::new();
+    let wb = glutin::window::WindowBuilder::new().with_inner_size(glutin::dpi::LogicalSize::new(WIDTH as f64, HEIGHT as f64));
     let cb = glutin::ContextBuilder::new().with_depth_buffer(23)
         .with_vsync(true)
         .with_multisampling(2);

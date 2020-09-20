@@ -1,16 +1,21 @@
 #[macro_use]
 extern crate glium;
-//extern crate glium_text;
 
 use log::info;
 
+use imgui_glium_renderer::imgui;
+use imgui::{Ui, im_str};
 use glium::{glutin, IndexBuffer, Surface};
 use glium::index::PrimitiveType;
 use std::time::{SystemTime, Instant};
 use crate::chunk_manager::{ChunkManager};
 use crate::player::Player;
 use crate::positions::ChunkPos;
-use crate::renderer::{DrawInfo, create_display, gen_program, gen_draw_params, Vertex};
+use crate::renderer::glium::{DrawInfo, create_display, gen_draw_params, gen_program};
+use crate::constants::{WIDTH, HEIGHT};
+use std::borrow::BorrowMut;
+use imgui_winit_support::{HiDpiMode, WinitPlatform};
+use imgui_glium_renderer::imgui::{Condition, Window};
 
 mod block;
 mod chunk;
@@ -49,12 +54,11 @@ fn main() {
     setup_logger();
 
     info!("starting up");
-    implement_vertex!(Vertex, position, color);
+
     let event_loop = glutin::event_loop::EventLoop::new();
     let display = create_display(&event_loop);
 
-    //let system = glium_text::TextSystem::new(&display);
-    //let font = glium_text::FontTexture::new(&display, std::fs::File::open(&std::path::Path::new("assets/OpenSans-Regular.ttf")).unwrap(), 24).unwrap();
+
     let program = gen_program(&display);
     let mut draw_info = DrawInfo{display: display, program: program, program_start: SystemTime::now(), draw_params: gen_draw_params()};
     let mut player = Player::new();
@@ -80,6 +84,18 @@ fn main() {
     const FRAMERATE: f32 = 30f32;
     info!("starting main loop");
     let mut t= 1f32;
+    let mut context = imgui::Context::create();
+    let mut glium_renderer = imgui_glium_renderer::Renderer::init(&mut context, &draw_info.display).unwrap();
+
+    let mut platform = WinitPlatform::init(&mut context);
+    {
+        let gl_window = &draw_info.display.gl_window();
+        let window = gl_window.window();
+        platform.attach_window(context.io_mut(), &window, HiDpiMode::Rounded);
+    }
+    let hidpi_factor = platform.hidpi_factor();
+
+
     // the main loop
     event_loop.run(move |event, _, control_flow| {
         *control_flow = match event {
@@ -105,6 +121,8 @@ fn main() {
             _ => glutin::event_loop::ControlFlow::Poll,
         };
         if 1f32/rerender_timer.elapsed().as_secs_f32() < FRAMERATE{
+
+
             rerender_timer = Instant::now();
             let dt = timer.elapsed().as_secs_f32();
             timer = Instant::now();
@@ -114,6 +132,26 @@ fn main() {
             let mut target = draw_info.display.draw();
             target.clear_color_and_depth((0.0, 0.0, 0.0, 0.0), 1.0);
             c.render_chunks(&mut draw_info, &mut target, &player);
+
+
+            let mut ui = context.frame();
+            let mut run = true;
+            Window::new(im_str!("Hello world"))
+                .size([300.0, 100.0], Condition::FirstUseEver)
+                .build(&ui, || {
+                    ui.text(format!("Hello world! {}", rerender_timer.elapsed().as_secs_f32()));
+                    ui.text(im_str!("こんにちは世界！"));
+                    ui.text(im_str!("This...is...imgui-rs!"));
+                    ui.separator();
+                    let mouse_pos = ui.io().mouse_pos;
+                    ui.text(format!(
+                        "Mouse Position: ({:.1},{:.1})",
+                        mouse_pos[0], mouse_pos[1]
+                    ));
+                });
+
+            platform.prepare_render(&ui, draw_info.display.gl_window().window());
+            glium_renderer.render(&mut target, ui.render());
 
 
             target.finish().unwrap();
