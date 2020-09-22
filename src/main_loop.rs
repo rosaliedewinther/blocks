@@ -1,15 +1,13 @@
-use glium::backend::glutin::glutin::event_loop::EventLoop;
 use crate::renderer::glium::{DrawInfo, create_display, gen_program, gen_draw_params};
-use crate::ui::UiRenderer;
+use crate::ui::{UiRenderer, UiData};
 use std::time::{SystemTime, Instant};
 use crate::chunk_manager::ChunkManager;
 use crate::player::Player;
-use imgui_glium_renderer::imgui::{Window, Condition};
 use glium::{glutin, Surface};
 use log::info;
-use imgui::{Ui, im_str};
-use imgui_glium_renderer::imgui;
 use crate::positions::ChunkPos;
+use glium::backend::glutin::glutin::event_loop::ControlFlow;
+use glium::glutin::event::Event;
 
 pub struct MainLoop{
     //pub event_loop: EventLoop<()>,
@@ -50,31 +48,11 @@ impl MainLoop{
         let mut timer = Instant::now();
         let mut rerender_timer = Instant::now();
         const FRAMERATE: f32 = 30f32;
+        let mut ui_data = UiData{clicked: false};
         info!("starting main loop");
-        let mut t= 1f32;
         event_loop.run(move |event, _, control_flow| {
-            *control_flow = match event {
-                glutin::event::Event::WindowEvent { event, .. } => match event {
-                    // Break from the main loop when the window is closed.
-                    glutin::event::WindowEvent::CloseRequested => glutin::event_loop::ControlFlow::Exit,
-                    glutin::event::WindowEvent::KeyboardInput {device_id, input, is_synthetic} =>{
-                        if input.virtual_keycode.is_some() && input.virtual_keycode.unwrap() == glutin::event::VirtualKeyCode::Escape  {
-                            glutin::event_loop::ControlFlow::Exit
-                        } else {
-                            glutin::event_loop::ControlFlow::Poll
-                        }
-                    }
+            MainLoop::event_handler(event, control_flow);
 
-                    // Redraw the triangle when the window is resized.
-                    glutin::event::WindowEvent::Resized(..) => {
-                        glutin::event_loop::ControlFlow::Poll
-                    },
-                    _ => {
-                        glutin::event_loop::ControlFlow::Poll
-                    },
-                },
-                _ => glutin::event_loop::ControlFlow::Poll,
-            };
             if 1f32/rerender_timer.elapsed().as_secs_f32() < FRAMERATE{
 
 
@@ -89,28 +67,39 @@ impl MainLoop{
                 world.render_chunks(&mut draw_info, &mut target, &player);
 
 
-                let mut ui = ui_renderer.context.frame();
-                let mut run = true;
-                Window::new(im_str!("Hello world"))
-                    .size([300.0, 100.0], Condition::FirstUseEver)
-                    .build(&ui, || {
-                        ui.text(format!("Hello world! {}", rerender_timer.elapsed().as_secs_f32()));
-                        ui.text(im_str!("こんにちは世界！"));
-                        ui.text(im_str!("This...is...imgui-rs!"));
-                        ui.separator();
-                        let mouse_pos = ui.io().mouse_pos;
-                        ui.text(format!(
-                            "Mouse Position: ({:.1},{:.1})",
-                            mouse_pos[0], mouse_pos[1]
-                        ));
-                    });
 
-                ui_renderer.platform.prepare_render(&ui, draw_info.display.gl_window().window());
-                ui_renderer.renderer.render(&mut target, ui.render());
+                let text = vec!["yeet".to_string(), format!("dt: {}", dt.to_string())];
+                ui_renderer.draw(&draw_info, &text, &mut target, &mut ui_data);
+
 
 
                 target.finish().unwrap();
             }
         });
+    }
+
+    pub fn event_handler(event: Event<()>, control_flow: &mut ControlFlow){
+        *control_flow = match event {
+            glutin::event::Event::WindowEvent { event, .. } => match event {
+                // Break from the main loop when the window is closed.
+                glutin::event::WindowEvent::CloseRequested => glutin::event_loop::ControlFlow::Exit,
+                glutin::event::WindowEvent::KeyboardInput {device_id, input, is_synthetic} =>{
+                    if input.virtual_keycode.is_some() && input.virtual_keycode.unwrap() == glutin::event::VirtualKeyCode::Escape  {
+                        glutin::event_loop::ControlFlow::Exit
+                    } else {
+                        glutin::event_loop::ControlFlow::Poll
+                    }
+                }
+
+                // Redraw the triangle when the window is resized.
+                glutin::event::WindowEvent::Resized(..) => {
+                    glutin::event_loop::ControlFlow::Poll
+                },
+                _ => {
+                    glutin::event_loop::ControlFlow::Poll
+                },
+            },
+            _ => glutin::event_loop::ControlFlow::Poll,
+        };
     }
 }
