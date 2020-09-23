@@ -37,9 +37,9 @@ impl MainLoop{
         let mut player = Player::new();
         info!("generating chunk main");
         let mut world = ChunkManager::new();
-        for x in 0..5{
-            for y in 0..5{
-                for z in 0..5 {
+        for x in 0..20{
+            for y in 0..3{
+                for z in 0..20 {
                     world.load_chunk(ChunkPos {x,y,z });
                 }
             }

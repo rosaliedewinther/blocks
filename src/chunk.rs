@@ -4,11 +4,12 @@ use glium::VertexBuffer;
 use std::time::Instant;
 use crate::chunk_manager::ChunkManager;
 use log::{info, warn};
-use noise::{Perlin, NoiseFn};
+use noise::{Perlin, NoiseFn, Seedable};
 use crate::positions::{ChunkPos, LocalBlockPos, GlobalBlockPos};
 use crate::renderer::glium::{DrawInfo};
 use crate::constants::CHUNKSIZE;
 use crate::renderer::vertex::Vertex;
+use nalgebra::SimdComplexField;
 
 #[derive(Debug, Clone)]
 pub struct BlockSides{
@@ -32,9 +33,13 @@ pub struct Chunk{
 
 impl Chunk{
     pub fn generate(pos: &ChunkPos) -> Chunk{
+        let start_time = Instant::now();
         println!("in chunk generation");
         let mut arr: Vec<Vec<Vec<Block>>> = Vec::new();
         let perlin = Perlin::new();
+        perlin.set_seed(15u32);
+        let perlin2 = Perlin::new();
+        perlin2.set_seed(3u32);
         for x in 0..CHUNKSIZE{
             arr.push(Vec::new());
             for y in 0..CHUNKSIZE{
@@ -42,7 +47,8 @@ impl Chunk{
                 for z in 0..CHUNKSIZE {
                     let local_pos = LocalBlockPos{x: x as i32,y: y as i32,z: z as i32};
                     let global_pos = GlobalBlockPos::new_from_chunk_local(&pos, &local_pos);
-                    if perlin.get([global_pos.x as f64/16f64, global_pos.y as f64/16f64, global_pos.z as f64/16f64]) > 0.2f64 {
+                    let height = (perlin.get([global_pos.x as f64/80f64, global_pos.z as f64/80f64]) + perlin2.get([global_pos.x as f64/80f64, global_pos.z as f64/80f64]))/2f64;
+                    if height > (1f64/(-global_pos.y as f64)) {
                         arr[x][y].push(block::Block::rand_new());
                     } else {
                         arr[x][y].push(block::Block::new(BlockType::Air));
