@@ -63,7 +63,7 @@ impl MainLoop {
 
         let mut timer = Instant::now();
         let mut rerender_timer = Instant::now();
-        const FRAMERATE: f32 = 30f32;
+        const FRAMERATE: f32 = 60f32;
         let mut ui_data = UiData { clicked: false };
         let mut update_timer = Instant::now();
         let mut frame_rate_queue = LinkedList::new();
