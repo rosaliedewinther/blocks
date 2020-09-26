@@ -75,6 +75,16 @@ impl ChunkPos {
         }
     }
 }
+
+impl ObjectPos {
+    pub fn get_chunk(&self) -> ChunkPos {
+        ChunkPos {
+            x: self.x as i32 / CHUNKSIZE as i32,
+            y: self.y as i32 / CHUNKSIZE as i32,
+            z: self.z as i32 / CHUNKSIZE as i32,
+        }
+    }
+}
 impl LocalBlockPos {}
 
 impl ops::Sub<i32> for GlobalBlockPos {

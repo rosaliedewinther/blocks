@@ -52,13 +52,13 @@ impl MainLoop {
                     .as_secs_f64())
                 * 10000f64) as u32,
         };
-        for x in 0..20 {
+        /*for x in 0..20 {
             for y in 0..VERTICALCHUNKS as i32 {
                 for z in 0..20 {
                     world.chunk_manager.load_chunk(ChunkPos { x, y, z });
                 }
             }
-        }
+        }*/
 
         let mut timer = Instant::now();
         let mut rerender_timer = Instant::now();
@@ -74,6 +74,16 @@ impl MainLoop {
                 timer = Instant::now();
                 player.handle_input(&dt);
                 player.update(&dt);
+                let current_chunk = player.position.get_chunk();
+                for x in current_chunk.x - 5..current_chunk.x + 6 {
+                    for y in 0..VERTICALCHUNKS as i32 {
+                        for z in current_chunk.z - 5..current_chunk.z + 6 {
+                            if !world.chunk_manager.chunk_exists(&ChunkPos { x, y, z }) {
+                                world.chunk_manager.load_chunk(ChunkPos { x, y, z });
+                            }
+                        }
+                    }
+                }
                 world.chunk_manager.update(&dt, &draw_info, &world.seed);
                 let mut target = draw_info.display.draw();
                 target.clear_color_and_depth((0.0, 0.0, 0.0, 0.0), 1.0);

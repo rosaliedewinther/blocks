@@ -35,6 +35,12 @@ impl ChunkManager {
             None => None,
         };
     }
+    pub fn chunk_exists(&self, pos: &ChunkPos) -> bool {
+        if self.chunks.get(pos).is_none() {
+            return false;
+        }
+        return true;
+    }
     pub fn load_chunk(&mut self, pos: ChunkPos) {
         self.to_load.push(pos);
     }

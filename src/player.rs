@@ -1,11 +1,12 @@
 use crate::input::Input;
+use crate::positions::ObjectPos;
 use crate::utils::{get_rotation_matrix_y, get_rotation_matrix_z};
 use device_query::Keycode;
 use nalgebra::{Matrix3, Vector3};
 use std::f32::consts::PI;
 
 pub struct Player {
-    pub position: [f32; 3],
+    pub position: ObjectPos,
     pub direction: Vector3<f32>,
     pub up: [f32; 3],
     pub input: Input,
@@ -15,7 +16,11 @@ pub struct Player {
 impl Player {
     pub fn new() -> Player {
         Player {
-            position: [0.0f32, 0.0f32, 0.0f32],
+            position: ObjectPos {
+                x: 0f32,
+                y: 0f32,
+                z: 0f32,
+            },
             direction: Vector3::new(0f32, 0.0f32, 1.0f32),
             up: [0f32, 1.0f32, 0f32],
             speed: 10f32,
@@ -30,10 +35,10 @@ impl Player {
         self.change_position(Keycode::W, 0f32 * PI, *dt * self.speed);
         self.change_position(Keycode::S, 1f32 * PI, *dt * self.speed);
         if self.input.key_pressed(Keycode::Space) {
-            self.position[1] += *dt * self.speed
+            self.position.y += *dt * self.speed
         }
         if self.input.key_pressed(Keycode::LShift) {
-            self.position[1] += -*dt * self.speed
+            self.position.y += -*dt * self.speed
         }
 
         let mouse_change = self.input.mouse_change();
@@ -57,8 +62,8 @@ impl Player {
             let move_vec = get_rotation_matrix_y(rotation_degree) * &self.direction;
             let to_extend =
                 1f32 / (move_vec[0].powf(2f32).abs() + move_vec[2].powf(2f32).abs()).sqrt();
-            self.position[0] += change * move_vec[0] * to_extend;
-            self.position[2] += change * move_vec[2] * to_extend;
+            self.position.x += change * move_vec.x * to_extend;
+            self.position.z += change * move_vec.z * to_extend;
         }
     }
     pub fn change_direction_horizontal(&mut self, mat: &Matrix3<f32>) {
@@ -116,11 +121,11 @@ impl Player {
         ];
 
         let p = [
-            -self.position[0] * s_norm[0]
-                - self.position[1] * s_norm[1]
-                - self.position[2] * s_norm[2],
-            -self.position[0] * u[0] - self.position[1] * u[1] - self.position[2] * u[2],
-            -self.position[0] * f[0] - self.position[1] * f[1] - self.position[2] * f[2],
+            -self.position.x * s_norm[0]
+                - self.position.y * s_norm[1]
+                - self.position.z * s_norm[2],
+            -self.position.x * u[0] - self.position.y * u[1] - self.position.z * u[2],
+            -self.position.x * f[0] - self.position.y * f[1] - self.position.z * f[2],
         ];
 
         [
