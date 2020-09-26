@@ -9,6 +9,7 @@ use glium::backend::glutin::glutin::event_loop::ControlFlow;
 use glium::glutin::event::Event;
 use glium::{glutin, Surface};
 use log::info;
+use std::collections::LinkedList;
 use std::time::{Instant, SystemTime, UNIX_EPOCH};
 
 pub struct MainLoop {
@@ -64,15 +65,18 @@ impl MainLoop {
         let mut rerender_timer = Instant::now();
         const FRAMERATE: f32 = 30f32;
         let mut ui_data = UiData { clicked: false };
+        let mut update_timer = Instant::now();
+        let mut frame_rate_queue = LinkedList::new();
+        for _ in 0..10 {
+            frame_rate_queue.push_back(0f32);
+        }
         info!("starting main loop");
         event_loop.run(move |event, _, control_flow| {
             MainLoop::event_handler(event, control_flow);
 
-            if 1f32 / rerender_timer.elapsed().as_secs_f32() < FRAMERATE {
-                rerender_timer = Instant::now();
+            if update_timer.elapsed().as_millis() > 100 {
                 let dt = timer.elapsed().as_secs_f32();
-                timer = Instant::now();
-                player.handle_input(&dt);
+                update_timer = Instant::now();
                 player.update(&dt);
                 let current_chunk = player.position.get_chunk();
                 for x in current_chunk.x - 5..current_chunk.x + 6 {
@@ -85,13 +89,37 @@ impl MainLoop {
                     }
                 }
                 world.chunk_manager.update(&dt, &draw_info, &world.seed);
+            }
+
+            if 1f32 / rerender_timer.elapsed().as_secs_f32() < FRAMERATE {
+                let frame_rate = 1f32 / rerender_timer.elapsed().as_secs_f32();
+                frame_rate_queue.pop_front();
+                frame_rate_queue.push_back(frame_rate);
+                let mut average_fps = 0f32;
+                let mut lowest_fps = 88888888f32;
+                for i in &frame_rate_queue {
+                    if i < &lowest_fps {
+                        lowest_fps = i.clone();
+                    }
+                    average_fps += i;
+                }
+                average_fps = average_fps / frame_rate_queue.len() as f32;
+                rerender_timer = Instant::now();
+                let dt = timer.elapsed().as_secs_f32();
+                timer = Instant::now();
+                player.handle_input(&dt);
                 let mut target = draw_info.display.draw();
                 target.clear_color_and_depth((0.0, 0.0, 0.0, 0.0), 1.0);
                 world
                     .chunk_manager
-                    .render_chunks(&mut draw_info, &mut target, &player);
+                    .render_chunks(&mut draw_info, &mut target, &player, 100);
 
-                let text = vec!["yeet".to_string(), format!("dt: {}", dt.to_string())];
+                let text = vec![
+                    "yeet".to_string(),
+                    format!("now: {}", frame_rate.to_string()),
+                    format!("low: {}", lowest_fps.to_string()),
+                    format!("ave: {}", average_fps.to_string()),
+                ];
                 ui_renderer.draw(&draw_info, &text, &mut target, &mut ui_data);
 
                 target.finish().unwrap();

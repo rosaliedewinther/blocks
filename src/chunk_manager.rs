@@ -46,11 +46,14 @@ impl ChunkManager {
     }
     pub fn update(&mut self, dt: &f32, draw_info: &DrawInfo, seed: &u32) {
         let started = Instant::now();
-        while started.elapsed().as_secs_f32() < 0.001 {
+        while started.elapsed().as_secs_f32() < 0.01 {
+            if self.to_load.len() == 0 {
+                return;
+            }
             self.gen_chunk(seed);
         }
         for (pos, chunk) in &mut self.chunks {
-            if started.elapsed().as_secs_f32() < 0.001 {
+            if started.elapsed().as_secs_f32() < 0.01 {
                 break;
             }
             if chunk.update(dt) {
@@ -59,7 +62,7 @@ impl ChunkManager {
         }
 
         for (pos, chunk) in &self.chunks {
-            if started.elapsed().as_secs_f32() < 0.001 {
+            if started.elapsed().as_secs_f32() < 0.01 {
                 break;
             }
             let vertex_buffer_opt = self.vertex_buffers.get(pos);
@@ -70,9 +73,6 @@ impl ChunkManager {
         }
     }
     pub fn gen_chunk(&mut self, seed: &u32) {
-        if self.to_load.len() == 0 {
-            return;
-        }
         let pos = self.to_load.pop().unwrap();
         if self.chunks.contains_key(&pos) {
             warn!(
@@ -109,8 +109,17 @@ impl ChunkManager {
         mut draw_info: &mut DrawInfo,
         mut frame: &mut Frame,
         player: &Player,
+        render_distance: u32,
     ) {
         for (pos, _) in &self.chunks {
+            let player_chunk_pos = player.position.get_chunk();
+            if pos.x >= player_chunk_pos.x + render_distance as i32
+                || pos.x <= player_chunk_pos.x - render_distance as i32
+                || pos.z >= player_chunk_pos.z + render_distance as i32
+                || pos.z <= player_chunk_pos.z - render_distance as i32
+            {
+                continue;
+            }
             let vertex_buffer_opt = self.vertex_buffers.get(pos);
             if vertex_buffer_opt.is_none() {
                 warn!(

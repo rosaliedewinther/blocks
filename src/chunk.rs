@@ -5,6 +5,7 @@ use crate::constants::{CHUNKSIZE, VERTICALCHUNKS};
 use crate::positions::{ChunkPos, GlobalBlockPos, LocalBlockPos};
 use crate::renderer::glium::DrawInfo;
 use crate::renderer::vertex::Vertex;
+use chrono::format::Numeric::Timestamp;
 use glium::VertexBuffer;
 use log::warn;
 use noise::{NoiseFn, Perlin, Seedable};
@@ -39,32 +40,38 @@ pub struct Chunk {
 
 impl Chunk {
     pub fn generate(pos: &ChunkPos, seed: &u32) -> Chunk {
+        let now = Instant::now();
         let mut arr: Vec<Vec<Vec<Block>>> = Vec::new();
-        let perlin = Perlin::new();
-        perlin.set_seed(*seed);
         for x in 0..CHUNKSIZE as i32 {
             arr.push(Vec::new());
             for y in 0..CHUNKSIZE as i32 {
                 arr[x as usize].push(Vec::new());
                 for z in 0..CHUNKSIZE as i32 {
-                    let perlin_input = [
-                        (x + (pos.x * CHUNKSIZE as i32)) as f64
-                            / (VERTICALCHUNKS * CHUNKSIZE) as f64,
-                        (z + (pos.z * CHUNKSIZE as i32)) as f64
-                            / (VERTICALCHUNKS * CHUNKSIZE) as f64,
-                    ];
-                    let height = (perlin.get(perlin_input));
+                    arr[x as usize][y as usize].push(block::Block::new(BlockType::Air));
+                }
+            }
+        }
+        let perlin = Perlin::new();
+        perlin.set_seed(*seed);
+        for x in 0..CHUNKSIZE as i32 {
+            for z in 0..CHUNKSIZE as i32 {
+                let perlin_input = [
+                    (x + (pos.x * CHUNKSIZE as i32)) as f64 / (VERTICALCHUNKS * CHUNKSIZE) as f64,
+                    (z + (pos.z * CHUNKSIZE as i32)) as f64 / (VERTICALCHUNKS * CHUNKSIZE) as f64,
+                ];
+                let height = (perlin.get(perlin_input));
+                for y in 0..CHUNKSIZE as i32 {
                     if (height * VERTICALCHUNKS as f64 * CHUNKSIZE as f64)
                         >= ((y as i32 + (pos.y * CHUNKSIZE as i32)) as f64)
                     {
-                        arr[x as usize][y as usize].push(block::Block::rand_new());
-                    } else {
-                        arr[x as usize][y as usize].push(block::Block::new(BlockType::Air));
+                        arr[x as usize][y as usize][z as usize] = block::Block::rand_new();
                     }
                 }
             }
         }
+
         let c = Chunk { blocks: arr };
+        println!("gen chunk ms  = {}", now.elapsed().as_millis());
         return c;
     }
 
@@ -78,7 +85,8 @@ impl Chunk {
         chunk_pos: &ChunkPos,
         chunk_manager: &ChunkManager,
     ) -> Option<VertexBuffer<Vertex>> {
-        let mut temp_vertex_buffer = Vec::new();
+        let now = Instant::now();
+        let mut temp_vertex_buffer = Vec::with_capacity(10000);
         for x in 0..CHUNKSIZE {
             for y in 0..CHUNKSIZE {
                 for z in 0..CHUNKSIZE {
@@ -115,6 +123,11 @@ impl Chunk {
                 }
             }
         }
+        println!(
+            "ms vertex gen = {} vertices = {}",
+            now.elapsed().as_millis(),
+            temp_vertex_buffer.len()
+        );
         return Some(glium::VertexBuffer::new(&draw_info.display, &temp_vertex_buffer).unwrap());
     }
     pub fn get_blocktype(&self, pos: &LocalBlockPos) -> BlockType {

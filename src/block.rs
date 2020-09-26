@@ -60,7 +60,7 @@ impl Block {
     }
 
     pub fn get_mesh(&self, pos: &GlobalBlockPos, sides: &BlockSides) -> Vec<Vertex> {
-        let mut mesh = Vec::new();
+        let mut mesh = Vec::with_capacity(36);
         let posf = pos.get_block_centre();
         if sides.right {
             self.mesh_right(&posf, &mut mesh);

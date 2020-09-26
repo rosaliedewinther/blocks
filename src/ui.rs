@@ -42,19 +42,14 @@ impl UiRenderer {
     ) {
         let mut ui = self.context.frame();
 
-        Window::new(im_str!("Hello world"))
+        Window::new(im_str!("it just works"))
             .size([300.0, 100.0], Condition::FirstUseEver)
             .opened(&mut false)
             .build(&ui, || {
                 for line in strings.iter() {
                     ui.text(line);
                 }
-                ui.checkbox(im_str!("clickthis"), &mut ui_data.clicked);
                 let mouse_pos = ui.io().mouse_pos;
-                ui.text(format!(
-                    "Mouse Position: ({:.1},{:.1})",
-                    mouse_pos[0], mouse_pos[1]
-                ));
             });
 
         self.platform
