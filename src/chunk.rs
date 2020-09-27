@@ -43,9 +43,9 @@ impl Chunk {
         let now = Instant::now();
         let mut arr: Vec<Vec<Vec<Block>>> = Vec::new();
         for x in 0..CHUNKSIZE as i32 {
-            arr.push(Vec::new());
+            arr.push(Vec::with_capacity(CHUNKSIZE));
             for y in 0..CHUNKSIZE as i32 {
-                arr[x as usize].push(Vec::new());
+                arr[x as usize].push(Vec::with_capacity(CHUNKSIZE));
                 for z in 0..CHUNKSIZE as i32 {
                     arr[x as usize][y as usize].push(block::Block::new(BlockType::Air));
                 }

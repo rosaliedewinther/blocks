@@ -11,6 +11,7 @@ pub struct Player {
     pub up: [f32; 3],
     pub input: Input,
     pub speed: f32,
+    pub camera_speed: f32,
 }
 
 impl Player {
@@ -24,6 +25,7 @@ impl Player {
             direction: Vector3::new(0f32, 0.0f32, 1.0f32),
             up: [0f32, 1.0f32, 0f32],
             speed: 100f32,
+            camera_speed: 1f32,
             input: Input::new(),
         }
     }
@@ -42,8 +44,8 @@ impl Player {
         }
 
         let mouse_change = self.input.mouse_change();
-        let xdiff = mouse_change.0 * dt;
-        let ydiff = -mouse_change.1 * dt;
+        let xdiff = mouse_change.0 * dt * self.camera_speed;
+        let ydiff = -mouse_change.1 * dt * self.camera_speed;
 
         if ydiff < 0f32 {
             self.change_direction_vertical(ydiff);

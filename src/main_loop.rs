@@ -44,8 +44,9 @@ impl MainLoop {
 
         let mut player = Player::new();
         info!("generating chunk main");
+        let world_seed = 15u32;
         let mut world = World {
-            chunk_manager: ChunkManager::new(),
+            chunk_manager: ChunkManager::new(world_seed),
             seed: ((1f64
                 / SystemTime::now()
                     .duration_since(UNIX_EPOCH)
@@ -53,18 +54,10 @@ impl MainLoop {
                     .as_secs_f64())
                 * 10000f64) as u32,
         };
-        /*for x in 0..20 {
-            for y in 0..VERTICALCHUNKS as i32 {
-                for z in 0..20 {
-                    world.chunk_manager.load_chunk(ChunkPos { x, y, z });
-                }
-            }
-        }*/
 
         let mut timer = Instant::now();
         let mut rerender_timer = Instant::now();
         const FRAMERATE: f32 = 60f32;
-        let mut ui_data = UiData { clicked: false };
         let mut update_timer = Instant::now();
         let mut frame_rate_queue = LinkedList::new();
         for _ in 0..10 {
@@ -77,54 +70,77 @@ impl MainLoop {
             if update_timer.elapsed().as_millis() > 100 {
                 let dt = timer.elapsed().as_secs_f32();
                 update_timer = Instant::now();
-                player.update(&dt);
-                let current_chunk = player.position.get_chunk();
-                for x in current_chunk.x - 5..current_chunk.x + 6 {
-                    for y in 0..VERTICALCHUNKS as i32 {
-                        for z in current_chunk.z - 5..current_chunk.z + 6 {
-                            if !world.chunk_manager.chunk_exists(&ChunkPos { x, y, z }) {
-                                world.chunk_manager.load_chunk(ChunkPos { x, y, z });
-                            }
-                        }
-                    }
-                }
-                world.chunk_manager.update(&dt, &draw_info, &world.seed);
-            }
-
-            if 1f32 / rerender_timer.elapsed().as_secs_f32() < FRAMERATE {
-                let frame_rate = 1f32 / rerender_timer.elapsed().as_secs_f32();
-                frame_rate_queue.pop_front();
-                frame_rate_queue.push_back(frame_rate);
-                let mut average_fps = 0f32;
-                let mut lowest_fps = 88888888f32;
-                for i in &frame_rate_queue {
-                    if i < &lowest_fps {
-                        lowest_fps = i.clone();
-                    }
-                    average_fps += i;
-                }
-                average_fps = average_fps / frame_rate_queue.len() as f32;
+                MainLoop::on_game_tick(&dt, &mut player, &mut world);
+            } else if 1f32 / rerender_timer.elapsed().as_secs_f32() < FRAMERATE {
+                let dt = rerender_timer.elapsed().as_secs_f32();
                 rerender_timer = Instant::now();
-                let dt = timer.elapsed().as_secs_f32();
-                timer = Instant::now();
                 player.handle_input(&dt);
-                let mut target = draw_info.display.draw();
-                target.clear_color_and_depth((0.0, 0.0, 0.0, 0.0), 1.0);
-                world
-                    .chunk_manager
-                    .render_chunks(&mut draw_info, &mut target, &player, 100);
 
-                let text = vec![
-                    "yeet".to_string(),
-                    format!("now: {}", frame_rate.to_string()),
-                    format!("low: {}", lowest_fps.to_string()),
-                    format!("ave: {}", average_fps.to_string()),
-                ];
-                ui_renderer.draw(&draw_info, &text, &mut target, &mut ui_data);
-
-                target.finish().unwrap();
+                MainLoop::on_render(
+                    &dt,
+                    &mut frame_rate_queue,
+                    &player,
+                    &world,
+                    &mut draw_info,
+                    &mut ui_renderer,
+                );
+            } else {
             }
+            world.chunk_manager.gen_vertex_buffers(&mut draw_info);
         });
+    }
+    pub fn on_game_tick(dt: &f32, player: &mut Player, world: &mut World) {
+        player.update(&dt);
+        let current_chunk = player.position.get_chunk();
+        for x in current_chunk.x - 5..current_chunk.x + 6 {
+            for y in 0..VERTICALCHUNKS as i32 {
+                for z in current_chunk.z - 5..current_chunk.z + 6 {
+                    if !world
+                        .chunk_manager
+                        .chunk_exists_or_generating(&ChunkPos { x, y, z })
+                    {
+                        world.chunk_manager.load_chunk(ChunkPos { x, y, z });
+                    }
+                }
+            }
+        }
+        world.chunk_manager.update(&dt);
+    }
+    pub fn on_render(
+        dt: &f32,
+        fps_buffer: &mut LinkedList<f32>,
+        player: &Player,
+        world: &World,
+        draw_info: &mut DrawInfo,
+        ui_renderer: &mut UiRenderer,
+    ) {
+        fps_buffer.pop_front();
+        fps_buffer.push_back(dt.clone());
+        let mut average_fps = 0f32;
+        let mut lowest_fps = 88888888f32;
+        for i in fps_buffer.iter() {
+            if i.clone() < lowest_fps {
+                lowest_fps = i.clone();
+            }
+            average_fps += i.clone();
+        }
+        average_fps = average_fps / fps_buffer.len() as f32;
+
+        let mut target = draw_info.display.draw();
+        target.clear_color_and_depth((0.0, 0.0, 1.0, 0.0), 1.0);
+        world
+            .chunk_manager
+            .render_chunks(draw_info, &mut target, &player, 10);
+
+        let text = vec![
+            "yeet".to_string(),
+            format!("now: {}", dt.to_string()),
+            format!("low: {}", lowest_fps.to_string()),
+            format!("ave: {}", average_fps.to_string()),
+        ];
+        ui_renderer.draw(&draw_info, &text, &mut target, &mut UiData {});
+
+        target.finish().unwrap();
     }
 
     pub fn event_handler(event: Event<()>, control_flow: &mut ControlFlow) {

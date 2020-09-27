@@ -7,6 +7,10 @@ use crate::renderer::vertex::Vertex;
 use glium::{Frame, VertexBuffer};
 use log::warn;
 use std::collections::HashMap;
+use std::sync::mpsc;
+use std::sync::mpsc::{Receiver, RecvError, Sender};
+use std::thread;
+use std::thread::{JoinHandle, Thread};
 use std::time::Instant;
 
 pub struct ChunkManager {
@@ -16,10 +20,24 @@ pub struct ChunkManager {
     pub to_rebuild: Vec<ChunkPos>,
     pub visible: Vec<ChunkPos>,
     pub vertex_buffers: HashMap<ChunkPos, Option<VertexBuffer<Vertex>>>,
+    pub chunk_generator_requester: Sender<ChunkPos>,
+    pub chunk_generator_receiver: Receiver<Chunk>,
+    pub chunk_generator_thread: JoinHandle<()>,
+    pub world_seed: u32,
 }
 
 impl ChunkManager {
-    pub fn new() -> ChunkManager {
+    pub fn new(seed: u32) -> ChunkManager {
+        let (gen_chunk_request, gen_chunk_receiver) = mpsc::channel();
+        let (tx, rx) = mpsc::channel();
+        let mut genthread = thread::spawn(move || loop {
+            let message: Result<ChunkPos, RecvError> = gen_chunk_receiver.recv();
+            if message.is_err() {
+                return;
+            } else {
+                tx.send(Chunk::generate(&message.unwrap(), &seed));
+            }
+        });
         ChunkManager {
             chunks: HashMap::new(),
             to_load: Vec::new(),
@@ -27,6 +45,10 @@ impl ChunkManager {
             to_rebuild: Vec::new(),
             visible: Vec::new(),
             vertex_buffers: HashMap::new(),
+            chunk_generator_thread: genthread,
+            chunk_generator_requester: gen_chunk_request,
+            chunk_generator_receiver: rx,
+            world_seed: seed,
         }
     }
     pub fn get_block(&self, pos: &GlobalBlockPos) -> Option<&Block> {
@@ -35,8 +57,8 @@ impl ChunkManager {
             None => None,
         };
     }
-    pub fn chunk_exists(&self, pos: &ChunkPos) -> bool {
-        if self.chunks.get(pos).is_none() {
+    pub fn chunk_exists_or_generating(&self, pos: &ChunkPos) -> bool {
+        if self.chunks.get(pos).is_none() && !self.to_load.contains(pos) {
             return false;
         }
         return true;
@@ -44,13 +66,13 @@ impl ChunkManager {
     pub fn load_chunk(&mut self, pos: ChunkPos) {
         self.to_load.push(pos);
     }
-    pub fn update(&mut self, dt: &f32, draw_info: &DrawInfo, seed: &u32) {
+    pub fn update(&mut self, dt: &f32) {
         let started = Instant::now();
         while started.elapsed().as_secs_f32() < 0.01 {
             if self.to_load.len() == 0 {
                 return;
             }
-            self.gen_chunk(seed);
+            self.gen_chunk();
         }
         for (pos, chunk) in &mut self.chunks {
             if started.elapsed().as_secs_f32() < 0.01 {
@@ -60,11 +82,9 @@ impl ChunkManager {
                 self.vertex_buffers.insert(pos.clone(), None);
             }
         }
-
+    }
+    pub fn gen_vertex_buffers(&mut self, draw_info: &DrawInfo) {
         for (pos, chunk) in &self.chunks {
-            if started.elapsed().as_secs_f32() < 0.01 {
-                break;
-            }
             let vertex_buffer_opt = self.vertex_buffers.get(pos);
             if vertex_buffer_opt.is_none() || vertex_buffer_opt.unwrap().is_none() {
                 self.vertex_buffers
@@ -72,7 +92,7 @@ impl ChunkManager {
             }
         }
     }
-    pub fn gen_chunk(&mut self, seed: &u32) {
+    pub fn gen_chunk(&mut self) {
         let pos = self.to_load.pop().unwrap();
         if self.chunks.contains_key(&pos) {
             warn!(
@@ -81,7 +101,8 @@ impl ChunkManager {
             );
             return;
         }
-        self.chunks.insert(pos.clone(), Chunk::generate(&pos, seed));
+        self.chunks
+            .insert(pos.clone(), Chunk::generate(&pos, &self.world_seed));
         self.reset_surronding_vertex_buffers(&pos);
     }
     pub fn reset_surronding_vertex_buffers(&mut self, pos: &ChunkPos) {

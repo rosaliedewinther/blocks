@@ -11,9 +11,7 @@ pub struct UiRenderer {
     pub platform: WinitPlatform,
 }
 
-pub struct UiData {
-    pub clicked: bool,
-}
+pub struct UiData {}
 
 impl UiRenderer {
     pub fn init(draw_info: &DrawInfo) -> UiRenderer {
@@ -49,7 +47,6 @@ impl UiRenderer {
                 for line in strings.iter() {
                     ui.text(line);
                 }
-                let mouse_pos = ui.io().mouse_pos;
             });
 
         self.platform
