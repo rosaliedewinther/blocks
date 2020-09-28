@@ -71,6 +71,7 @@ impl MainLoop {
                 let dt = timer.elapsed().as_secs_f32();
                 update_timer = Instant::now();
                 MainLoop::on_game_tick(&dt, &mut player, &mut world);
+                world.chunk_manager.gen_vertex_buffers(&mut draw_info);
             } else if 1f32 / rerender_timer.elapsed().as_secs_f32() < FRAMERATE {
                 let dt = rerender_timer.elapsed().as_secs_f32();
                 rerender_timer = Instant::now();
@@ -84,9 +85,7 @@ impl MainLoop {
                     &mut draw_info,
                     &mut ui_renderer,
                 );
-            } else {
             }
-            world.chunk_manager.gen_vertex_buffers(&mut draw_info);
         });
     }
     pub fn on_game_tick(dt: &f32, player: &mut Player, world: &mut World) {
@@ -137,6 +136,7 @@ impl MainLoop {
             format!("now: {}", dt.to_string()),
             format!("low: {}", lowest_fps.to_string()),
             format!("ave: {}", average_fps.to_string()),
+            format!("ave: {}", world.chunk_manager.count_vertex_buffers()),
         ];
         ui_renderer.draw(&draw_info, &text, &mut target, &mut UiData {});
 

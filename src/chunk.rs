@@ -5,7 +5,6 @@ use crate::constants::{CHUNKSIZE, VERTICALCHUNKS};
 use crate::positions::{ChunkPos, GlobalBlockPos, LocalBlockPos};
 use crate::renderer::glium::DrawInfo;
 use crate::renderer::vertex::Vertex;
-use chrono::format::Numeric::Timestamp;
 use glium::VertexBuffer;
 use log::warn;
 use noise::{NoiseFn, Perlin, Seedable};
@@ -34,13 +33,13 @@ impl BlockSides {
     }
 }
 
+#[derive(Clone)]
 pub struct Chunk {
     pub blocks: Vec<Vec<Vec<Block>>>,
 }
 
 impl Chunk {
     pub fn generate(pos: &ChunkPos, seed: &u32) -> Chunk {
-        let now = Instant::now();
         let mut arr: Vec<Vec<Vec<Block>>> = Vec::new();
         for x in 0..CHUNKSIZE as i32 {
             arr.push(Vec::with_capacity(CHUNKSIZE));
@@ -59,7 +58,7 @@ impl Chunk {
                     (x + (pos.x * CHUNKSIZE as i32)) as f64 / (VERTICALCHUNKS * CHUNKSIZE) as f64,
                     (z + (pos.z * CHUNKSIZE as i32)) as f64 / (VERTICALCHUNKS * CHUNKSIZE) as f64,
                 ];
-                let height = (perlin.get(perlin_input));
+                let height = perlin.get(perlin_input);
                 for y in 0..CHUNKSIZE as i32 {
                     if (height * VERTICALCHUNKS as f64 * CHUNKSIZE as f64)
                         >= ((y as i32 + (pos.y * CHUNKSIZE as i32)) as f64)
@@ -71,7 +70,6 @@ impl Chunk {
         }
 
         let c = Chunk { blocks: arr };
-        println!("gen chunk ms  = {}", now.elapsed().as_millis());
         return c;
     }
 
@@ -79,13 +77,7 @@ impl Chunk {
         return false;
     }
 
-    pub fn get_vertex_buffer(
-        &self,
-        draw_info: &DrawInfo,
-        chunk_pos: &ChunkPos,
-        chunk_manager: &ChunkManager,
-    ) -> Option<VertexBuffer<Vertex>> {
-        let now = Instant::now();
+    pub fn get_vertex_buffer(&self, chunk_pos: &ChunkPos) -> Vec<Vertex> {
         let mut temp_vertex_buffer = Vec::with_capacity(10000);
         for x in 0..CHUNKSIZE {
             for y in 0..CHUNKSIZE {
@@ -100,22 +92,22 @@ impl Chunk {
                         continue;
                     }
                     let mut sides = BlockSides::new();
-                    if self.should_render_side(&global_pos.get_diff(1, 0, 0), chunk_manager) {
+                    if self.should_render_against_block(&local_pos.get_diff(1, 0, 0)) {
                         sides.right = true;
                     }
-                    if self.should_render_side(&global_pos.get_diff(-1, 0, 0), chunk_manager) {
+                    if self.should_render_against_block(&local_pos.get_diff(-1, 0, 0)) {
                         sides.left = true;
                     }
-                    if self.should_render_side(&global_pos.get_diff(0, 1, 0), chunk_manager) {
+                    if self.should_render_against_block(&local_pos.get_diff(0, 1, 0)) {
                         sides.top = true;
                     }
-                    if self.should_render_side(&global_pos.get_diff(0, -1, 0), chunk_manager) {
+                    if self.should_render_against_block(&local_pos.get_diff(0, -1, 0)) {
                         sides.bot = true;
                     }
-                    if self.should_render_side(&global_pos.get_diff(0, 0, 1), chunk_manager) {
+                    if self.should_render_against_block(&local_pos.get_diff(0, 0, 1)) {
                         sides.back = true;
                     }
-                    if self.should_render_side(&global_pos.get_diff(0, 0, -1), chunk_manager) {
+                    if self.should_render_against_block(&local_pos.get_diff(0, 0, -1)) {
                         sides.front = true;
                     }
                     let block: &Block = &self.blocks[x][y][z];
@@ -123,12 +115,7 @@ impl Chunk {
                 }
             }
         }
-        println!(
-            "ms vertex gen = {} vertices = {}",
-            now.elapsed().as_millis(),
-            temp_vertex_buffer.len()
-        );
-        return Some(glium::VertexBuffer::new(&draw_info.display, &temp_vertex_buffer).unwrap());
+        return temp_vertex_buffer;
     }
     pub fn get_blocktype(&self, pos: &LocalBlockPos) -> BlockType {
         let maybe_block_type = self.get_block(pos);
@@ -162,8 +149,8 @@ impl Chunk {
         }
         return Some(&self.blocks[pos.x as usize][pos.y as usize][pos.z as usize]);
     }
-    pub fn should_render_side(&self, pos: &GlobalBlockPos, chunk_manager: &ChunkManager) -> bool {
-        let block = chunk_manager.get_block(pos);
+    pub fn should_render_against_block(&self, pos: &LocalBlockPos) -> bool {
+        let block = self.get_block(pos);
         if block.is_none() {
             return true;
         }

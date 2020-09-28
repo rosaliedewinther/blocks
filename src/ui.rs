@@ -41,7 +41,7 @@ impl UiRenderer {
         let mut ui = self.context.frame();
 
         Window::new(im_str!("it just works"))
-            .size([300.0, 100.0], Condition::FirstUseEver)
+            .size([300.0, 200.0], Condition::FirstUseEver)
             .opened(&mut false)
             .build(&ui, || {
                 for line in strings.iter() {

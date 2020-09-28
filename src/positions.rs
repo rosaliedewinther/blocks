@@ -6,7 +6,7 @@ pub struct GlobalBlockPos {
     pub y: i32,
     pub z: i32,
 }
-#[derive(Debug)]
+#[derive(Hash, PartialEq, Eq, Debug, Clone)]
 pub struct LocalBlockPos {
     pub x: i32,
     pub y: i32,
@@ -85,7 +85,15 @@ impl ObjectPos {
         }
     }
 }
-impl LocalBlockPos {}
+impl LocalBlockPos {
+    pub fn get_diff(&self, x_diff: i32, y_diff: i32, z_diff: i32) -> LocalBlockPos {
+        LocalBlockPos {
+            x: self.x + x_diff,
+            y: self.y + y_diff,
+            z: self.z + z_diff,
+        }
+    }
+}
 
 impl ops::Sub<i32> for GlobalBlockPos {
     type Output = GlobalBlockPos;
