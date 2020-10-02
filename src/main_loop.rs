@@ -136,7 +136,10 @@ impl MainLoop {
             format!("now: {}", dt.to_string()),
             format!("low: {}", lowest_fps.to_string()),
             format!("ave: {}", average_fps.to_string()),
-            format!("ave: {}", world.chunk_manager.count_vertex_buffers()),
+            format!(
+                "total loaded chunks: {}",
+                world.chunk_manager.count_vertex_buffers()
+            ),
         ];
         ui_renderer.draw(&draw_info, &text, &mut target, &mut UiData {});
 

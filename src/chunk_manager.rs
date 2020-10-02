@@ -7,12 +7,12 @@ use crate::renderer::glium::{draw_vertices, DrawInfo};
 use crate::renderer::vertex::Vertex;
 use glium::{Frame, VertexBuffer};
 use log::warn;
-use std::collections::{HashMap, HashSet};
+use std::collections::{HashMap, HashSet, VecDeque};
 use std::sync::mpsc;
-use std::sync::mpsc::{Receiver, RecvError, Sender};
-use std::thread;
+use std::sync::mpsc::{Receiver, RecvError, Sender, TryRecvError};
 use std::thread::JoinHandle;
 use std::time::Instant;
+use std::{thread, time};
 
 pub struct SurroundingChunkSides {
     pub blocks: HashSet<LocalBlockPos>,
@@ -141,26 +141,56 @@ impl ChunkManager {
     pub fn new(seed: u32) -> ChunkManager {
         let (gen_chunk_request, gen_chunk_receiver) = mpsc::channel();
         let (gen_chunk_request_done, gen_chunk_receiver_done) = mpsc::channel();
+        let mut queue_chunk_gen: VecDeque<ChunkPos> = VecDeque::new();
         let chunk_gen_thread = thread::spawn(move || loop {
-            let message: Result<ChunkPos, RecvError> = gen_chunk_receiver.recv();
-            if message.is_err() {
-                return;
-            } else {
-                let pos = message.unwrap();
+            loop {
+                let message: Result<ChunkPos, TryRecvError> = gen_chunk_receiver.try_recv();
+                if message.is_err() {
+                    if message.err().unwrap() == TryRecvError::Disconnected {
+                        return;
+                    } else {
+                        break;
+                    }
+                } else {
+                    queue_chunk_gen.push_back(message.unwrap());
+                }
+            }
+            if !queue_chunk_gen.is_empty() {
+                let pos = queue_chunk_gen.pop_front().unwrap();
                 gen_chunk_request_done.send((Chunk::generate(&pos, &seed), pos));
+            } else {
+                thread::sleep(time::Duration::from_millis(100));
             }
         });
 
         let (gen_vertex_request, gen_vertex_receiver) = mpsc::channel();
         let (gen_vertex_request_done, gen_vertex_receiver_done) = mpsc::channel();
+        let mut queue_vertex_gen: VecDeque<(Chunk, SurroundingChunkSides, ChunkPos)> =
+            VecDeque::new();
         let vertex_gen_thread = thread::spawn(move || loop {
-            let message: Result<(Chunk, SurroundingChunkSides, ChunkPos), RecvError> =
-                gen_vertex_receiver.recv();
-            if message.is_err() {
-                return;
+            loop {
+                let message: Result<(Chunk, SurroundingChunkSides, ChunkPos), TryRecvError> =
+                    gen_vertex_receiver.try_recv();
+                if message.is_err() {
+                    if message.err().unwrap() == TryRecvError::Disconnected {
+                        return;
+                    } else {
+                        break;
+                    }
+                } else {
+                    queue_vertex_gen.push_back(message.unwrap());
+                }
+            }
+            for obj in &queue_vertex_gen {
+                print!("{:?},", obj.2);
+            }
+            println!();
+            if !queue_vertex_gen.is_empty() {
+                let message = queue_vertex_gen.pop_front().unwrap();
+                gen_vertex_request_done
+                    .send((message.2.clone(), message.0.get_vertex_buffer(&message.2)));
             } else {
-                let mes = message.unwrap();
-                gen_vertex_request_done.send((mes.2.clone(), mes.0.get_vertex_buffer(&mes.2)));
+                thread::sleep(time::Duration::from_millis(100));
             }
         });
 
@@ -236,9 +266,13 @@ impl ChunkManager {
             if vertex_buffer_opt.is_none() || vertex_buffer_opt.unwrap().is_none() {
                 let mut started2 = Instant::now();
                 let sides = SurroundingChunkSides::generate(self, pos);
+                let gen = started2.elapsed().as_secs_f64();
+                let mut started3 = Instant::now();
                 self.vertex_generator_requester
                     .send((chunk.clone(), sides, pos.clone()));
-                println!("{}", started2.elapsed().as_secs_f64());
+                let send = started3.elapsed().as_secs_f64();
+                println!("gen: {} sec", gen);
+                println!("sid: {} sec", send);
             }
         }
     }
