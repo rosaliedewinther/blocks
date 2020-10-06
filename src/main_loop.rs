@@ -10,6 +10,7 @@ use glium::glutin::event::Event;
 use glium::{glutin, Surface};
 use log::info;
 use std::collections::LinkedList;
+use std::fs::File;
 use std::time::{Instant, SystemTime, UNIX_EPOCH};
 
 pub struct MainLoop {
@@ -71,7 +72,9 @@ impl MainLoop {
                 let dt = timer.elapsed().as_secs_f32();
                 update_timer = Instant::now();
                 MainLoop::on_game_tick(&dt, &mut player, &mut world);
-                world.chunk_manager.gen_vertex_buffers(&mut draw_info);
+                world
+                    .chunk_manager
+                    .gen_vertex_buffers(&mut draw_info, &player);
             } else if 1f32 / rerender_timer.elapsed().as_secs_f32() < FRAMERATE {
                 let dt = rerender_timer.elapsed().as_secs_f32();
                 rerender_timer = Instant::now();
@@ -91,9 +94,9 @@ impl MainLoop {
     pub fn on_game_tick(dt: &f32, player: &mut Player, world: &mut World) {
         player.update(&dt);
         let current_chunk = player.position.get_chunk();
-        for x in current_chunk.x - 5..current_chunk.x + 6 {
+        for x in current_chunk.x - 20..current_chunk.x + 21 {
             for y in 0..VERTICALCHUNKS as i32 {
-                for z in current_chunk.z - 5..current_chunk.z + 6 {
+                for z in current_chunk.z - 20..current_chunk.z + 21 {
                     if !world
                         .chunk_manager
                         .chunk_exists_or_generating(&ChunkPos { x, y, z })
@@ -129,7 +132,7 @@ impl MainLoop {
         target.clear_color_and_depth((0.0, 0.0, 1.0, 0.0), 1.0);
         world
             .chunk_manager
-            .render_chunks(draw_info, &mut target, &player, 10);
+            .render_chunks(draw_info, &mut target, &player);
 
         let text = vec![
             "yeet".to_string(),
@@ -137,8 +140,13 @@ impl MainLoop {
             format!("low: {}", lowest_fps.to_string()),
             format!("ave: {}", average_fps.to_string()),
             format!(
-                "total loaded chunks: {}",
+                "total vertex buffers: {}",
                 world.chunk_manager.count_vertex_buffers()
+            ),
+            format!("total chunks: {}", world.chunk_manager.count_chunks()),
+            format!(
+                "total vertex buffers drawn: {}",
+                world.chunk_manager.count_vertex_buffers_in_range(&player)
             ),
         ];
         ui_renderer.draw(&draw_info, &text, &mut target, &mut UiData {});

@@ -12,6 +12,7 @@ pub struct Player {
     pub input: Input,
     pub speed: f32,
     pub camera_speed: f32,
+    pub render_distance: f32,
 }
 
 impl Player {
@@ -27,6 +28,7 @@ impl Player {
             speed: 100f32,
             camera_speed: 1f32,
             input: Input::new(),
+            render_distance: 10f32,
         }
     }
 

@@ -29,7 +29,7 @@ impl Distribution<BlockType> for Standard {
             3 => BlockType::Stone,
             4 => BlockType::Grass,
             5 => BlockType::Air,
-            _ => BlockType::Stone,
+            _ => BlockType::Air,
         }
     }
 }
@@ -48,8 +48,8 @@ impl Block {
                 BlockType::Water => [0.0, 0.0, 1.0, 0.5f32],
                 BlockType::Dirt => [0.5, 0.25, 0.0, 1.0f32],
                 BlockType::Stone => [1.0, 0.8, 0.8, 1.0f32],
-                BlockType::Sand => [1.0, 0.1, 0.0, 1.0f32],
-                BlockType::Air => [1.0, 0.7, 0.8, 1.0f32],
+                BlockType::Sand => [1.0, 0.5, 0.0, 1.0f32],
+                BlockType::Air => [0.0, 1.0, 1.0, 1.0f32],
             },
             block_type,
         }
@@ -59,6 +59,15 @@ impl Block {
         return Block::new(rand::random());
     }
 
+    pub fn should_render_against(&self) -> bool {
+        if self.block_type == BlockType::Air {
+            return true;
+        }
+        if self.col[3] != 1.0 {
+            return true;
+        }
+        return false;
+    }
     pub fn get_mesh(&self, pos: &GlobalBlockPos, sides: &BlockSides) -> Vec<Vertex> {
         let mut mesh = Vec::with_capacity(36);
         let posf = pos.get_block_centre();

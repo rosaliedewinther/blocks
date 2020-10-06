@@ -1,6 +1,9 @@
 use crate::constants::CHUNKSIZE;
 use core::ops;
+use num_traits::real::Real;
+use num_traits::Pow;
 
+#[flame]
 pub struct GlobalBlockPos {
     pub x: i32,
     pub y: i32,
@@ -39,9 +42,9 @@ impl GlobalBlockPos {
     }
     pub fn get_local_pos(&self) -> LocalBlockPos {
         LocalBlockPos {
-            x: self.x % CHUNKSIZE as i32,
-            y: self.y % CHUNKSIZE as i32,
-            z: self.z % CHUNKSIZE as i32,
+            x: (self.x % CHUNKSIZE as i32).abs(),
+            y: (self.y % CHUNKSIZE as i32).abs(),
+            z: (self.z % CHUNKSIZE as i32).abs(),
         }
     }
     pub fn get_chunk_pos(&self) -> ChunkPos {
@@ -74,6 +77,12 @@ impl ChunkPos {
             z: self.z + z_diff,
         }
     }
+    pub fn get_distance(&self, pos: &ChunkPos) -> f32 {
+        ((((self.x - pos.x) as f32).pow(2)
+            + ((self.y - pos.y) as f32).pow(2)
+            + ((self.z - pos.z) as f32).pow(2)) as f32)
+            .sqrt()
+    }
 }
 
 impl ObjectPos {
@@ -88,9 +97,9 @@ impl ObjectPos {
 impl LocalBlockPos {
     pub fn get_diff(&self, x_diff: i32, y_diff: i32, z_diff: i32) -> LocalBlockPos {
         LocalBlockPos {
-            x: self.x + x_diff,
-            y: self.y + y_diff,
-            z: self.z + z_diff,
+            x: ((self.x + x_diff) % CHUNKSIZE as i32).abs(),
+            y: ((self.y + y_diff) % CHUNKSIZE as i32).abs(),
+            z: ((self.z + z_diff) % CHUNKSIZE as i32).abs(),
         }
     }
 }

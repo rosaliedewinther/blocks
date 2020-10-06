@@ -1,5 +1,8 @@
 #[macro_use]
 extern crate glium;
+extern crate flame;
+#[macro_use]
+extern crate flamer;
 
 use log::info;
 
@@ -8,6 +11,7 @@ use crate::main_loop::MainLoop;
 use crate::renderer::glium::DrawInfo;
 use glium::index::PrimitiveType;
 use glium::IndexBuffer;
+use std::fs::File;
 
 mod block;
 mod chunk;
@@ -39,4 +43,6 @@ fn main() {
 
     let mut main_loop = MainLoop::new();
     main_loop.run();
+
+    println!("done dumping");
 }
