@@ -77,7 +77,11 @@ impl Chunk {
         return false;
     }
 
-    pub fn get_vertex_buffer(&self, chunk_pos: &ChunkPos) -> Vec<Vertex> {
+    pub fn get_vertex_buffer(
+        &self,
+        chunk_pos: &ChunkPos,
+        chunk_manager: &mut ChunkManager,
+    ) -> Vec<Vertex> {
         let mut temp_vertex_buffer = Vec::with_capacity(10000);
         for x in 0..CHUNKSIZE {
             for y in 0..CHUNKSIZE {
@@ -92,22 +96,46 @@ impl Chunk {
                         continue;
                     }
                     let mut sides = BlockSides::new();
-                    if self.should_render_against_block(&local_pos.get_diff(1, 0, 0)) {
+                    if self.should_render_against_block(
+                        &local_pos.get_diff(1, 0, 0),
+                        &chunk_manager,
+                        &chunk_pos,
+                    ) {
                         sides.right = true;
                     }
-                    if self.should_render_against_block(&local_pos.get_diff(-1, 0, 0)) {
+                    if self.should_render_against_block(
+                        &local_pos.get_diff(-1, 0, 0),
+                        &chunk_manager,
+                        &chunk_pos,
+                    ) {
                         sides.left = true;
                     }
-                    if self.should_render_against_block(&local_pos.get_diff(0, 1, 0)) {
+                    if self.should_render_against_block(
+                        &local_pos.get_diff(0, 1, 0),
+                        &chunk_manager,
+                        &chunk_pos,
+                    ) {
                         sides.top = true;
                     }
-                    if self.should_render_against_block(&local_pos.get_diff(0, -1, 0)) {
+                    if self.should_render_against_block(
+                        &local_pos.get_diff(0, -1, 0),
+                        &chunk_manager,
+                        &chunk_pos,
+                    ) {
                         sides.bot = true;
                     }
-                    if self.should_render_against_block(&local_pos.get_diff(0, 0, 1)) {
+                    if self.should_render_against_block(
+                        &local_pos.get_diff(0, 0, 1),
+                        &chunk_manager,
+                        &chunk_pos,
+                    ) {
                         sides.back = true;
                     }
-                    if self.should_render_against_block(&local_pos.get_diff(0, 0, -1)) {
+                    if self.should_render_against_block(
+                        &local_pos.get_diff(0, 0, -1),
+                        &chunk_manager,
+                        &chunk_pos,
+                    ) {
                         sides.front = true;
                     }
                     let block: &Block = &self.blocks[x][y][z];
@@ -149,8 +177,13 @@ impl Chunk {
         }
         return Some(&self.blocks[pos.x as usize][pos.y as usize][pos.z as usize]);
     }
-    pub fn should_render_against_block(&self, pos: &LocalBlockPos) -> bool {
-        let block = self.get_block(pos);
+    pub fn should_render_against_block(
+        &self,
+        pos: &LocalBlockPos,
+        chunk_manager: &ChunkManager,
+        chunk_pos: &ChunkPos,
+    ) -> bool {
+        let block = chunk_manager.get_block(&GlobalBlockPos::new_from_chunk_local(chunk_pos, pos));
         if block.is_none() {
             return true;
         }

@@ -14,113 +14,6 @@ use std::thread::JoinHandle;
 use std::time::Instant;
 use std::{thread, time};
 
-pub struct SurroundingChunkSides {
-    pub blocks: HashSet<LocalBlockPos>,
-}
-
-impl SurroundingChunkSides {
-    pub fn generate(chunk_manager: &ChunkManager, chunk_pos: &ChunkPos) -> SurroundingChunkSides {
-        let mut blocks = HashSet::new();
-        let chunk1 = chunk_manager.chunks.get(&chunk_pos.get_diff(0, 0, 1));
-        if chunk1.is_some() {
-            let c = chunk1.unwrap();
-            for x in 0..CHUNKSIZE {
-                for y in 0..CHUNKSIZE {
-                    let pos = LocalBlockPos {
-                        x: x as i32,
-                        y: y as i32,
-                        z: CHUNKSIZE as i32,
-                    };
-                    if c.should_render_against_block(&pos) {
-                        blocks.insert(pos);
-                    }
-                }
-            }
-        }
-        let chunk2 = chunk_manager.chunks.get(&chunk_pos.get_diff(0, 0, -1));
-        if chunk2.is_some() {
-            let c = chunk2.unwrap();
-            for x in 0..CHUNKSIZE {
-                for y in 0..CHUNKSIZE {
-                    let pos = LocalBlockPos {
-                        x: x as i32,
-                        y: y as i32,
-                        z: -1,
-                    };
-                    if c.should_render_against_block(&pos) {
-                        blocks.insert(pos);
-                    }
-                }
-            }
-        }
-        let chunk3 = chunk_manager.chunks.get(&chunk_pos.get_diff(0, 1, 0));
-        if chunk3.is_some() {
-            let c = chunk3.unwrap();
-            for x in 0..CHUNKSIZE {
-                for z in 0..CHUNKSIZE {
-                    let pos = LocalBlockPos {
-                        x: x as i32,
-                        y: CHUNKSIZE as i32,
-                        z: z as i32,
-                    };
-                    if c.should_render_against_block(&pos) {
-                        blocks.insert(pos);
-                    }
-                }
-            }
-        }
-        let chunk4 = chunk_manager.chunks.get(&chunk_pos.get_diff(0, -1, 0));
-        if chunk4.is_some() {
-            let c = chunk4.unwrap();
-            for x in 0..CHUNKSIZE {
-                for z in 0..CHUNKSIZE {
-                    let pos = LocalBlockPos {
-                        x: x as i32,
-                        y: -1,
-                        z: z as i32,
-                    };
-                    if c.should_render_against_block(&pos) {
-                        blocks.insert(pos);
-                    }
-                }
-            }
-        }
-        let chunk5 = chunk_manager.chunks.get(&chunk_pos.get_diff(1, 0, 0));
-        if chunk5.is_some() {
-            let c = chunk5.unwrap();
-            for y in 0..CHUNKSIZE {
-                for z in 0..CHUNKSIZE {
-                    let pos = LocalBlockPos {
-                        x: CHUNKSIZE as i32,
-                        y: y as i32,
-                        z: z as i32,
-                    };
-                    if c.should_render_against_block(&pos) {
-                        blocks.insert(pos);
-                    }
-                }
-            }
-        }
-        let chunk6 = chunk_manager.chunks.get(&chunk_pos.get_diff(-1, 0, 0));
-        if chunk6.is_some() {
-            let c = chunk6.unwrap();
-            for y in 0..CHUNKSIZE {
-                for z in 0..CHUNKSIZE {
-                    let pos = LocalBlockPos {
-                        x: -1,
-                        y: y as i32,
-                        z: z as i32,
-                    };
-                    if c.should_render_against_block(&pos) {
-                        blocks.insert(pos);
-                    }
-                }
-            }
-        }
-        return SurroundingChunkSides { blocks };
-    }
-}
-
 pub struct ChunkManager {
     pub chunks: HashMap<ChunkPos, Chunk>,
     pub loading_chunks: HashSet<ChunkPos>,
@@ -131,9 +24,6 @@ pub struct ChunkManager {
     pub chunk_generator_requester: Sender<ChunkPos>,
     pub chunk_generator_receiver: Receiver<(Chunk, ChunkPos)>,
     pub chunk_generator_thread: JoinHandle<()>,
-    pub vertex_generator_requester: Sender<(Chunk, SurroundingChunkSides, ChunkPos)>,
-    pub vertex_generator_receiver: Receiver<(ChunkPos, Vec<Vertex>)>,
-    pub vertex_generator_thread: JoinHandle<()>,
     pub world_seed: u32,
 }
 
@@ -163,37 +53,6 @@ impl ChunkManager {
             }
         });
 
-        let (gen_vertex_request, gen_vertex_receiver) = mpsc::channel();
-        let (gen_vertex_request_done, gen_vertex_receiver_done) = mpsc::channel();
-        let mut queue_vertex_gen: VecDeque<(Chunk, SurroundingChunkSides, ChunkPos)> =
-            VecDeque::new();
-        let vertex_gen_thread = thread::spawn(move || loop {
-            loop {
-                let message: Result<(Chunk, SurroundingChunkSides, ChunkPos), TryRecvError> =
-                    gen_vertex_receiver.try_recv();
-                if message.is_err() {
-                    if message.err().unwrap() == TryRecvError::Disconnected {
-                        return;
-                    } else {
-                        break;
-                    }
-                } else {
-                    queue_vertex_gen.push_back(message.unwrap());
-                }
-            }
-            for obj in &queue_vertex_gen {
-                print!("{:?},", obj.2);
-            }
-            println!();
-            if !queue_vertex_gen.is_empty() {
-                let message = queue_vertex_gen.pop_front().unwrap();
-                gen_vertex_request_done
-                    .send((message.2.clone(), message.0.get_vertex_buffer(&message.2)));
-            } else {
-                thread::sleep(time::Duration::from_millis(100));
-            }
-        });
-
         ChunkManager {
             chunks: HashMap::new(),
             loading_chunks: HashSet::new(),
@@ -202,12 +61,9 @@ impl ChunkManager {
             visible: Vec::new(),
             vertex_buffers: HashMap::new(),
             chunk_generator_thread: chunk_gen_thread,
-            vertex_generator_requester: gen_vertex_request,
-            vertex_generator_receiver: gen_vertex_receiver_done,
             chunk_generator_requester: gen_chunk_request,
             chunk_generator_receiver: gen_chunk_receiver_done,
             world_seed: seed,
-            vertex_generator_thread: vertex_gen_thread,
         }
     }
     pub fn get_block(&self, pos: &GlobalBlockPos) -> Option<&Block> {
@@ -243,36 +99,17 @@ impl ChunkManager {
     }
     pub fn gen_vertex_buffers(&mut self, draw_info: &DrawInfo) {
         let mut started = Instant::now();
-        loop {
-            if started.elapsed().as_secs_f32() > 0.01 {
-                break;
-            }
-            let possibly_generated_vertex = self.vertex_generator_receiver.try_recv();
-            if possibly_generated_vertex.is_ok() {
-                let vertices = possibly_generated_vertex.unwrap();
-                let buffer =
-                    Some(glium::VertexBuffer::new(&draw_info.display, &vertices.1).unwrap());
-                self.vertex_buffers.insert(vertices.0, buffer);
-            } else {
-                break;
-            }
-        }
-        started = Instant::now();
-        for (pos, chunk) in &self.chunks {
+        for (pos, chunk) in &mut self.chunks {
             if started.elapsed().as_secs_f32() > 0.01 {
                 break;
             }
             let vertex_buffer_opt = self.vertex_buffers.get(pos);
             if vertex_buffer_opt.is_none() || vertex_buffer_opt.unwrap().is_none() {
                 let mut started2 = Instant::now();
-                let sides = SurroundingChunkSides::generate(self, pos);
-                let gen = started2.elapsed().as_secs_f64();
-                let mut started3 = Instant::now();
-                self.vertex_generator_requester
-                    .send((chunk.clone(), sides, pos.clone()));
-                let send = started3.elapsed().as_secs_f64();
-                println!("gen: {} sec", gen);
-                println!("sid: {} sec", send);
+                let vertices = chunk.get_vertex_buffer(pos, self);
+                let buffer = Some(glium::VertexBuffer::new(&draw_info.display, &vertices).unwrap());
+                self.vertex_buffers.insert(pos.clone(), buffer);
+                println!("gen: {} sec", started2.elapsed().as_secs_f64());
             }
         }
     }
