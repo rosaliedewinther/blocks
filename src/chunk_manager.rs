@@ -6,13 +6,14 @@ use crate::positions::{ChunkPos, GlobalBlockPos, LocalBlockPos};
 use crate::renderer::glium::{draw_vertices, DrawInfo};
 use crate::renderer::vertex::Vertex;
 use glium::{Frame, VertexBuffer};
-use std::collections::{BTreeMap, BinaryHeap, HashMap, HashSet, VecDeque};
-use std::fs::File;
-use std::sync::mpsc;
+use rayon::iter::ParallelIterator;
+use rayon::prelude::IntoParallelIterator;
+use std::collections::{BTreeMap, HashMap, HashSet, VecDeque};
 use std::sync::mpsc::{Receiver, Sender, TryRecvError};
+use std::sync::{mpsc, Arc, Mutex};
+use std::thread;
 use std::thread::JoinHandle;
 use std::time::Instant;
-use std::{thread, time};
 
 pub struct ChunkManager {
     pub chunks: HashMap<ChunkPos, Chunk>,
@@ -31,8 +32,8 @@ impl ChunkManager {
     pub fn new(seed: u32) -> ChunkManager {
         let (gen_chunk_request, gen_chunk_receiver) = mpsc::channel();
         let (gen_chunk_request_done, gen_chunk_receiver_done) = mpsc::channel();
-        let mut queue_chunk_gen: VecDeque<ChunkPos> = VecDeque::new();
         let chunk_gen_thread = thread::spawn(move || loop {
+            let mut queue_chunk_gen: VecDeque<ChunkPos> = VecDeque::new();
             loop {
                 let message: Result<ChunkPos, TryRecvError> = gen_chunk_receiver.try_recv();
                 if message.is_err() {
@@ -45,11 +46,15 @@ impl ChunkManager {
                     queue_chunk_gen.push_back(message.unwrap());
                 }
             }
-            if !queue_chunk_gen.is_empty() {
-                let pos = queue_chunk_gen.pop_front().unwrap();
-                gen_chunk_request_done.send((Chunk::generate(&pos, &seed), pos));
-            } else {
-                thread::sleep(time::Duration::from_millis(100));
+            let chunks = Arc::new(Mutex::new(Some(Vec::new())));
+            queue_chunk_gen.into_par_iter().for_each(|pos| {
+                let chunk = Chunk::generate(&pos, &seed);
+                let mut m = chunks.lock().unwrap();
+                m.as_mut().unwrap().push((chunk, pos));
+            });
+            let taken_value = chunks.lock().unwrap().take();
+            for c in taken_value.unwrap().into_iter() {
+                gen_chunk_request_done.send(c);
             }
         });
 
@@ -108,7 +113,7 @@ impl ChunkManager {
     pub fn gen_vertex_buffers(&mut self, draw_info: &DrawInfo, player: &Player) {
         let mut started = Instant::now();
         let mut to_render = BTreeMap::new();
-        for (pos, chunk) in &self.chunks {
+        for (pos, _) in &self.chunks {
             if started.elapsed().as_secs_f32() > 0.01 {
                 break;
             }
@@ -125,7 +130,6 @@ impl ChunkManager {
             if started.elapsed().as_secs_f32() > 0.01 {
                 break;
             }
-            let mut started2 = Instant::now();
             let c = self.chunks.get(pos.1);
             if c.is_none() {
                 continue;

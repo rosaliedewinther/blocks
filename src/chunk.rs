@@ -28,7 +28,6 @@ impl BlockSides {
     }
 }
 
-#[derive(Clone)]
 pub struct Chunk {
     pub blocks: Vec<Vec<Vec<Block>>>,
 }

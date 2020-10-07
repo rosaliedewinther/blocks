@@ -11,7 +11,6 @@ use crate::main_loop::MainLoop;
 use crate::renderer::glium::DrawInfo;
 use glium::index::PrimitiveType;
 use glium::IndexBuffer;
-use std::fs::File;
 
 mod block;
 mod chunk;

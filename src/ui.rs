@@ -11,8 +11,6 @@ pub struct UiRenderer {
     pub platform: WinitPlatform,
 }
 
-pub struct UiData {}
-
 impl UiRenderer {
     pub fn init(draw_info: &DrawInfo) -> UiRenderer {
         let mut context = imgui::Context::create();
@@ -31,13 +29,7 @@ impl UiRenderer {
             platform,
         }
     }
-    pub fn draw(
-        &mut self,
-        draw_info: &DrawInfo,
-        strings: &Vec<String>,
-        target: &mut Frame,
-        ui_data: &mut UiData,
-    ) {
+    pub fn draw(&mut self, draw_info: &DrawInfo, strings: &Vec<String>, target: &mut Frame) {
         let mut ui = self.context.frame();
 
         Window::new(im_str!("it just works"))

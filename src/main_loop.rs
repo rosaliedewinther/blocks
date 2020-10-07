@@ -1,16 +1,15 @@
 use crate::chunk_manager::ChunkManager;
-use crate::constants::VERTICALCHUNKS;
+use crate::constants::{CHUNK_GEN_RANGE, VERTICALCHUNKS};
 use crate::player::Player;
 use crate::positions::ChunkPos;
 use crate::renderer::glium::{create_display, gen_draw_params, gen_program, DrawInfo};
-use crate::ui::{UiData, UiRenderer};
+use crate::ui::UiRenderer;
 use crate::world::World;
 use glium::backend::glutin::glutin::event_loop::ControlFlow;
 use glium::glutin::event::Event;
 use glium::{glutin, Surface};
 use log::info;
 use std::collections::LinkedList;
-use std::fs::File;
 use std::time::{Instant, SystemTime, UNIX_EPOCH};
 
 pub struct MainLoop {
@@ -94,9 +93,13 @@ impl MainLoop {
     pub fn on_game_tick(dt: &f32, player: &mut Player, world: &mut World) {
         player.update(&dt);
         let current_chunk = player.position.get_chunk();
-        for x in current_chunk.x - 20..current_chunk.x + 21 {
+        for x in
+            current_chunk.x - CHUNK_GEN_RANGE as i32..current_chunk.x + CHUNK_GEN_RANGE as i32 + 1
+        {
             for y in 0..VERTICALCHUNKS as i32 {
-                for z in current_chunk.z - 20..current_chunk.z + 21 {
+                for z in current_chunk.z - CHUNK_GEN_RANGE as i32
+                    ..current_chunk.z + CHUNK_GEN_RANGE as i32 + 1
+                {
                     if !world
                         .chunk_manager
                         .chunk_exists_or_generating(&ChunkPos { x, y, z })
@@ -149,7 +152,7 @@ impl MainLoop {
                 world.chunk_manager.count_vertex_buffers_in_range(&player)
             ),
         ];
-        ui_renderer.draw(&draw_info, &text, &mut target, &mut UiData {});
+        ui_renderer.draw(&draw_info, &text, &mut target);
 
         target.finish().unwrap();
     }

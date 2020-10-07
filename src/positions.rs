@@ -1,6 +1,5 @@
 use crate::constants::CHUNKSIZE;
 use core::ops;
-use num_traits::real::Real;
 use num_traits::Pow;
 
 #[flame]
