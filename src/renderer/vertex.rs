@@ -5,3 +5,8 @@ pub struct Vertex {
 }
 
 pub type Color = [f32; 4];
+
+#[derive(Copy, Clone)]
+pub struct Normal {
+    pub normal: (f32, f32, f32),
+}
