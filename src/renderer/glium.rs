@@ -41,7 +41,7 @@ pub fn draw_vertices(
         ]
     };
     let view = player.get_view_matrix();
-    let light = [1.0, 0.4, 0.9f32];
+    let light = [0.0, -1.0, 0.0f32];
     let uniforms = uniform! {
         matrix: [
             [0.1, 0.0, 0.0, 0.0],
@@ -53,7 +53,7 @@ pub fn draw_vertices(
         time: utime,
         perspective: perspective,
         light: light,
-        camera_direction: [player.direction.x, player.direction.y, player.direction.z],
+        camera_direction: [player.position.x, player.position.y, player.position.z],
     };
     // drawing a frame
     let vertex_buffer = &buffers.0;
@@ -107,29 +107,18 @@ pub fn gen_program(display: &Display) -> Program {
             fragment: "
                 #version 140
                 in vec4 vColor;
-                //in vec3 v_normal;
                 in vec3 v_normal;
                 out vec4 f_color;
                 uniform vec3 u_light;
                 uniform vec3 camera_direction;
                 in vec3 v_position;
                 
-                
-                
-                const vec3 ambient_color = vec3(0.2, 0.0, 0.0);
                 const vec3 diffuse_color = vec3(1.0, 1.0, 1.0);
-                const vec3 specular_color = vec3(1.0, 1.0, 1.0);
                 
                 void main() {
-                    //vec3 u_light = vec3(1.4, 0.4, 0.7);
-                    vec3 camera_direction2 = vec3(camera_direction[0],-camera_direction[1], camera_direction[2]);
-                    float diffuse = max(dot(normalize(v_normal), normalize(camera_direction2)), 0.0);
-                    
-                    
-                    vec3 camera_dir = normalize(-v_position);
-                    vec3 half_direction = normalize(normalize(u_light) + camera_dir);
-                    float specular = pow(max(dot(half_direction, normalize(v_normal)), 0.0), 16.0);
-                    f_color = vColor + vec4(diffuse * diffuse_color + specular * specular_color, 1.0);
+                    vec3 camera_direction2 = vec3(camera_direction[0],camera_direction[1], camera_direction[2]);
+                    float diffuse = max(dot(normalize(v_normal), normalize(camera_direction)), 0.1);
+                    f_color = vColor * vec4(diffuse * diffuse_color, 1.0);
                 }
             "
         },

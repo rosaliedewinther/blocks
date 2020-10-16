@@ -81,6 +81,7 @@ impl ChunkPos {
             + ((self.y - pos.y) as f32).pow(2)
             + ((self.z - pos.z) as f32).pow(2)) as f32)
             .sqrt()
+            * CHUNKSIZE as f32
     }
 }
 

@@ -1,6 +1,6 @@
 use crate::block::{Block, BlockType};
 use crate::chunk::{BlockSides, Chunk};
-use crate::constants::CHUNKSIZE;
+use crate::constants::{CHUNKSIZE, CHUNK_UNLOAD_RADIUS};
 use crate::player::Player;
 use crate::positions::{ChunkPos, GlobalBlockPos, LocalBlockPos};
 use crate::renderer::glium::{draw_vertices, DrawInfo};
@@ -279,6 +279,15 @@ impl ChunkManager {
             }
             draw_vertices(&mut draw_info, &mut frame, real_vertex_buffer, player);
         }
+    }
+    pub fn chunk_should_be_loaded(player: &Player, pos: &ChunkPos) -> bool {
+        let player_chunk_pos = player.position.get_chunk();
+        pos.x < player_chunk_pos.x + CHUNK_UNLOAD_RADIUS as i32
+            && pos.x > player_chunk_pos.x - CHUNK_UNLOAD_RADIUS as i32
+            && pos.y < player_chunk_pos.y + CHUNK_UNLOAD_RADIUS as i32
+            && pos.y > player_chunk_pos.y - CHUNK_UNLOAD_RADIUS as i32
+            && pos.z < player_chunk_pos.z + CHUNK_UNLOAD_RADIUS as i32
+            && pos.z > player_chunk_pos.z - CHUNK_UNLOAD_RADIUS as i32
     }
     pub fn player_is_in_range(
         &self,

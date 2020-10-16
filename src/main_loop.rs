@@ -101,32 +101,24 @@ impl MainLoop {
                 for z in current_chunk.z - CHUNK_GEN_RANGE as i32
                     ..current_chunk.z + CHUNK_GEN_RANGE as i32 + 1
                 {
-                    if !world
-                        .chunk_manager
-                        .chunk_exists_or_generating(&ChunkPos { x, y, z })
+                    if ChunkManager::chunk_should_be_loaded(&player, &ChunkPos { x, y, z })
+                        && !world
+                            .chunk_manager
+                            .chunk_exists_or_generating(&ChunkPos { x, y, z })
                     {
                         world.chunk_manager.load_chunk(ChunkPos { x, y, z });
                     }
                 }
             }
         }
-        let player_chunk_pos = player.position.get_chunk();
-        world.chunk_manager.chunks.retain(|pos, c| {
-            pos.x < player_chunk_pos.x + CHUNK_UNLOAD_RADIUS as i32
-                && pos.x > player_chunk_pos.x - CHUNK_UNLOAD_RADIUS as i32
-                && pos.y < player_chunk_pos.y + CHUNK_UNLOAD_RADIUS as i32
-                && pos.y > player_chunk_pos.y - CHUNK_UNLOAD_RADIUS as i32
-                && pos.z < player_chunk_pos.z + CHUNK_UNLOAD_RADIUS as i32
-                && pos.z > player_chunk_pos.z - CHUNK_UNLOAD_RADIUS as i32
-        });
-        world.chunk_manager.vertex_buffers.retain(|pos, c| {
-            pos.x < player_chunk_pos.x + CHUNK_UNLOAD_RADIUS as i32
-                && pos.x > player_chunk_pos.x - CHUNK_UNLOAD_RADIUS as i32
-                && pos.y < player_chunk_pos.y + CHUNK_UNLOAD_RADIUS as i32
-                && pos.y > player_chunk_pos.y - CHUNK_UNLOAD_RADIUS as i32
-                && pos.z < player_chunk_pos.z + CHUNK_UNLOAD_RADIUS as i32
-                && pos.z > player_chunk_pos.z - CHUNK_UNLOAD_RADIUS as i32
-        });
+        world
+            .chunk_manager
+            .chunks
+            .retain(|pos, c| ChunkManager::chunk_should_be_loaded(&player, pos));
+        world
+            .chunk_manager
+            .vertex_buffers
+            .retain(|pos, c| ChunkManager::chunk_should_be_loaded(&player, pos));
         world.chunk_manager.update(&dt);
     }
     pub fn on_render(
