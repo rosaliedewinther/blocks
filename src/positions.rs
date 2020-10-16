@@ -2,7 +2,6 @@ use crate::constants::CHUNKSIZE;
 use core::ops;
 use num_traits::Pow;
 
-#[flame]
 pub struct GlobalBlockPos {
     pub x: i32,
     pub y: i32,
