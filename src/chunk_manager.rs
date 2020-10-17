@@ -4,7 +4,7 @@ use crate::constants::{CHUNKSIZE, CHUNK_UNLOAD_RADIUS};
 use crate::player::Player;
 use crate::positions::{ChunkPos, GlobalBlockPos, LocalBlockPos};
 use crate::renderer::glium::{draw_vertices, DrawInfo};
-use crate::renderer::vertex::{Normal, Vertex};
+use crate::renderer::vertex::Vertex;
 use glium::{Frame, VertexBuffer};
 use rayon::iter::ParallelIterator;
 use rayon::prelude::IntoParallelIterator;
@@ -30,7 +30,7 @@ pub struct ChunkManager {
     pub chunk_generator_requester: Sender<ChunkPos>,
     pub chunk_generator_receiver: Receiver<(Chunk, ChunkPos)>,
     pub chunk_generator_thread: JoinHandle<()>,
-    pub vertex_buffers: HashMap<ChunkPos, Option<(VertexBuffer<Vertex>, VertexBuffer<Normal>)>>,
+    pub vertex_buffers: HashMap<ChunkPos, Option<VertexBuffer<Vertex>>>,
 }
 
 impl WorldData {
@@ -212,14 +212,16 @@ impl ChunkManager {
                 continue;
             }
             let vertices = self.get_chunk_vertices(c.unwrap(), pos.1);
-            let vert_buffer = glium::VertexBuffer::new(&draw_info.display, &vertices.0).unwrap();
-            let norm_buffer = glium::VertexBuffer::new(&draw_info.display, &vertices.1).unwrap();
-            self.vertex_buffers
-                .insert(pos.1.clone(), Some((vert_buffer, norm_buffer)));
+            let vert_buffer = glium::VertexBuffer::new(&draw_info.display, &vertices).unwrap();
+            self.vertex_buffers.insert(pos.1.clone(), Some(vert_buffer));
         }
     }
     pub fn load_generated_chunks(&mut self) {
+        let mut started = Instant::now();
         loop {
+            if started.elapsed().as_secs_f32() > 0.01 {
+                break;
+            }
             let possibly_generated_chunk = self.chunk_generator_receiver.try_recv();
             if possibly_generated_chunk.is_ok() {
                 let (chunk, pos) = possibly_generated_chunk.unwrap();
@@ -232,14 +234,8 @@ impl ChunkManager {
         }
     }
 
-    pub fn get_chunk_vertices(
-        &self,
-        chunk: &Chunk,
-        chunk_pos: &ChunkPos,
-    ) -> (Vec<Vertex>, Vec<Normal>) {
-        let mut temp_vertex_buffer: Arc<Mutex<Vec<Vertex>>> =
-            Arc::new(Mutex::new(Vec::with_capacity(20000)));
-        let mut temp_normal_buffer: Arc<Mutex<Vec<Normal>>> =
+    pub fn get_chunk_vertices(&self, chunk: &Chunk, chunk_pos: &ChunkPos) -> Vec<Vertex> {
+        let temp_vertex_buffer: Arc<Mutex<Vec<Vertex>>> =
             Arc::new(Mutex::new(Vec::with_capacity(20000)));
         let world_data = Box::new(&self.world_data);
         (0..CHUNKSIZE as i32).into_par_iter().for_each(|x| {
@@ -260,28 +256,16 @@ impl ChunkManager {
                     let block: &Block = &chunk.blocks[x as usize][y][z];
                     let buffers = block.get_mesh(&global_pos, &sides);
                     {
-                        //let mut buffer = ;
                         temp_vertex_buffer
                             .lock()
                             .unwrap()
                             .deref_mut()
-                            .extend(buffers.0.iter());
-                    }
-                    {
-                        //let mut buffer = ;
-                        temp_normal_buffer
-                            .lock()
-                            .unwrap()
-                            .deref_mut()
-                            .extend(buffers.1.iter());
+                            .extend(buffers.iter());
                     }
                 }
             }
         });
-        return (
-            temp_vertex_buffer.lock().unwrap().to_vec(),
-            temp_normal_buffer.lock().unwrap().to_vec(),
-        );
+        return temp_vertex_buffer.lock().unwrap().to_vec();
     }
 
     pub fn render_chunks(
@@ -307,7 +291,7 @@ impl ChunkManager {
                 continue;
             }
             let real_vertex_buffer = vertex_buffer.as_ref().unwrap();
-            if real_vertex_buffer.0.len() == 0 {
+            if real_vertex_buffer.len() == 0 {
                 continue;
             }
             draw_vertices(&mut draw_info, &mut frame, real_vertex_buffer, player);
@@ -336,7 +320,7 @@ impl ChunkManager {
             if buffer.is_none() {
                 continue;
             }
-            counter += buffer.as_ref().unwrap().0.len() as i64;
+            counter += buffer.as_ref().unwrap().len() as i64;
         }
         return counter;
     }
