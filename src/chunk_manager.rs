@@ -260,12 +260,20 @@ impl ChunkManager {
                     let block: &Block = &chunk.blocks[x as usize][y][z];
                     let buffers = block.get_mesh(&global_pos, &sides);
                     {
-                        let mut buffer = temp_vertex_buffer.lock().unwrap();
-                        buffer.deref_mut().extend(buffers.0.iter());
+                        //let mut buffer = ;
+                        temp_vertex_buffer
+                            .lock()
+                            .unwrap()
+                            .deref_mut()
+                            .extend(buffers.0.iter());
                     }
                     {
-                        let mut buffer = temp_normal_buffer.lock().unwrap();
-                        buffer.deref_mut().extend(buffers.1.iter());
+                        //let mut buffer = ;
+                        temp_normal_buffer
+                            .lock()
+                            .unwrap()
+                            .deref_mut()
+                            .extend(buffers.1.iter());
                     }
                 }
             }

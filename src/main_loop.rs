@@ -150,7 +150,6 @@ impl MainLoop {
             .render_chunks(draw_info, &mut target, &player);
 
         let text = vec![
-            "yeet".to_string(),
             format!("now: {}", dt.to_string()),
             format!("low: {}", lowest_fps.to_string()),
             format!("ave: {}", average_fps.to_string()),
@@ -163,6 +162,7 @@ impl MainLoop {
                 "total vertex buffers drawn: {}",
                 world.chunk_manager.count_vertex_buffers_in_range(&player)
             ),
+            format!("total vertices: {}", world.chunk_manager.count_verticecs()),
         ];
         ui_renderer.draw(&draw_info, &text, &mut target);
 

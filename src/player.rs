@@ -28,7 +28,7 @@ impl Player {
             speed: 100f32,
             camera_speed: 1f32,
             input: Input::new(),
-            render_distance: 100f32,
+            render_distance: 200f32,
         }
     }
 
