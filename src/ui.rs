@@ -30,7 +30,7 @@ impl UiRenderer {
         }
     }
     pub fn draw(&mut self, draw_info: &DrawInfo, strings: &Vec<String>, target: &mut Frame) {
-        let mut ui = self.context.frame();
+        let ui = self.context.frame();
 
         Window::new(im_str!("it just works"))
             .size([300.0, 200.0], Condition::FirstUseEver)

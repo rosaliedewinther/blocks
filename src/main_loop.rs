@@ -56,7 +56,7 @@ impl MainLoop {
                 * 10000f64) as u32,
         };
 
-        let mut timer = Instant::now();
+        let timer = Instant::now();
         let mut rerender_timer = Instant::now();
         const FRAMERATE: f32 = 60f32;
         let mut update_timer = Instant::now();
@@ -104,6 +104,7 @@ impl MainLoop {
                     if ChunkManager::chunk_should_be_loaded(&player, &ChunkPos { x, y, z })
                         && !world
                             .chunk_manager
+                            .world_data
                             .chunk_exists_or_generating(&ChunkPos { x, y, z })
                     {
                         world.chunk_manager.load_chunk(ChunkPos { x, y, z });
@@ -113,6 +114,7 @@ impl MainLoop {
         }
         world
             .chunk_manager
+            .world_data
             .chunks
             .retain(|pos, c| ChunkManager::chunk_should_be_loaded(&player, pos));
         world

@@ -5,70 +5,42 @@ use crate::player::Player;
 use crate::positions::{ChunkPos, GlobalBlockPos, LocalBlockPos};
 use crate::renderer::glium::{draw_vertices, DrawInfo};
 use crate::renderer::vertex::{Normal, Vertex};
-use glium::vertex::MultiVerticesSource;
 use glium::{Frame, VertexBuffer};
 use rayon::iter::ParallelIterator;
 use rayon::prelude::IntoParallelIterator;
 use std::collections::{BTreeMap, HashMap, HashSet, VecDeque};
+use std::ops::{Deref, DerefMut};
 use std::sync::mpsc::{Receiver, Sender, TryRecvError};
-use std::sync::{mpsc, Arc, Mutex};
+use std::sync::{mpsc, Arc, Mutex, MutexGuard};
 use std::thread;
 use std::thread::JoinHandle;
 use std::time::Instant;
 
-pub struct ChunkManager {
+pub struct WorldData {
     pub chunks: HashMap<ChunkPos, Chunk>,
     pub loading_chunks: HashSet<ChunkPos>,
     pub to_unload: Vec<ChunkPos>,
     pub to_rebuild: Vec<ChunkPos>,
     pub visible: Vec<ChunkPos>,
-    pub vertex_buffers: HashMap<ChunkPos, Option<(VertexBuffer<Vertex>, VertexBuffer<Normal>)>>,
-    pub chunk_generator_requester: Sender<ChunkPos>,
-    pub chunk_generator_receiver: Receiver<(Chunk, ChunkPos)>,
-    pub chunk_generator_thread: JoinHandle<()>,
     pub world_seed: u32,
 }
 
-impl ChunkManager {
-    pub fn new(seed: u32) -> ChunkManager {
-        let (gen_chunk_request, gen_chunk_receiver) = mpsc::channel();
-        let (gen_chunk_request_done, gen_chunk_receiver_done) = mpsc::channel();
-        let chunk_gen_thread = thread::spawn(move || loop {
-            let mut queue_chunk_gen: VecDeque<ChunkPos> = VecDeque::new();
-            loop {
-                let message: Result<ChunkPos, TryRecvError> = gen_chunk_receiver.try_recv();
-                if message.is_err() {
-                    if message.err().unwrap() == TryRecvError::Disconnected {
-                        return;
-                    } else {
-                        break;
-                    }
-                } else {
-                    queue_chunk_gen.push_back(message.unwrap());
-                }
-            }
-            let chunks = Arc::new(Mutex::new(Some(Vec::new())));
-            queue_chunk_gen.into_par_iter().for_each(|pos| {
-                let chunk = Chunk::generate(&pos, &seed);
-                let mut m = chunks.lock().unwrap();
-                m.as_mut().unwrap().push((chunk, pos));
-            });
-            let taken_value = chunks.lock().unwrap().take();
-            for c in taken_value.unwrap().into_iter() {
-                gen_chunk_request_done.send(c);
-            }
-        });
+pub struct ChunkManager {
+    pub world_data: WorldData,
+    pub chunk_generator_requester: Sender<ChunkPos>,
+    pub chunk_generator_receiver: Receiver<(Chunk, ChunkPos)>,
+    pub chunk_generator_thread: JoinHandle<()>,
+    pub vertex_buffers: HashMap<ChunkPos, Option<(VertexBuffer<Vertex>, VertexBuffer<Normal>)>>,
+}
 
-        ChunkManager {
+impl WorldData {
+    pub fn new(seed: u32) -> WorldData {
+        WorldData {
             chunks: HashMap::new(),
             loading_chunks: HashSet::new(),
             to_unload: Vec::new(),
             to_rebuild: Vec::new(),
             visible: Vec::new(),
-            vertex_buffers: HashMap::new(),
-            chunk_generator_thread: chunk_gen_thread,
-            chunk_generator_requester: gen_chunk_request,
-            chunk_generator_receiver: gen_chunk_receiver_done,
             world_seed: seed,
         }
     }
@@ -91,120 +63,6 @@ impl ChunkManager {
             return false;
         }
         return true;
-    }
-    pub fn load_chunk(&mut self, pos: ChunkPos) {
-        if self.chunk_exists_or_generating(&pos) {
-            return;
-        }
-        self.loading_chunks.insert(pos.clone());
-        self.chunk_generator_requester.send(pos);
-    }
-    pub fn update(&mut self, dt: &f32) {
-        let started = Instant::now();
-        self.load_generated_chunks();
-        for (pos, chunk) in &mut self.chunks {
-            if started.elapsed().as_secs_f32() > 0.01 {
-                break;
-            }
-            if chunk.update(dt) {
-                self.vertex_buffers.insert(pos.clone(), None);
-            }
-        }
-    }
-    pub fn gen_vertex_buffers(&mut self, draw_info: &DrawInfo, player: &Player) {
-        let mut started = Instant::now();
-        let mut to_render = BTreeMap::new();
-        for (pos, _) in &self.chunks {
-            if started.elapsed().as_secs_f32() > 0.01 {
-                break;
-            }
-            let distance = pos.get_distance(&player.position.get_chunk());
-            if distance > player.render_distance {
-                continue;
-            }
-            let vertex_buffer_opt = self.vertex_buffers.get(pos);
-            if vertex_buffer_opt.is_none() || vertex_buffer_opt.unwrap().is_none() {
-                to_render.insert((distance * 10000f32) as i32, pos.clone());
-            }
-        }
-        for pos in to_render.iter() {
-            if started.elapsed().as_secs_f32() > 0.01 {
-                break;
-            }
-            let c = self.chunks.get(pos.1);
-            if c.is_none() {
-                continue;
-            }
-            let vertices = self.get_chunk_vertices(c.unwrap(), pos.1);
-            let vert_buffer = glium::VertexBuffer::new(&draw_info.display, &vertices.0).unwrap();
-            let norm_buffer = glium::VertexBuffer::new(&draw_info.display, &vertices.1).unwrap();
-            self.vertex_buffers
-                .insert(pos.1.clone(), Some((vert_buffer, norm_buffer)));
-        }
-    }
-    pub fn load_generated_chunks(&mut self) {
-        loop {
-            let possibly_generated_chunk = self.chunk_generator_receiver.try_recv();
-            if possibly_generated_chunk.is_ok() {
-                let (chunk, pos) = possibly_generated_chunk.unwrap();
-                self.chunks.insert(pos.clone(), chunk);
-                self.loading_chunks.remove(&pos);
-                self.reset_surronding_vertex_buffers(&pos);
-            } else {
-                break;
-            }
-        }
-    }
-    pub fn reset_surronding_vertex_buffers(&mut self, pos: &ChunkPos) {
-        if self.vertex_buffers.contains_key(&pos.get_diff(0, 0, 1)) {
-            self.vertex_buffers.insert(pos.get_diff(0, 0, 1), None);
-        }
-        if self.vertex_buffers.contains_key(&pos.get_diff(0, 0, -1)) {
-            self.vertex_buffers.insert(pos.get_diff(0, 0, -1), None);
-        }
-        if self.vertex_buffers.contains_key(&pos.get_diff(0, 1, 0)) {
-            self.vertex_buffers.insert(pos.get_diff(0, 1, 0), None);
-        }
-        if self.vertex_buffers.contains_key(&pos.get_diff(0, -1, 0)) {
-            self.vertex_buffers.insert(pos.get_diff(0, -1, 0), None);
-        }
-        if self.vertex_buffers.contains_key(&pos.get_diff(1, 0, 0)) {
-            self.vertex_buffers.insert(pos.get_diff(1, 0, 0), None);
-        }
-        if self.vertex_buffers.contains_key(&pos.get_diff(-1, 0, 0)) {
-            self.vertex_buffers.insert(pos.get_diff(-1, 0, 0), None);
-        }
-    }
-    pub fn get_chunk_vertices(
-        &self,
-        chunk: &Chunk,
-        chunk_pos: &ChunkPos,
-    ) -> (Vec<Vertex>, Vec<Normal>) {
-        let mut temp_vertex_buffer = Vec::with_capacity(20000);
-        let mut temp_normal_buffer = Vec::with_capacity(5000);
-        for x in 0..CHUNKSIZE {
-            for y in 0..CHUNKSIZE {
-                for z in 0..CHUNKSIZE {
-                    let global_pos = GlobalBlockPos {
-                        x: x as i32 + chunk_pos.x * CHUNKSIZE as i32,
-                        y: y as i32 + chunk_pos.y * CHUNKSIZE as i32,
-                        z: z as i32 + chunk_pos.z * CHUNKSIZE as i32,
-                    };
-
-                    let block = chunk.get_block(&global_pos.get_local_pos());
-                    if block.is_some() && block.unwrap().block_type == BlockType::Air {
-                        continue;
-                    }
-                    let sides = self.sides_to_render(&global_pos, chunk, chunk_pos);
-
-                    let block: &Block = &chunk.blocks[x][y][z];
-                    let buffers = block.get_mesh(&global_pos, &sides);
-                    temp_vertex_buffer.extend(buffers.0.iter());
-                    temp_normal_buffer.extend(buffers.1.iter());
-                }
-            }
-        }
-        return (temp_vertex_buffer, temp_normal_buffer);
     }
 
     pub fn sides_to_render(
@@ -250,6 +108,173 @@ impl ChunkManager {
         }
         return true;
     }
+}
+
+impl ChunkManager {
+    pub fn new(seed: u32) -> ChunkManager {
+        let (gen_chunk_request, gen_chunk_receiver) = mpsc::channel();
+        let (gen_chunk_request_done, gen_chunk_receiver_done) = mpsc::channel();
+        let chunk_gen_thread = thread::spawn(move || loop {
+            let mut queue_chunk_gen: VecDeque<ChunkPos> = VecDeque::new();
+            loop {
+                let message: Result<ChunkPos, TryRecvError> = gen_chunk_receiver.try_recv();
+                if message.is_err() {
+                    if message.err().unwrap() == TryRecvError::Disconnected {
+                        return;
+                    } else {
+                        break;
+                    }
+                } else {
+                    queue_chunk_gen.push_back(message.unwrap());
+                }
+            }
+            let chunks = Arc::new(Mutex::new(Some(Vec::new())));
+            queue_chunk_gen.into_par_iter().for_each(|pos| {
+                let chunk = Chunk::generate(&pos, &seed);
+                let mut m = chunks.lock().unwrap();
+                m.as_mut().unwrap().push((chunk, pos));
+            });
+            let taken_value = chunks.lock().unwrap().take();
+            for c in taken_value.unwrap().into_iter() {
+                gen_chunk_request_done.send(c);
+            }
+        });
+
+        ChunkManager {
+            world_data: WorldData::new(seed),
+            chunk_generator_thread: chunk_gen_thread,
+            chunk_generator_requester: gen_chunk_request,
+            chunk_generator_receiver: gen_chunk_receiver_done,
+            vertex_buffers: HashMap::new(),
+        }
+    }
+    pub fn load_chunk(&mut self, pos: ChunkPos) {
+        if self.world_data.chunk_exists_or_generating(&pos) {
+            return;
+        }
+        self.world_data.loading_chunks.insert(pos.clone());
+        self.chunk_generator_requester.send(pos);
+    }
+    pub fn reset_surronding_vertex_buffers(&mut self, pos: &ChunkPos) {
+        if self.vertex_buffers.contains_key(&pos.get_diff(0, 0, 1)) {
+            self.vertex_buffers.insert(pos.get_diff(0, 0, 1), None);
+        }
+        if self.vertex_buffers.contains_key(&pos.get_diff(0, 0, -1)) {
+            self.vertex_buffers.insert(pos.get_diff(0, 0, -1), None);
+        }
+        if self.vertex_buffers.contains_key(&pos.get_diff(0, 1, 0)) {
+            self.vertex_buffers.insert(pos.get_diff(0, 1, 0), None);
+        }
+        if self.vertex_buffers.contains_key(&pos.get_diff(0, -1, 0)) {
+            self.vertex_buffers.insert(pos.get_diff(0, -1, 0), None);
+        }
+        if self.vertex_buffers.contains_key(&pos.get_diff(1, 0, 0)) {
+            self.vertex_buffers.insert(pos.get_diff(1, 0, 0), None);
+        }
+        if self.vertex_buffers.contains_key(&pos.get_diff(-1, 0, 0)) {
+            self.vertex_buffers.insert(pos.get_diff(-1, 0, 0), None);
+        }
+    }
+    pub fn update(&mut self, dt: &f32) {
+        let started = Instant::now();
+        self.load_generated_chunks();
+        for (pos, chunk) in &mut self.world_data.chunks {
+            if started.elapsed().as_secs_f32() > 0.01 {
+                break;
+            }
+            if chunk.update(dt) {
+                self.vertex_buffers.insert(pos.clone(), None);
+            }
+        }
+    }
+    pub fn gen_vertex_buffers(&mut self, draw_info: &DrawInfo, player: &Player) {
+        let mut started = Instant::now();
+        let mut to_render = BTreeMap::new();
+        for (pos, _) in &self.world_data.chunks {
+            if started.elapsed().as_secs_f32() > 0.01 {
+                break;
+            }
+            let distance = pos.get_distance(&player.position.get_chunk());
+            if distance > player.render_distance {
+                continue;
+            }
+            let vertex_buffer_opt = self.vertex_buffers.get(pos);
+            if vertex_buffer_opt.is_none() || vertex_buffer_opt.unwrap().is_none() {
+                to_render.insert((distance * 10000f32) as i32, pos.clone());
+            }
+        }
+        for pos in to_render.iter() {
+            if started.elapsed().as_secs_f32() > 0.01 {
+                break;
+            }
+            let c = self.world_data.chunks.get(pos.1);
+            if c.is_none() {
+                continue;
+            }
+            let vertices = self.get_chunk_vertices(c.unwrap(), pos.1);
+            let vert_buffer = glium::VertexBuffer::new(&draw_info.display, &vertices.0).unwrap();
+            let norm_buffer = glium::VertexBuffer::new(&draw_info.display, &vertices.1).unwrap();
+            self.vertex_buffers
+                .insert(pos.1.clone(), Some((vert_buffer, norm_buffer)));
+        }
+    }
+    pub fn load_generated_chunks(&mut self) {
+        loop {
+            let possibly_generated_chunk = self.chunk_generator_receiver.try_recv();
+            if possibly_generated_chunk.is_ok() {
+                let (chunk, pos) = possibly_generated_chunk.unwrap();
+                self.world_data.chunks.insert(pos.clone(), chunk);
+                self.world_data.loading_chunks.remove(&pos);
+                self.reset_surronding_vertex_buffers(&pos);
+            } else {
+                break;
+            }
+        }
+    }
+
+    pub fn get_chunk_vertices(
+        &self,
+        chunk: &Chunk,
+        chunk_pos: &ChunkPos,
+    ) -> (Vec<Vertex>, Vec<Normal>) {
+        let mut temp_vertex_buffer: Arc<Mutex<Vec<Vertex>>> =
+            Arc::new(Mutex::new(Vec::with_capacity(20000)));
+        let mut temp_normal_buffer: Arc<Mutex<Vec<Normal>>> =
+            Arc::new(Mutex::new(Vec::with_capacity(20000)));
+        let world_data = Box::new(&self.world_data);
+        (0..CHUNKSIZE as i32).into_par_iter().for_each(|x| {
+            for y in 0..CHUNKSIZE {
+                for z in 0..CHUNKSIZE {
+                    let global_pos = GlobalBlockPos {
+                        x: x as i32 + chunk_pos.x * CHUNKSIZE as i32,
+                        y: y as i32 + chunk_pos.y * CHUNKSIZE as i32,
+                        z: z as i32 + chunk_pos.z * CHUNKSIZE as i32,
+                    };
+
+                    let block = chunk.get_block(&global_pos.get_local_pos());
+                    if block.is_some() && block.unwrap().block_type == BlockType::Air {
+                        continue;
+                    }
+                    let sides = world_data.sides_to_render(&global_pos, chunk, chunk_pos);
+
+                    let block: &Block = &chunk.blocks[x as usize][y][z];
+                    let buffers = block.get_mesh(&global_pos, &sides);
+                    {
+                        let mut buffer = temp_vertex_buffer.lock().unwrap();
+                        buffer.deref_mut().extend(buffers.0.iter());
+                    }
+                    {
+                        let mut buffer = temp_normal_buffer.lock().unwrap();
+                        buffer.deref_mut().extend(buffers.1.iter());
+                    }
+                }
+            }
+        });
+        return (
+            temp_vertex_buffer.lock().unwrap().to_vec(),
+            temp_normal_buffer.lock().unwrap().to_vec(),
+        );
+    }
 
     pub fn render_chunks(
         &self,
@@ -257,7 +282,7 @@ impl ChunkManager {
         mut frame: &mut Frame,
         player: &Player,
     ) {
-        for (pos, _) in &self.chunks {
+        for (pos, _) in &self.world_data.chunks {
             if self.player_is_in_range(
                 &player.position.get_chunk(),
                 pos,
@@ -318,7 +343,7 @@ impl ChunkManager {
         return counter;
     }
     pub fn count_chunks(&self) -> i64 {
-        return self.chunks.len() as i64;
+        return self.world_data.chunks.len() as i64;
     }
     pub fn count_vertex_buffers_in_range(&self, player: &Player) -> i64 {
         let mut counter = 0i64;
