@@ -179,9 +179,7 @@ impl ChunkManager {
         let started = Instant::now();
         self.load_generated_chunks();
         for (pos, chunk) in &mut self.world_data.chunks {
-            if started.elapsed().as_secs_f32() > 0.01 {
-                break;
-            }
+            break;
             if chunk.update(dt) {
                 self.vertex_buffers.insert(pos.clone(), None);
             }
@@ -219,7 +217,7 @@ impl ChunkManager {
     pub fn load_generated_chunks(&mut self) {
         let mut started = Instant::now();
         loop {
-            if started.elapsed().as_secs_f32() > 0.01 {
+            if started.elapsed().as_secs_f32() > 0.001 {
                 break;
             }
             let possibly_generated_chunk = self.chunk_generator_receiver.try_recv();

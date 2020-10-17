@@ -1,5 +1,5 @@
 use crate::input::Input;
-use crate::positions::ObjectPos;
+use crate::positions::{ChunkPos, ObjectPos};
 use crate::utils::{get_rotation_matrix_y, get_rotation_matrix_z};
 use device_query::Keycode;
 use nalgebra::{Matrix3, Vector3};
@@ -13,6 +13,7 @@ pub struct Player {
     pub speed: f32,
     pub camera_speed: f32,
     pub render_distance: f32,
+    pub generated_chunks_for: ChunkPos,
 }
 
 impl Player {
@@ -29,6 +30,11 @@ impl Player {
             camera_speed: 1f32,
             input: Input::new(),
             render_distance: 100f32,
+            generated_chunks_for: ChunkPos {
+                x: i32::max_value(),
+                y: i32::max_value(),
+                z: i32::max_value(),
+            },
         }
     }
 

@@ -60,9 +60,14 @@ impl MainLoop {
         let mut rerender_timer = Instant::now();
         const FRAMERATE: f32 = 60f32;
         let mut update_timer = Instant::now();
-        let mut frame_rate_queue = LinkedList::new();
-        for _ in 0..10 {
-            frame_rate_queue.push_back(0f32);
+        let mut update_times = LinkedList::new();
+        for _ in 0..30 {
+            update_times.push_back(0f32);
+        }
+        let mut draw_timer = Instant::now();
+        let mut draw_times = LinkedList::new();
+        for _ in 0..30 {
+            draw_times.push_back(0f32);
         }
         info!("starting main loop");
         event_loop.run(move |event, _, control_flow| {
@@ -75,6 +80,8 @@ impl MainLoop {
                 world
                     .chunk_manager
                     .gen_vertex_buffers(&mut draw_info, &player);
+                update_times.pop_front();
+                update_times.push_back(update_timer.elapsed().as_secs_f32());
             } else if 1f32 / rerender_timer.elapsed().as_secs_f32() < FRAMERATE {
                 let dt = rerender_timer.elapsed().as_secs_f32();
                 rerender_timer = Instant::now();
@@ -82,66 +89,82 @@ impl MainLoop {
 
                 MainLoop::on_render(
                     &dt,
-                    &mut frame_rate_queue,
+                    &update_times,
+                    &draw_times,
                     &player,
                     &world,
                     &mut draw_info,
                     &mut ui_renderer,
                 );
+                draw_times.pop_front();
+                draw_times.push_back(rerender_timer.elapsed().as_secs_f32());
             }
         });
     }
     pub fn on_game_tick(dt: &f32, player: &mut Player, world: &mut World) {
         player.update(&dt);
-        let current_chunk = player.position.get_chunk();
-        for x in
-            current_chunk.x - CHUNK_GEN_RANGE as i32..current_chunk.x + CHUNK_GEN_RANGE as i32 + 1
-        {
-            for y in 0..VERTICALCHUNKS as i32 {
-                for z in current_chunk.z - CHUNK_GEN_RANGE as i32
-                    ..current_chunk.z + CHUNK_GEN_RANGE as i32 + 1
-                {
-                    if ChunkManager::chunk_should_be_loaded(&player, &ChunkPos { x, y, z })
-                        && !world
-                            .chunk_manager
-                            .world_data
-                            .chunk_exists_or_generating(&ChunkPos { x, y, z })
+        if player.generated_chunks_for != player.position.get_chunk() {
+            let current_chunk = player.position.get_chunk();
+            for x in current_chunk.x - CHUNK_GEN_RANGE as i32
+                ..current_chunk.x + CHUNK_GEN_RANGE as i32 + 1
+            {
+                for y in 0..VERTICALCHUNKS as i32 {
+                    for z in current_chunk.z - CHUNK_GEN_RANGE as i32
+                        ..current_chunk.z + CHUNK_GEN_RANGE as i32 + 1
                     {
-                        world.chunk_manager.load_chunk(ChunkPos { x, y, z });
+                        if ChunkManager::chunk_should_be_loaded(&player, &ChunkPos { x, y, z })
+                            && !world
+                                .chunk_manager
+                                .world_data
+                                .chunk_exists_or_generating(&ChunkPos { x, y, z })
+                        {
+                            world.chunk_manager.load_chunk(ChunkPos { x, y, z });
+                        }
                     }
                 }
             }
+            world
+                .chunk_manager
+                .world_data
+                .chunks
+                .retain(|pos, c| ChunkManager::chunk_should_be_loaded(&player, pos));
+            world
+                .chunk_manager
+                .vertex_buffers
+                .retain(|pos, c| ChunkManager::chunk_should_be_loaded(&player, pos));
+            player.generated_chunks_for = player.position.get_chunk();
         }
-        world
-            .chunk_manager
-            .world_data
-            .chunks
-            .retain(|pos, c| ChunkManager::chunk_should_be_loaded(&player, pos));
-        world
-            .chunk_manager
-            .vertex_buffers
-            .retain(|pos, c| ChunkManager::chunk_should_be_loaded(&player, pos));
+
         world.chunk_manager.update(&dt);
     }
     pub fn on_render(
         dt: &f32,
-        fps_buffer: &mut LinkedList<f32>,
+        update_buffer: &LinkedList<f32>,
+        draw_buffer: &LinkedList<f32>,
         player: &Player,
         world: &World,
         draw_info: &mut DrawInfo,
         ui_renderer: &mut UiRenderer,
     ) {
-        fps_buffer.pop_front();
-        fps_buffer.push_back(dt.clone());
-        let mut average_fps = 0f32;
-        let mut lowest_fps = 88888888f32;
-        for i in fps_buffer.iter() {
-            if i.clone() < lowest_fps {
-                lowest_fps = i.clone();
+        let mut average_update = 0f32;
+        let mut longest_update = 0f32;
+        for i in update_buffer.iter() {
+            if i.clone() > longest_update {
+                longest_update = i.clone();
             }
-            average_fps += i.clone();
+            average_update += i.clone();
         }
-        average_fps = average_fps / fps_buffer.len() as f32;
+        average_update = average_update / update_buffer.len() as f32;
+
+        let mut average_draw = 0f32;
+        let mut longest_draw = 0f32;
+        for i in draw_buffer.iter() {
+            if i.clone() > longest_draw {
+                longest_draw = i.clone();
+            }
+            average_draw += i.clone();
+        }
+        average_draw = average_draw / draw_buffer.len() as f32;
 
         let mut target = draw_info.display.draw();
         target.clear_color_and_depth((0.0, 0.0, 1.0, 0.0), 1.0);
@@ -150,9 +173,10 @@ impl MainLoop {
             .render_chunks(draw_info, &mut target, &player);
 
         let text = vec![
-            format!("now: {}", dt.to_string()),
-            format!("low: {}", lowest_fps.to_string()),
-            format!("ave: {}", average_fps.to_string()),
+            format!("long up: {}", longest_update.to_string()),
+            format!("ave up: {}", average_update.to_string()),
+            format!("long dr: {}", longest_draw.to_string()),
+            format!("ave dr: {}", average_draw.to_string()),
             format!(
                 "total vertex buffers: {}",
                 world.chunk_manager.count_vertex_buffers()
