@@ -17,7 +17,6 @@ pub enum BlockType {
 #[derive(Clone)]
 pub struct Block {
     pub block_type: BlockType,
-    pub col: [u8; 4],
 }
 
 impl Distribution<BlockType> for Standard {
@@ -42,16 +41,16 @@ impl Default for Block {
 
 impl Block {
     pub fn new(block_type: BlockType) -> Block {
-        Block {
-            col: match &block_type {
-                BlockType::Grass => [0, 255, 0, 255],
-                BlockType::Water => [0, 0, 255, 128],
-                BlockType::Dirt => [255, 64, 64, 255],
-                BlockType::Stone => [128, 128, 128, 255],
-                BlockType::Sand => [255, 0, 0, 255],
-                BlockType::Air => [255, 255, 0, 255],
-            },
-            block_type,
+        Block { block_type }
+    }
+    pub fn get_col(&self) -> [u8; 4] {
+        match self.block_type {
+            BlockType::Grass => [0, 255, 0, 255],
+            BlockType::Water => [0, 0, 255, 128],
+            BlockType::Dirt => [255, 64, 64, 255],
+            BlockType::Stone => [128, 128, 128, 255],
+            BlockType::Sand => [255, 0, 0, 255],
+            BlockType::Air => [255, 255, 0, 255],
         }
     }
 
@@ -63,7 +62,7 @@ impl Block {
         if self.block_type == BlockType::Air {
             return true;
         }
-        if self.col[3] != 255 {
+        if self.get_col()[3] != 255 {
             return true;
         }
         return false;
@@ -94,192 +93,192 @@ impl Block {
     pub fn mesh_front(&self, pos: &ObjectPos, vec: &mut Vec<Vertex>) {
         vec.push(Vertex {
             position: [pos.x, pos.y, pos.z],
-            color: self.col,
+            color: self.get_col(),
             normal: [0f32, 0f32, 1f32],
         });
         vec.push(Vertex {
             position: [pos.x + 1f32, pos.y, pos.z],
-            color: self.col,
+            color: self.get_col(),
             normal: [0f32, 0f32, 1f32],
         });
         vec.push(Vertex {
             position: [pos.x, pos.y + 1f32, pos.z],
-            color: self.col,
+            color: self.get_col(),
             normal: [0f32, 0f32, 1f32],
         });
         vec.push(Vertex {
             position: [pos.x + 1f32, pos.y, pos.z],
-            color: self.col,
+            color: self.get_col(),
             normal: [0f32, 0f32, 1f32],
         });
         vec.push(Vertex {
             position: [pos.x + 1f32, pos.y + 1f32, pos.z],
-            color: self.col,
+            color: self.get_col(),
             normal: [0f32, 0f32, 1f32],
         });
         vec.push(Vertex {
             position: [pos.x, pos.y + 1f32, pos.z],
-            color: self.col,
+            color: self.get_col(),
             normal: [0f32, 0f32, 1f32],
         });
     }
     pub fn mesh_back(&self, pos: &ObjectPos, vec: &mut Vec<Vertex>) {
         vec.push(Vertex {
             position: [pos.x, pos.y, pos.z + 1f32],
-            color: self.col,
+            color: self.get_col(),
             normal: [0f32, 0f32, -1f32],
         });
         vec.push(Vertex {
             position: [pos.x, pos.y + 1f32, pos.z + 1f32],
-            color: self.col,
+            color: self.get_col(),
             normal: [0f32, 0f32, -1f32],
         });
         vec.push(Vertex {
             position: [pos.x + 1f32, pos.y, pos.z + 1f32],
-            color: self.col,
+            color: self.get_col(),
             normal: [0f32, 0f32, -1f32],
         });
         vec.push(Vertex {
             position: [pos.x + 1f32, pos.y, pos.z + 1f32],
-            color: self.col,
+            color: self.get_col(),
             normal: [0f32, 0f32, -1f32],
         });
         vec.push(Vertex {
             position: [pos.x, pos.y + 1f32, pos.z + 1f32],
-            color: self.col,
+            color: self.get_col(),
             normal: [0f32, 0f32, -1f32],
         });
         vec.push(Vertex {
             position: [pos.x + 1f32, pos.y + 1f32, pos.z + 1f32],
-            color: self.col,
+            color: self.get_col(),
             normal: [0f32, 0f32, -1f32],
         });
     }
     pub fn mesh_left(&self, pos: &ObjectPos, vec: &mut Vec<Vertex>) {
         vec.push(Vertex {
             position: [pos.x, pos.y, pos.z],
-            color: self.col,
+            color: self.get_col(),
             normal: [-1f32, 0f32, 0f32],
         });
         vec.push(Vertex {
             position: [pos.x, pos.y + 1f32, pos.z],
-            color: self.col,
+            color: self.get_col(),
             normal: [-1f32, 0f32, 0f32],
         });
         vec.push(Vertex {
             position: [pos.x, pos.y, pos.z + 1f32],
-            color: self.col,
+            color: self.get_col(),
             normal: [-1f32, 0f32, 0f32],
         });
         vec.push(Vertex {
             position: [pos.x, pos.y + 1f32, pos.z + 1f32],
-            color: self.col,
+            color: self.get_col(),
             normal: [-1f32, 0f32, 0f32],
         });
         vec.push(Vertex {
             position: [pos.x, pos.y, pos.z + 1f32],
-            color: self.col,
+            color: self.get_col(),
             normal: [-1f32, 0f32, 0f32],
         });
         vec.push(Vertex {
             position: [pos.x, pos.y + 1f32, pos.z],
-            color: self.col,
+            color: self.get_col(),
             normal: [-1f32, 0f32, 0f32],
         });
     }
     pub fn mesh_right(&self, pos: &ObjectPos, vec: &mut Vec<Vertex>) {
         vec.push(Vertex {
             position: [pos.x + 1f32, pos.y, pos.z],
-            color: self.col,
+            color: self.get_col(),
             normal: [1f32, 0f32, 0f32],
         });
         vec.push(Vertex {
             position: [pos.x + 1f32, pos.y, pos.z + 1f32],
-            color: self.col,
+            color: self.get_col(),
             normal: [1f32, 0f32, 0f32],
         });
         vec.push(Vertex {
             position: [pos.x + 1f32, pos.y + 1f32, pos.z],
-            color: self.col,
+            color: self.get_col(),
             normal: [1f32, 0f32, 0f32],
         });
         vec.push(Vertex {
             position: [pos.x + 1f32, pos.y + 1f32, pos.z + 1f32],
-            color: self.col,
+            color: self.get_col(),
             normal: [1f32, 0f32, 0f32],
         });
         vec.push(Vertex {
             position: [pos.x + 1f32, pos.y + 1f32, pos.z],
-            color: self.col,
+            color: self.get_col(),
             normal: [1f32, 0f32, 0f32],
         });
         vec.push(Vertex {
             position: [pos.x + 1f32, pos.y, pos.z + 1f32],
-            color: self.col,
+            color: self.get_col(),
             normal: [1f32, 0f32, 0f32],
         });
     }
     pub fn mesh_top(&self, pos: &ObjectPos, vec: &mut Vec<Vertex>) {
         vec.push(Vertex {
             position: [pos.x, pos.y + 1f32, pos.z],
-            color: self.col,
+            color: self.get_col(),
             normal: [0f32, 1f32, 0f32],
         });
         vec.push(Vertex {
             position: [pos.x + 1f32, pos.y + 1f32, pos.z],
-            color: self.col,
+            color: self.get_col(),
             normal: [0f32, 1f32, 0f32],
         });
         vec.push(Vertex {
             position: [pos.x, pos.y + 1f32, pos.z + 1f32],
-            color: self.col,
+            color: self.get_col(),
             normal: [0f32, 1f32, 0f32],
         });
         vec.push(Vertex {
             position: [pos.x + 1f32, pos.y + 1f32, pos.z + 1f32],
-            color: self.col,
+            color: self.get_col(),
             normal: [0f32, 1f32, 0f32],
         });
         vec.push(Vertex {
             position: [pos.x, pos.y + 1f32, pos.z + 1f32],
-            color: self.col,
+            color: self.get_col(),
             normal: [0f32, 1f32, 0f32],
         });
         vec.push(Vertex {
             position: [pos.x + 1f32, pos.y + 1f32, pos.z],
-            color: self.col,
+            color: self.get_col(),
             normal: [0f32, 1f32, 0f32],
         });
     }
     pub fn mesh_bottom(&self, pos: &ObjectPos, vec: &mut Vec<Vertex>) {
         vec.push(Vertex {
             position: [pos.x, pos.y, pos.z],
-            color: self.col,
+            color: self.get_col(),
             normal: [0f32, -1f32, 0f32],
         });
         vec.push(Vertex {
             position: [pos.x, pos.y, pos.z + 1f32],
-            color: self.col,
+            color: self.get_col(),
             normal: [0f32, -1f32, 0f32],
         });
         vec.push(Vertex {
             position: [pos.x + 1f32, pos.y, pos.z],
-            color: self.col,
+            color: self.get_col(),
             normal: [0f32, -1f32, 0f32],
         });
         vec.push(Vertex {
             position: [pos.x + 1f32, pos.y, pos.z + 1f32],
-            color: self.col,
+            color: self.get_col(),
             normal: [0f32, -1f32, 0f32],
         });
         vec.push(Vertex {
             position: [pos.x + 1f32, pos.y, pos.z],
-            color: self.col,
+            color: self.get_col(),
             normal: [0f32, -1f32, 0f32],
         });
         vec.push(Vertex {
             position: [pos.x, pos.y, pos.z + 1f32],
-            color: self.col,
+            color: self.get_col(),
             normal: [0f32, -1f32, 0f32],
         });
     }

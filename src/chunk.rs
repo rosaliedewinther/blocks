@@ -62,7 +62,10 @@ impl Chunk {
                         if global_y < CHUNKSIZE as f64 {
                             arr[x as usize][y as usize][z as usize] =
                                 block::Block::new(BlockType::Water);
-                        } else if global_y < CHUNKSIZE as f64 * 1.5 {
+                        } else if global_y
+                            < CHUNKSIZE as f64 * VERTICALCHUNKS as f64
+                                - CHUNKSIZE as f64 * (VERTICALCHUNKS as f64 - 3f64)
+                        {
                             arr[x as usize][y as usize][z as usize] =
                                 block::Block::new(BlockType::Grass);
                         } else if global_y < CHUNKSIZE as f64 * VERTICALCHUNKS as f64 {
