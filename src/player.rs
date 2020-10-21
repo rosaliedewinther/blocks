@@ -29,7 +29,7 @@ impl Player {
             speed: 100f32,
             camera_speed: 1f32,
             input: Input::new(),
-            render_distance: 100f32,
+            render_distance: 300f32,
             generated_chunks_for: ChunkPos {
                 x: i32::max_value(),
                 y: i32::max_value(),

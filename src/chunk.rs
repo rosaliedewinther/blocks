@@ -54,10 +54,23 @@ impl Chunk {
                 ];
                 let height = perlin.get(perlin_input);
                 for y in 0..CHUNKSIZE as i32 {
-                    if (height * VERTICALCHUNKS as f64 * CHUNKSIZE as f64)
-                        >= ((y as i32 + (pos.y * CHUNKSIZE as i32)) as f64)
+                    let global_y = ((y as i32 + (pos.y * CHUNKSIZE as i32)) as f64);
+                    if (height * VERTICALCHUNKS as f64 * CHUNKSIZE as f64 / 2f64
+                        + VERTICALCHUNKS as f64 * CHUNKSIZE as f64 / 2f64)
+                        >= global_y
                     {
-                        arr[x as usize][y as usize][z as usize] = block::Block::rand_new();
+                        if global_y < CHUNKSIZE as f64 {
+                            arr[x as usize][y as usize][z as usize] =
+                                block::Block::new(BlockType::Water);
+                        } else if global_y < CHUNKSIZE as f64 * 1.5 {
+                            arr[x as usize][y as usize][z as usize] =
+                                block::Block::new(BlockType::Grass);
+                        } else if global_y < CHUNKSIZE as f64 * VERTICALCHUNKS as f64 {
+                            arr[x as usize][y as usize][z as usize] =
+                                block::Block::new(BlockType::Stone);
+                        } else {
+                            arr[x as usize][y as usize][z as usize] = block::Block::rand_new();
+                        }
                     }
                 }
             }
