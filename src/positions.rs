@@ -1,4 +1,5 @@
 use crate::constants::CHUNKSIZE;
+use crate::utils::wrap;
 use core::ops;
 use num_traits::Pow;
 
@@ -40,9 +41,9 @@ impl GlobalBlockPos {
     }
     pub fn get_local_pos(&self) -> LocalBlockPos {
         LocalBlockPos {
-            x: (self.x % CHUNKSIZE as i32).abs(),
-            y: (self.y % CHUNKSIZE as i32).abs(),
-            z: (self.z % CHUNKSIZE as i32).abs(),
+            x: self.x % CHUNKSIZE as i32,
+            y: self.y % CHUNKSIZE as i32,
+            z: self.z % CHUNKSIZE as i32,
         }
     }
     pub fn get_chunk_pos(&self) -> ChunkPos {
@@ -96,9 +97,9 @@ impl ObjectPos {
 impl LocalBlockPos {
     pub fn get_diff(&self, x_diff: i32, y_diff: i32, z_diff: i32) -> LocalBlockPos {
         LocalBlockPos {
-            x: ((self.x + x_diff) % CHUNKSIZE as i32).abs(),
-            y: ((self.y + y_diff) % CHUNKSIZE as i32).abs(),
-            z: ((self.z + z_diff) % CHUNKSIZE as i32).abs(),
+            x: wrap((self.x + x_diff) % CHUNKSIZE as i32, CHUNKSIZE as i32),
+            y: wrap((self.y + y_diff) % CHUNKSIZE as i32, CHUNKSIZE as i32),
+            z: wrap((self.z + z_diff) % CHUNKSIZE as i32, CHUNKSIZE as i32),
         }
     }
 }

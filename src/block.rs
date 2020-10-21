@@ -50,7 +50,7 @@ impl Block {
             BlockType::Dirt => [255, 64, 64, 255],
             BlockType::Stone => [128, 128, 128, 255],
             BlockType::Sand => [255, 0, 0, 255],
-            BlockType::Air => [255, 255, 0, 255],
+            BlockType::Air => [255, 0, 255, 255],
         }
     }
 
@@ -68,6 +68,9 @@ impl Block {
         return false;
     }
     pub fn get_mesh(&self, pos: &GlobalBlockPos, sides: &BlockSides) -> Vec<Vertex> {
+        if self.block_type == BlockType::Air {
+            return Vec::new();
+        }
         let mut mesh = Vec::with_capacity(36);
         let posf = pos.get_block_centre();
         if sides.right {

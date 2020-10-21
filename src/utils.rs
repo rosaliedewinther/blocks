@@ -47,3 +47,10 @@ pub fn negative_ceil(val: f32) -> f32 {
         return val.ceil();
     }
 }
+pub fn wrap(val: i32, max: i32) -> i32 {
+    if val < 0 {
+        val % max + max
+    } else {
+        val % max
+    }
+}

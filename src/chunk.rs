@@ -59,10 +59,7 @@ impl Chunk {
                         + VERTICALCHUNKS as f64 * CHUNKSIZE as f64 / 2f64)
                         >= global_y
                     {
-                        if global_y < CHUNKSIZE as f64 {
-                            arr[x as usize][y as usize][z as usize] =
-                                block::Block::new(BlockType::Water);
-                        } else if global_y
+                        if global_y
                             < CHUNKSIZE as f64 * VERTICALCHUNKS as f64
                                 - CHUNKSIZE as f64 * (VERTICALCHUNKS as f64 - 3f64)
                         {
@@ -74,6 +71,20 @@ impl Chunk {
                         } else {
                             arr[x as usize][y as usize][z as usize] = block::Block::rand_new();
                         }
+                    }
+                }
+            }
+        }
+        for x in 0..CHUNKSIZE as i32 {
+            for z in 0..CHUNKSIZE as i32 {
+                for y in 0..CHUNKSIZE as i32 {
+                    let global_y = ((y as i32 + (pos.y * CHUNKSIZE as i32)) as f64);
+
+                    if global_y < CHUNKSIZE as f64
+                        && arr[x as usize][y as usize][z as usize].block_type == BlockType::Air
+                    {
+                        arr[x as usize][y as usize][z as usize] =
+                            block::Block::new(BlockType::Water);
                     }
                 }
             }
