@@ -1,6 +1,6 @@
 use crate::block::{Block, BlockType};
 use crate::chunk::{BlockSides, Chunk};
-use crate::constants::{CHUNKSIZE, CHUNK_UNLOAD_RADIUS};
+use crate::constants::{CHUNKSIZE, CHUNK_UNLOAD_RADIUS, VERTICALCHUNKS};
 use crate::player::Player;
 use crate::positions::{ChunkPos, GlobalBlockPos, LocalBlockPos};
 use crate::renderer::glium::{draw_vertices, DrawInfo};
@@ -196,13 +196,19 @@ impl ChunkManager {
             if distance > player.render_distance {
                 continue;
             }
+            //if !self.surrounding_chunks_exist(pos) {
+            //     continue;
+            //}
             let vertex_buffer_opt = self.vertex_buffers.get(pos);
             if vertex_buffer_opt.is_none() || vertex_buffer_opt.unwrap().is_none() {
                 to_render.insert((distance * 10000f32) as i32, pos.clone());
             }
         }
+        started = Instant::now();
         for pos in to_render.iter() {
+            println!("trying");
             if started.elapsed().as_secs_f32() > 0.01 {
+                println!("done");
                 break;
             }
             let c = self.world_data.chunks.get(pos.1);
@@ -213,6 +219,15 @@ impl ChunkManager {
             let vert_buffer = glium::VertexBuffer::new(&draw_info.display, &vertices).unwrap();
             self.vertex_buffers.insert(pos.1.clone(), Some(vert_buffer));
         }
+    }
+    pub fn surrounding_chunks_exist(&self, pos: &ChunkPos) -> bool {
+        self.world_data.chunks.contains_key(&pos.get_diff(0, 0, 1))
+            && self.world_data.chunks.contains_key(&pos.get_diff(0, 0, -1))
+            && (pos.y >= VERTICALCHUNKS as i32
+                || self.world_data.chunks.contains_key(&pos.get_diff(0, 1, 0)))
+            && (pos.y <= 0 || self.world_data.chunks.contains_key(&pos.get_diff(0, -1, 0)))
+            && self.world_data.chunks.contains_key(&pos.get_diff(1, 0, 0))
+            && self.world_data.chunks.contains_key(&pos.get_diff(-1, 0, 0))
     }
     pub fn load_generated_chunks(&mut self) {
         let mut started = Instant::now();

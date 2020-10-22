@@ -104,38 +104,40 @@ impl MainLoop {
     pub fn on_game_tick(dt: &f32, player: &mut Player, world: &mut World) {
         player.update(&dt);
         if player.generated_chunks_for != player.position.get_chunk() {
-            let current_chunk = player.position.get_chunk();
-            for x in current_chunk.x - CHUNK_GEN_RANGE as i32
-                ..current_chunk.x + CHUNK_GEN_RANGE as i32 + 1
-            {
-                for y in 0..VERTICALCHUNKS as i32 {
-                    for z in current_chunk.z - CHUNK_GEN_RANGE as i32
-                        ..current_chunk.z + CHUNK_GEN_RANGE as i32 + 1
+            MainLoop::on_player_moved_chunks(player, world);
+        }
+        world.chunk_manager.update(&dt);
+    }
+    pub fn on_player_moved_chunks(player: &mut Player, world: &mut World) {
+        let current_chunk = player.position.get_chunk();
+        for x in
+            current_chunk.x - CHUNK_GEN_RANGE as i32..current_chunk.x + CHUNK_GEN_RANGE as i32 + 1
+        {
+            for y in 0..VERTICALCHUNKS as i32 {
+                for z in current_chunk.z - CHUNK_GEN_RANGE as i32
+                    ..current_chunk.z + CHUNK_GEN_RANGE as i32 + 1
+                {
+                    if ChunkManager::chunk_should_be_loaded(&player, &ChunkPos { x, y, z })
+                        && !world
+                            .chunk_manager
+                            .world_data
+                            .chunk_exists_or_generating(&ChunkPos { x, y, z })
                     {
-                        if ChunkManager::chunk_should_be_loaded(&player, &ChunkPos { x, y, z })
-                            && !world
-                                .chunk_manager
-                                .world_data
-                                .chunk_exists_or_generating(&ChunkPos { x, y, z })
-                        {
-                            world.chunk_manager.load_chunk(ChunkPos { x, y, z });
-                        }
+                        world.chunk_manager.load_chunk(ChunkPos { x, y, z });
                     }
                 }
             }
-            world
-                .chunk_manager
-                .world_data
-                .chunks
-                .retain(|pos, c| ChunkManager::chunk_should_be_loaded(&player, pos));
-            world
-                .chunk_manager
-                .vertex_buffers
-                .retain(|pos, c| ChunkManager::chunk_should_be_loaded(&player, pos));
-            player.generated_chunks_for = player.position.get_chunk();
         }
-
-        world.chunk_manager.update(&dt);
+        world
+            .chunk_manager
+            .world_data
+            .chunks
+            .retain(|pos, c| ChunkManager::chunk_should_be_loaded(&player, pos));
+        world
+            .chunk_manager
+            .vertex_buffers
+            .retain(|pos, c| ChunkManager::chunk_should_be_loaded(&player, pos));
+        player.generated_chunks_for = player.position.get_chunk();
     }
     pub fn on_render(
         dt: &f32,
