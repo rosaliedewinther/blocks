@@ -126,6 +126,7 @@ impl Chunk {
             || pos.z < 0
             || pos.z > (CHUNKSIZE - 1) as i32
         {
+            println!("{:?}", &pos);
             return None;
         }
         return Some(&self.blocks[pos.x as usize][pos.y as usize][pos.z as usize]);

@@ -47,16 +47,11 @@ impl WorldData {
     pub fn get_block(&self, pos: &GlobalBlockPos) -> Option<&Block> {
         return match self.chunks.get(&pos.get_chunk_pos()) {
             Some(c) => c.get_block(&pos.get_local_pos()),
-            None => None,
+            None => {
+                println!("wrong block at: {:?}", pos);
+                None
+            }
         };
-    }
-    pub fn should_render_against_chunk_known(&self, pos: &LocalBlockPos, chunk: &Chunk) -> bool {
-        let block = chunk.get_block(pos);
-        if block.is_none() {
-            println!("{:?}", pos);
-            return true;
-        }
-        block.unwrap().should_render_against()
     }
     pub fn chunk_exists_or_generating(&self, pos: &ChunkPos) -> bool {
         if self.chunks.get(pos).is_none() && !self.loading_chunks.contains(pos) {
@@ -72,35 +67,30 @@ impl WorldData {
         chunk_pos: &ChunkPos,
     ) -> BlockSides {
         let mut sides = BlockSides::new();
-        if self.should_render_against_block(&global_pos.get_diff(1, 0, 0), chunk, chunk_pos) {
+        if self.should_render_against_block(&global_pos.get_diff(1, 0, 0)) {
             sides.right = true;
         }
-        if self.should_render_against_block(&global_pos.get_diff(-1, 0, 0), chunk, chunk_pos) {
+        if self.should_render_against_block(&global_pos.get_diff(-1, 0, 0)) {
             sides.left = true;
         }
-        if self.should_render_against_block(&global_pos.get_diff(0, 1, 0), chunk, chunk_pos) {
+        if self.should_render_against_block(&global_pos.get_diff(0, 1, 0)) {
             sides.top = true;
         }
-        if self.should_render_against_block(&global_pos.get_diff(0, -1, 0), chunk, chunk_pos) {
+        if self.should_render_against_block(&global_pos.get_diff(0, -1, 0)) {
             sides.bot = true;
         }
-        if self.should_render_against_block(&global_pos.get_diff(0, 0, 1), chunk, chunk_pos) {
+        if self.should_render_against_block(&global_pos.get_diff(0, 0, 1)) {
             sides.back = true;
         }
-        if self.should_render_against_block(&global_pos.get_diff(0, 0, -1), chunk, chunk_pos) {
+        if self.should_render_against_block(&global_pos.get_diff(0, 0, -1)) {
             sides.front = true;
         }
         return sides;
     }
-    pub fn should_render_against_block(
-        &self,
-        pos: &GlobalBlockPos,
-        chunk: &Chunk,
-        chunk_local_pos: &ChunkPos,
-    ) -> bool {
+    pub fn should_render_against_block(&self, pos: &GlobalBlockPos) -> bool {
         let real_chunk_pos = pos.get_chunk_pos();
-        if &real_chunk_pos == chunk_local_pos {
-            return self.should_render_against_chunk_known(&pos.get_local_pos(), chunk);
+        if !self.chunks.contains_key(&real_chunk_pos) {
+            return false;
         }
         let block = self.get_block(pos);
         if block.is_some() {
@@ -206,9 +196,7 @@ impl ChunkManager {
         }
         started = Instant::now();
         for pos in to_render.iter() {
-            println!("trying");
             if started.elapsed().as_secs_f32() > 0.01 {
-                println!("done");
                 break;
             }
             let c = self.world_data.chunks.get(pos.1);
@@ -273,7 +261,7 @@ impl ChunkManager {
                             .lock()
                             .unwrap()
                             .deref_mut()
-                            .extend(buffers.iter());
+                            .extend(buffers);
                     }
                 }
             }

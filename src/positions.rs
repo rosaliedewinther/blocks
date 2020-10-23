@@ -1,8 +1,9 @@
 use crate::constants::CHUNKSIZE;
-use crate::utils::wrap;
+use crate::utils::{negative_floor, wrap};
 use core::ops;
 use num_traits::Pow;
 
+#[derive(Debug)]
 pub struct GlobalBlockPos {
     pub x: i32,
     pub y: i32,
@@ -41,16 +42,16 @@ impl GlobalBlockPos {
     }
     pub fn get_local_pos(&self) -> LocalBlockPos {
         LocalBlockPos {
-            x: self.x % CHUNKSIZE as i32,
-            y: self.y % CHUNKSIZE as i32,
-            z: self.z % CHUNKSIZE as i32,
+            x: wrap(self.x % CHUNKSIZE as i32, CHUNKSIZE as i32),
+            y: wrap(self.y % CHUNKSIZE as i32, CHUNKSIZE as i32),
+            z: wrap(self.z % CHUNKSIZE as i32, CHUNKSIZE as i32),
         }
     }
     pub fn get_chunk_pos(&self) -> ChunkPos {
         ChunkPos {
-            x: self.x / CHUNKSIZE as i32,
-            y: self.y / CHUNKSIZE as i32,
-            z: self.z / CHUNKSIZE as i32,
+            x: negative_floor(self.x as f32 / CHUNKSIZE as f32),
+            y: negative_floor(self.y as f32 / CHUNKSIZE as f32),
+            z: negative_floor(self.z as f32 / CHUNKSIZE as f32),
         }
     }
     pub fn get_block_centre(&self) -> ObjectPos {

@@ -24,7 +24,7 @@ pub fn draw_vertices(
     player: &Player,
 ) {
     let time: f32 = draw_info.program_start.elapsed().unwrap().as_secs_f32();
-    let rot_mat = get_rotation_matrix_y(time / 5f32);
+    let rot_mat = get_rotation_matrix_y(time);
     let light_dir = rot_mat * Vector3::new(1.0, 0.3, 0.0);
 
     let uniforms = uniform! {

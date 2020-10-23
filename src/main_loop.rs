@@ -64,7 +64,6 @@ impl MainLoop {
         for _ in 0..30 {
             update_times.push_back(0f32);
         }
-        let mut draw_timer = Instant::now();
         let mut draw_times = LinkedList::new();
         for _ in 0..30 {
             draw_times.push_back(0f32);

@@ -1,4 +1,5 @@
 use nalgebra::base::Matrix3;
+use num_traits::real::Real;
 
 pub fn get_rotation_matrix_z(angle: f32) -> Matrix3<f32> {
     Matrix3::new(
@@ -40,16 +41,16 @@ pub fn get_rotation_matrix_y(angle: f32) -> Matrix3<f32> {
     )
 }
 
-pub fn negative_ceil(val: f32) -> f32 {
-    if val < 0f32 {
-        return val.floor();
+pub fn negative_floor(val: f32) -> i32 {
+    if val > 0f32 {
+        val.floor() as i32
     } else {
-        return val.ceil();
+        val.ceil() as i32
     }
 }
 pub fn wrap(val: i32, max: i32) -> i32 {
     if val < 0 {
-        val % max + max
+        (val % max) + max
     } else {
         val % max
     }
