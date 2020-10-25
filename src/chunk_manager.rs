@@ -178,9 +178,9 @@ impl ChunkManager {
             if distance > player.render_distance {
                 continue;
             }
-            //if !self.surrounding_chunks_exist(pos) {
-            //     continue;
-            //}
+            if !self.surrounding_chunks_exist(pos) {
+                continue;
+            }
             let vertex_buffer_opt = self.vertex_buffers.get(pos);
             if vertex_buffer_opt.is_none() || vertex_buffer_opt.unwrap().is_none() {
                 to_render.insert((distance * 10000f32) as i32, pos.clone());
@@ -203,7 +203,7 @@ impl ChunkManager {
     pub fn surrounding_chunks_exist(&self, pos: &ChunkPos) -> bool {
         self.world_data.chunks.contains_key(&pos.get_diff(0, 0, 1))
             && self.world_data.chunks.contains_key(&pos.get_diff(0, 0, -1))
-            && (pos.y >= VERTICALCHUNKS as i32
+            && (pos.y + 2 > VERTICALCHUNKS as i32
                 || self.world_data.chunks.contains_key(&pos.get_diff(0, 1, 0)))
             && (pos.y <= 0 || self.world_data.chunks.contains_key(&pos.get_diff(0, -1, 0)))
             && self.world_data.chunks.contains_key(&pos.get_diff(1, 0, 0))
