@@ -19,6 +19,7 @@ mod renderer;
 mod ui;
 mod utils;
 mod world;
+mod world_gen;
 
 fn main() {
     setup_logger().unwrap();

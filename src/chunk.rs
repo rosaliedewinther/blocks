@@ -1,32 +1,8 @@
-use crate::block;
-use crate::block::{Block, BlockType};
-use crate::constants::{CHUNKSIZE, VERTICALCHUNKS};
+use crate::block::Block;
+use crate::constants::CHUNKSIZE;
 use crate::positions::{ChunkPos, LocalBlockPos};
+use crate::world_gen::basic::{floodfill_water, generate_empty_chunk, generate_landmass};
 use log::warn;
-use noise::{NoiseFn, Perlin, Seedable};
-
-#[derive(Debug, Clone)]
-pub struct BlockSides {
-    pub top: bool,
-    pub bot: bool,
-    pub left: bool,
-    pub right: bool,
-    pub front: bool,
-    pub back: bool,
-}
-
-impl BlockSides {
-    pub fn new() -> BlockSides {
-        BlockSides {
-            top: false,
-            bot: false,
-            left: false,
-            right: false,
-            front: false,
-            back: false,
-        }
-    }
-}
 
 pub struct Chunk {
     pub blocks: Vec<Vec<Vec<Block>>>,
@@ -34,63 +10,10 @@ pub struct Chunk {
 
 impl Chunk {
     pub fn generate(pos: &ChunkPos, seed: &u32) -> Chunk {
-        let mut arr: Vec<Vec<Vec<Block>>> = Vec::new();
-        for x in 0..CHUNKSIZE as i32 {
-            arr.push(Vec::with_capacity(CHUNKSIZE));
-            for y in 0..CHUNKSIZE as i32 {
-                arr[x as usize].push(Vec::with_capacity(CHUNKSIZE));
-                for z in 0..CHUNKSIZE as i32 {
-                    arr[x as usize][y as usize].push(block::Block::new(BlockType::Air));
-                }
-            }
-        }
-        let perlin = Perlin::new();
-        perlin.set_seed(*seed);
-        for x in 0..CHUNKSIZE as i32 {
-            for z in 0..CHUNKSIZE as i32 {
-                let perlin_input = [
-                    (x + (pos.x * CHUNKSIZE as i32)) as f64 / (VERTICALCHUNKS * CHUNKSIZE) as f64,
-                    (z + (pos.z * CHUNKSIZE as i32)) as f64 / (VERTICALCHUNKS * CHUNKSIZE) as f64,
-                ];
-                let height = perlin.get(perlin_input);
-                for y in 0..CHUNKSIZE as i32 {
-                    let global_y = ((y as i32 + (pos.y * CHUNKSIZE as i32)) as f64);
-                    if (height * VERTICALCHUNKS as f64 * CHUNKSIZE as f64 / 2f64
-                        + VERTICALCHUNKS as f64 * CHUNKSIZE as f64 / 2f64)
-                        >= global_y
-                    {
-                        if global_y
-                            < CHUNKSIZE as f64 * VERTICALCHUNKS as f64
-                                - CHUNKSIZE as f64 * (VERTICALCHUNKS as f64 - 3f64)
-                        {
-                            arr[x as usize][y as usize][z as usize] =
-                                block::Block::new(BlockType::Grass);
-                        } else if global_y < CHUNKSIZE as f64 * VERTICALCHUNKS as f64 {
-                            arr[x as usize][y as usize][z as usize] =
-                                block::Block::new(BlockType::Stone);
-                        } else {
-                            arr[x as usize][y as usize][z as usize] = block::Block::rand_new();
-                        }
-                    }
-                }
-            }
-        }
-        for x in 0..CHUNKSIZE as i32 {
-            for z in 0..CHUNKSIZE as i32 {
-                for y in 0..CHUNKSIZE as i32 {
-                    let global_y = ((y as i32 + (pos.y * CHUNKSIZE as i32)) as f64);
-                    if global_y < CHUNKSIZE as f64
-                        && arr[x as usize][y as usize][z as usize].block_type == BlockType::Air
-                    {
-                        arr[x as usize][y as usize][z as usize] =
-                            block::Block::new(BlockType::Water);
-                    }
-                }
-            }
-        }
-
-        let c = Chunk { blocks: arr };
-        return c;
+        let mut chunk = generate_empty_chunk();
+        generate_landmass(pos, seed, &mut chunk);
+        floodfill_water(&mut chunk, pos);
+        return chunk;
     }
 
     pub fn update(&mut self, dt: &f32) -> bool {

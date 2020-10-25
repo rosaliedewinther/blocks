@@ -1,8 +1,30 @@
-use crate::chunk::BlockSides;
 use crate::positions::{GlobalBlockPos, ObjectPos};
 use crate::renderer::vertex::Vertex;
 use rand::distributions::{Distribution, Standard};
 use rand::Rng;
+
+#[derive(Debug, Clone)]
+pub struct BlockSides {
+    pub top: bool,
+    pub bot: bool,
+    pub left: bool,
+    pub right: bool,
+    pub front: bool,
+    pub back: bool,
+}
+
+impl BlockSides {
+    pub fn new() -> BlockSides {
+        BlockSides {
+            top: false,
+            bot: false,
+            left: false,
+            right: false,
+            front: false,
+            back: false,
+        }
+    }
+}
 
 #[derive(PartialEq, Clone, Copy)]
 pub enum BlockType {

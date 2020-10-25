@@ -1,5 +1,5 @@
 use crate::chunk_manager::ChunkManager;
-use crate::constants::{CHUNK_GEN_RANGE, CHUNK_UNLOAD_RADIUS, VERTICALCHUNKS};
+use crate::constants::{CHUNK_GEN_RANGE, VERTICALCHUNKS};
 use crate::player::Player;
 use crate::positions::ChunkPos;
 use crate::renderer::glium::{create_display, gen_draw_params, gen_program, DrawInfo};
@@ -9,7 +9,6 @@ use glium::backend::glutin::glutin::event_loop::ControlFlow;
 use glium::glutin::event::Event;
 use glium::{glutin, Surface};
 use log::info;
-use rayon::prelude::IntoParallelIterator;
 use std::collections::LinkedList;
 use std::time::{Instant, SystemTime, UNIX_EPOCH};
 

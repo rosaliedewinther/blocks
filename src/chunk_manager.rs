@@ -1,5 +1,5 @@
-use crate::block::{Block, BlockType};
-use crate::chunk::{BlockSides, Chunk};
+use crate::block::{Block, BlockSides, BlockType};
+use crate::chunk::Chunk;
 use crate::constants::{CHUNKSIZE, CHUNK_UNLOAD_RADIUS, VERTICALCHUNKS};
 use crate::player::Player;
 use crate::positions::{ChunkPos, GlobalBlockPos, LocalBlockPos};
@@ -9,9 +9,8 @@ use glium::{Frame, VertexBuffer};
 use rayon::iter::ParallelIterator;
 use rayon::prelude::IntoParallelIterator;
 use std::collections::{BTreeMap, HashMap, HashSet, VecDeque};
-use std::ops::{Deref, DerefMut};
 use std::sync::mpsc::{Receiver, Sender, TryRecvError};
-use std::sync::{mpsc, Arc, Mutex, MutexGuard};
+use std::sync::{mpsc, Arc, Mutex};
 use std::thread;
 use std::thread::JoinHandle;
 use std::time::Instant;

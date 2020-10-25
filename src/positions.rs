@@ -1,5 +1,5 @@
 use crate::constants::CHUNKSIZE;
-use crate::utils::{negative_floor, wrap};
+use crate::utils::wrap;
 use core::ops;
 use num_traits::Pow;
 
