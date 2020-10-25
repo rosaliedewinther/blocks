@@ -27,8 +27,7 @@ impl Distribution<BlockType> for Standard {
             2 => BlockType::Sand,
             3 => BlockType::Stone,
             4 => BlockType::Grass,
-            5 => BlockType::Air,
-            _ => BlockType::Air,
+            _ => BlockType::Stone,
         }
     }
 }
@@ -50,7 +49,7 @@ impl Block {
             BlockType::Dirt => [255, 64, 64, 255],
             BlockType::Stone => [128, 128, 128, 255],
             BlockType::Sand => [255, 0, 0, 255],
-            BlockType::Air => [255, 0, 255, 255],
+            BlockType::Air => [255, 0, 255, 0],
         }
     }
 
@@ -59,9 +58,6 @@ impl Block {
     }
 
     pub fn should_render_against(&self) -> bool {
-        if self.block_type == BlockType::Air {
-            return true;
-        }
         if self.get_col()[3] != 255 {
             return true;
         }

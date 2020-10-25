@@ -42,9 +42,9 @@ impl GlobalBlockPos {
     }
     pub fn get_local_pos(&self) -> LocalBlockPos {
         LocalBlockPos {
-            x: wrap(self.x % CHUNKSIZE as i32, CHUNKSIZE as i32),
-            y: wrap(self.y % CHUNKSIZE as i32, CHUNKSIZE as i32),
-            z: wrap(self.z % CHUNKSIZE as i32, CHUNKSIZE as i32),
+            x: wrap(self.x, CHUNKSIZE as i32),
+            y: wrap(self.y, CHUNKSIZE as i32),
+            z: wrap(self.z, CHUNKSIZE as i32),
         }
     }
     pub fn get_chunk_pos(&self) -> ChunkPos {
@@ -98,9 +98,9 @@ impl ObjectPos {
 impl LocalBlockPos {
     pub fn get_diff(&self, x_diff: i32, y_diff: i32, z_diff: i32) -> LocalBlockPos {
         LocalBlockPos {
-            x: wrap((self.x + x_diff) % CHUNKSIZE as i32, CHUNKSIZE as i32),
-            y: wrap((self.y + y_diff) % CHUNKSIZE as i32, CHUNKSIZE as i32),
-            z: wrap((self.z + z_diff) % CHUNKSIZE as i32, CHUNKSIZE as i32),
+            x: (self.x + x_diff),
+            y: (self.y + y_diff),
+            z: (self.z + z_diff),
         }
     }
 }

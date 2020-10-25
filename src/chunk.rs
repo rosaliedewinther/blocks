@@ -79,7 +79,6 @@ impl Chunk {
             for z in 0..CHUNKSIZE as i32 {
                 for y in 0..CHUNKSIZE as i32 {
                     let global_y = ((y as i32 + (pos.y * CHUNKSIZE as i32)) as f64);
-
                     if global_y < CHUNKSIZE as f64
                         && arr[x as usize][y as usize][z as usize].block_type == BlockType::Air
                     {
@@ -98,13 +97,6 @@ impl Chunk {
         return false;
     }
 
-    pub fn get_blocktype(&self, pos: &LocalBlockPos) -> BlockType {
-        let maybe_block_type = self.get_block(pos);
-        if maybe_block_type.is_none() {
-            return BlockType::Air;
-        }
-        return maybe_block_type.unwrap().block_type;
-    }
     pub fn set_block(&mut self, block: Block, pos: &LocalBlockPos) {
         if pos.x < 0
             || pos.x > (CHUNKSIZE - 1) as i32
@@ -120,13 +112,13 @@ impl Chunk {
     }
     pub fn get_block(&self, pos: &LocalBlockPos) -> Option<&Block> {
         if pos.x < 0
-            || pos.x > (CHUNKSIZE - 1) as i32
+            || pos.x >= (CHUNKSIZE) as i32
             || pos.y < 0
-            || pos.y > (CHUNKSIZE - 1) as i32
+            || pos.y >= (CHUNKSIZE) as i32
             || pos.z < 0
-            || pos.z > (CHUNKSIZE - 1) as i32
+            || pos.z >= (CHUNKSIZE) as i32
         {
-            println!("{:?}", &pos);
+            println!("couldn't get block at: {:?}", &pos);
             return None;
         }
         return Some(&self.blocks[pos.x as usize][pos.y as usize][pos.z as usize]);

@@ -50,7 +50,7 @@ pub fn negative_floor(val: f32) -> i32 {
 }
 pub fn wrap(val: i32, max: i32) -> i32 {
     if val < 0 {
-        (val % max) + max
+        (val % max) + max - 1
     } else {
         val % max
     }
