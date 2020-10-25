@@ -63,7 +63,7 @@ impl Block {
         }
         return false;
     }
-    pub fn get_mesh(&self, pos: GlobalBlockPos, sides: &BlockSides) -> Vec<Vertex> {
+    pub fn get_mesh(&self, pos: &GlobalBlockPos, sides: &BlockSides) -> Vec<Vertex> {
         if self.block_type == BlockType::Air {
             return Vec::new();
         }

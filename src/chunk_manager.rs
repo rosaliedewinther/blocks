@@ -46,19 +46,8 @@ impl WorldData {
     }
     pub fn get_block(&self, pos: &GlobalBlockPos) -> Option<&Block> {
         return match self.chunks.get(&pos.get_chunk_pos()) {
-            Some(c) => {
-                /*println!(
-                    "{:?} {:?} {:?}",
-                    pos,
-                    pos.get_chunk_pos(),
-                    pos.get_local_pos()
-                );*/
-                c.get_block(&pos.get_local_pos())
-            }
-            None => {
-                println!("wrong block at: {:?}", pos);
-                None
-            }
+            Some(c) => c.get_block(&pos.get_local_pos()),
+            None => None,
         };
     }
     pub fn chunk_exists_or_generating(&self, pos: &ChunkPos) -> bool {
@@ -68,7 +57,7 @@ impl WorldData {
         return true;
     }
 
-    pub fn sides_to_render(&self, global_pos: GlobalBlockPos) -> BlockSides {
+    pub fn sides_to_render(&self, global_pos: &GlobalBlockPos) -> BlockSides {
         let mut sides = BlockSides::new();
         if self.should_render_against_block(&global_pos.get_diff(1, 0, 0)) {
             sides.right = true;
@@ -95,7 +84,7 @@ impl WorldData {
         if !self.chunks.contains_key(&real_chunk_pos) {
             return false;
         }
-        let block = self.get_block(pos);
+        let block = self.get_block(&pos);
         if block.is_some() {
             return block.unwrap().should_render_against();
         }
@@ -253,10 +242,10 @@ impl ChunkManager {
                     if block.is_some() && block.unwrap().block_type == BlockType::Air {
                         continue;
                     }
-                    let sides = self.world_data.sides_to_render(global_pos);
+                    let sides = self.world_data.sides_to_render(&global_pos);
 
                     let block: &Block = &chunk.blocks[x as usize][y as usize][z as usize];
-                    let buffers = block.get_mesh(global_pos, &sides);
+                    let buffers = block.get_mesh(&global_pos, &sides);
                     {
                         temp_vertex_buffer.extend(buffers);
                     }
