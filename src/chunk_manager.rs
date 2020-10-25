@@ -46,7 +46,15 @@ impl WorldData {
     }
     pub fn get_block(&self, pos: &GlobalBlockPos) -> Option<&Block> {
         return match self.chunks.get(&pos.get_chunk_pos()) {
-            Some(c) => c.get_block(&pos.get_local_pos()),
+            Some(c) => {
+                /*println!(
+                    "{:?} {:?} {:?}",
+                    pos,
+                    pos.get_chunk_pos(),
+                    pos.get_local_pos()
+                );*/
+                c.get_block(&pos.get_local_pos())
+            }
             None => {
                 println!("wrong block at: {:?}", pos);
                 None
@@ -60,12 +68,7 @@ impl WorldData {
         return true;
     }
 
-    pub fn sides_to_render(
-        &self,
-        global_pos: &GlobalBlockPos,
-        chunk: &Chunk,
-        chunk_pos: &ChunkPos,
-    ) -> BlockSides {
+    pub fn sides_to_render(&self, global_pos: GlobalBlockPos) -> BlockSides {
         let mut sides = BlockSides::new();
         if self.should_render_against_block(&global_pos.get_diff(1, 0, 0)) {
             sides.right = true;
@@ -145,7 +148,7 @@ impl ChunkManager {
         self.world_data.loading_chunks.insert(pos.clone());
         self.chunk_generator_requester.send(pos);
     }
-    pub fn reset_surronding_vertex_buffers(&mut self, pos: &ChunkPos) {
+    pub fn reset_surrounding_vertex_buffers(&mut self, pos: &ChunkPos) {
         if self.vertex_buffers.contains_key(&pos.get_diff(0, 0, 1)) {
             self.vertex_buffers.insert(pos.get_diff(0, 0, 1), None);
         }
@@ -228,7 +231,7 @@ impl ChunkManager {
                 let (chunk, pos) = possibly_generated_chunk.unwrap();
                 self.world_data.chunks.insert(pos.clone(), chunk);
                 self.world_data.loading_chunks.remove(&pos);
-                self.reset_surronding_vertex_buffers(&pos);
+                self.reset_surrounding_vertex_buffers(&pos);
             } else {
                 break;
             }
@@ -236,37 +239,31 @@ impl ChunkManager {
     }
 
     pub fn get_chunk_vertices(&self, chunk: &Chunk, chunk_pos: &ChunkPos) -> Vec<Vertex> {
-        let temp_vertex_buffer: Arc<Mutex<Vec<Vertex>>> =
-            Arc::new(Mutex::new(Vec::with_capacity(20000)));
-        let world_data = Box::new(&self.world_data);
-        (0..CHUNKSIZE as i32).into_par_iter().for_each(|x| {
-            for y in 0..CHUNKSIZE {
-                for z in 0..CHUNKSIZE {
+        let mut temp_vertex_buffer: Vec<Vertex> = Vec::with_capacity(20000);
+        for x in 0..CHUNKSIZE as i32 {
+            for y in 0..CHUNKSIZE as i32 {
+                for z in 0..CHUNKSIZE as i32 {
                     let global_pos = GlobalBlockPos {
-                        x: x as i32 + chunk_pos.x * CHUNKSIZE as i32,
-                        y: y as i32 + chunk_pos.y * CHUNKSIZE as i32,
-                        z: z as i32 + chunk_pos.z * CHUNKSIZE as i32,
+                        x: x + (chunk_pos.x * CHUNKSIZE as i32),
+                        y: y + (chunk_pos.y * CHUNKSIZE as i32),
+                        z: z + (chunk_pos.z * CHUNKSIZE as i32),
                     };
 
-                    let block = chunk.get_block(&global_pos.get_local_pos());
+                    let block = chunk.get_block(&LocalBlockPos { x, y, z });
                     if block.is_some() && block.unwrap().block_type == BlockType::Air {
                         continue;
                     }
-                    let sides = world_data.sides_to_render(&global_pos, chunk, chunk_pos);
+                    let sides = self.world_data.sides_to_render(global_pos);
 
-                    let block: &Block = &chunk.blocks[x as usize][y][z];
-                    let buffers = block.get_mesh(&global_pos, &sides);
+                    let block: &Block = &chunk.blocks[x as usize][y as usize][z as usize];
+                    let buffers = block.get_mesh(global_pos, &sides);
                     {
-                        temp_vertex_buffer
-                            .lock()
-                            .unwrap()
-                            .deref_mut()
-                            .extend(buffers);
+                        temp_vertex_buffer.extend(buffers);
                     }
                 }
             }
-        });
-        return temp_vertex_buffer.lock().unwrap().to_vec();
+        }
+        return temp_vertex_buffer;
     }
 
     pub fn render_chunks(
@@ -315,7 +312,7 @@ impl ChunkManager {
     ) -> bool {
         return player_pos.get_distance(chunk_pos) > max_dist;
     }
-    pub fn count_verticecs(&self) -> i64 {
+    pub fn count_vertices(&self) -> i64 {
         let mut counter = 0i64;
         for (_, buffer) in &self.vertex_buffers {
             if buffer.is_none() {

@@ -3,7 +3,7 @@ use crate::utils::{negative_floor, wrap};
 use core::ops;
 use num_traits::Pow;
 
-#[derive(Debug)]
+#[derive(Debug, Copy, Clone)]
 pub struct GlobalBlockPos {
     pub x: i32,
     pub y: i32,
@@ -49,23 +49,16 @@ impl GlobalBlockPos {
     }
     pub fn get_chunk_pos(&self) -> ChunkPos {
         ChunkPos {
-            x: negative_floor(self.x as f32 / CHUNKSIZE as f32),
-            y: negative_floor(self.y as f32 / CHUNKSIZE as f32),
-            z: negative_floor(self.z as f32 / CHUNKSIZE as f32),
+            x: (self.x as f32 / CHUNKSIZE as f32).floor() as i32,
+            y: (self.y as f32 / CHUNKSIZE as f32).floor() as i32,
+            z: (self.z as f32 / CHUNKSIZE as f32).floor() as i32,
         }
     }
     pub fn get_block_centre(&self) -> ObjectPos {
         ObjectPos {
-            x: self.x as f32 - 0.5,
-            y: self.y as f32 - 0.5,
-            z: self.z as f32 - 0.5,
-        }
-    }
-    pub fn new_from_chunk_local(chunk_pos: &ChunkPos, local_pos: &LocalBlockPos) -> GlobalBlockPos {
-        GlobalBlockPos {
-            x: chunk_pos.x * CHUNKSIZE as i32 + local_pos.x,
-            y: chunk_pos.y * CHUNKSIZE as i32 + local_pos.y,
-            z: chunk_pos.z * CHUNKSIZE as i32 + local_pos.z,
+            x: self.x as f32,
+            y: self.y as f32,
+            z: self.z as f32,
         }
     }
 }

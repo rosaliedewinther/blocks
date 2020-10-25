@@ -187,7 +187,7 @@ impl MainLoop {
                 "total vertex buffers drawn: {}",
                 world.chunk_manager.count_vertex_buffers_in_range(&player)
             ),
-            format!("total vertices: {}", world.chunk_manager.count_verticecs()),
+            format!("total vertices: {}", world.chunk_manager.count_vertices()),
         ];
         ui_renderer.draw(&draw_info, &text, &mut target);
 
