@@ -1,10 +1,10 @@
 use crate::block::{Block, BlockSides, BlockType};
-use crate::chunk::Chunk;
 use crate::constants::{CHUNKSIZE, CHUNK_UNLOAD_RADIUS, VERTICALCHUNKS};
 use crate::player::Player;
 use crate::positions::{ChunkPos, GlobalBlockPos, LocalBlockPos};
 use crate::renderer::glium::{draw_vertices, DrawInfo};
 use crate::renderer::vertex::Vertex;
+use crate::world_gen::chunk::Chunk;
 use glium::{Frame, VertexBuffer};
 use rayon::iter::ParallelIterator;
 use rayon::prelude::IntoParallelIterator;
@@ -111,7 +111,7 @@ impl ChunkManager {
             }
             let chunks = Arc::new(Mutex::new(Some(Vec::new())));
             queue_chunk_gen.into_par_iter().for_each(|pos| {
-                let chunk = Chunk::generate(&pos, &seed);
+                let chunk = Chunk::generate(&pos, seed);
                 let mut m = chunks.lock().unwrap();
                 m.as_mut().unwrap().push((chunk, pos));
             });
@@ -161,9 +161,9 @@ impl ChunkManager {
         self.load_generated_chunks();
         for (pos, chunk) in &mut self.world_data.chunks {
             break;
-            if chunk.update(dt) {
-                self.vertex_buffers.insert(pos.clone(), None);
-            }
+            //if chunk.update(dt) {
+            //    self.vertex_buffers.insert(pos.clone(), None);
+            //}
         }
     }
     pub fn gen_vertex_buffers(&mut self, draw_info: &DrawInfo, player: &Player) {
@@ -177,9 +177,9 @@ impl ChunkManager {
             if distance > player.render_distance {
                 continue;
             }
-            if !self.surrounding_chunks_exist(pos) {
-                continue;
-            }
+            //if !self.surrounding_chunks_exist(pos) {
+            //    continue;
+            //}
             let vertex_buffer_opt = self.vertex_buffers.get(pos);
             if vertex_buffer_opt.is_none() || vertex_buffer_opt.unwrap().is_none() {
                 to_render.insert((distance * 10000f32) as i32, pos.clone());

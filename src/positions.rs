@@ -27,6 +27,12 @@ pub struct ChunkPos {
     pub z: i32,
 }
 
+pub struct MetaChunkPos {
+    pub x: i32,
+    pub y: i32,
+    pub z: i32,
+}
+
 impl Eq for ChunkPos {}
 
 impl GlobalBlockPos {
@@ -76,6 +82,15 @@ impl ChunkPos {
             + ((self.z - pos.z) as f32).pow(2)) as f32)
             .sqrt()
             * CHUNKSIZE as f32
+    }
+}
+impl MetaChunkPos {
+    pub fn get_diff(&self, x_diff: i32, y_diff: i32, z_diff: i32) -> MetaChunkPos {
+        MetaChunkPos {
+            x: self.x + x_diff,
+            y: self.y + y_diff,
+            z: self.z + z_diff,
+        }
     }
 }
 

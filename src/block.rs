@@ -36,7 +36,7 @@ pub enum BlockType {
     Air,
 }
 
-#[derive(Clone)]
+#[derive(Clone, Copy)]
 pub struct Block {
     pub block_type: BlockType,
 }

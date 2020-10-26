@@ -9,14 +9,14 @@ pub struct Chunk {
 }
 
 impl Chunk {
-    pub fn generate(pos: &ChunkPos, seed: &u32) -> Chunk {
+    pub fn generate(pos: &ChunkPos, seed: u32) -> Chunk {
         let mut chunk = generate_empty_chunk();
         generate_landmass(pos, seed, &mut chunk);
         floodfill_water(&mut chunk, pos);
         return chunk;
     }
 
-    pub fn update(&mut self, dt: &f32) -> bool {
+    pub fn update(&mut self, dt: f32) -> bool {
         return false;
     }
 

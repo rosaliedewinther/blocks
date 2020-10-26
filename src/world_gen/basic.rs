@@ -1,8 +1,8 @@
 use crate::block;
 use crate::block::{Block, BlockType};
-use crate::chunk::Chunk;
 use crate::constants::{CHUNKSIZE, VERTICALCHUNKS};
 use crate::positions::ChunkPos;
+use crate::world_gen::chunk::Chunk;
 use noise::{NoiseFn, Perlin, Seedable};
 
 pub fn generate_empty_chunk() -> Chunk {
@@ -19,11 +19,11 @@ pub fn generate_empty_chunk() -> Chunk {
     return Chunk { blocks: arr };
 }
 
-pub fn generate_landmass(pos: &ChunkPos, seed: &u32, chunk: &mut Chunk) {
+pub fn generate_landmass(pos: &ChunkPos, seed: u32, chunk: &mut Chunk) {
     let perlin = Perlin::new();
     let perlin2 = Perlin::new();
-    perlin.set_seed(*seed);
-    perlin2.set_seed(*seed + i32::max_value() as u32);
+    perlin.set_seed(seed);
+    perlin2.set_seed(seed + i32::max_value() as u32);
     for x in 0..CHUNKSIZE as i32 {
         for z in 0..CHUNKSIZE as i32 {
             let perlin_input = [

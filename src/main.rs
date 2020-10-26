@@ -7,7 +7,6 @@ use crate::logger::setup_logger;
 use crate::main_loop::MainLoop;
 
 mod block;
-mod chunk;
 mod chunk_manager;
 mod constants;
 mod input;
