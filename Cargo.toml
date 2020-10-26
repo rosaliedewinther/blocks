@@ -22,6 +22,7 @@ noise="0.6"
 imgui-glium-renderer="0.5"
 imgui-winit-support = "0.5"
 rayon = "1.4"
+arr_macro = "0.1"
 
 [profile.dev]
 opt-level = 3
