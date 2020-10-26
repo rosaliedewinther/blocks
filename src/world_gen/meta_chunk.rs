@@ -1,5 +1,5 @@
 use crate::block::Block;
-use crate::constants::{METACHUNKSIZE, VERTICALCHUNKS};
+use crate::constants::{CHUNKSIZE, METACHUNKSIZE, VERTICALCHUNKS};
 use crate::io::file_reader::read_meta_chunk_from_file;
 use crate::io::file_writer::write_to_file;
 use crate::positions::{ChunkPos, GlobalBlockPos, MetaChunkPos};
@@ -60,12 +60,8 @@ impl MetaChunk {
         write_to_file(filename.as_str(), self);
     }
 
-    pub fn genz() -> [Chunk; METACHUNKSIZE] {
-        arr![generate_empty_chunk(); 32]
-    }
-
     pub fn set_block(&mut self, pos: GlobalBlockPos, block: Block) {}
-    pub fn get_block(&self, pos: GlobalBlockPos) -> Option<&Block> {
-        None
+    pub fn get_block(&self, pos: &GlobalBlockPos) -> Option<&Block> {
+        let x = pos - (self.pos.x * CHUNKSIZE * METACHUNKSIZE) / (CHUNKSIZE * METACHUNKSIZE);
     }
 }

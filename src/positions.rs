@@ -1,4 +1,4 @@
-use crate::constants::CHUNKSIZE;
+use crate::constants::{CHUNKSIZE, METACHUNKSIZE};
 use crate::utils::wrap;
 use core::ops;
 use num_traits::Pow;
@@ -66,6 +66,13 @@ impl GlobalBlockPos {
             x: self.x as f32,
             y: self.y as f32,
             z: self.z as f32,
+        }
+    }
+    pub fn get_meta_chunk_pos(&self) -> MetaChunkPos {
+        MetaChunkPos {
+            x: (self.x as f32 / (CHUNKSIZE as f32 * METACHUNKSIZE as f32)).floor() as i32,
+            y: (self.y as f32 / (CHUNKSIZE as f32 * METACHUNKSIZE as f32)).floor() as i32,
+            z: (self.z as f32 / (CHUNKSIZE as f32 * METACHUNKSIZE as f32)).floor() as i32,
         }
     }
 }

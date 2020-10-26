@@ -145,4 +145,7 @@ impl Player {
             [p[0], p[1], p[2], 1.0],
         ]
     }
+    pub fn chunk_in_view_distance(&self, pos: &ChunkPos) -> bool {
+        self.position.get_chunk().get_distance(pos) < self.render_distance
+    }
 }
