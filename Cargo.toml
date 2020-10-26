@@ -23,6 +23,9 @@ imgui-glium-renderer="0.5"
 imgui-winit-support = "0.5"
 rayon = "1.4"
 arr_macro = "0.1"
+serde = { version = "1.0", features = ["derive"] }
+serde_cbor = "0.11"
+zstd = "0.5"
 
 [profile.dev]
-opt-level = 3
+opt-level = 2

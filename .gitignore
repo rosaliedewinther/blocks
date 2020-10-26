@@ -1,4 +1,5 @@
 /target
-output.log
 /.idea
-imgui.ini
+*.log
+*.ini
+*.txt

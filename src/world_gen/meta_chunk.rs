@@ -1,20 +1,37 @@
 use crate::block::Block;
 use crate::constants::{METACHUNKSIZE, VERTICALCHUNKS};
+use crate::io::file_reader::read_meta_chunk_from_file;
+use crate::io::file_writer::write_to_file;
 use crate::positions::{ChunkPos, GlobalBlockPos, MetaChunkPos};
 use crate::world_gen::basic::{floodfill_water, generate_empty_chunk, generate_landmass};
 use crate::world_gen::chunk::Chunk;
 use arr_macro::arr;
+use serde::{Deserialize, Serialize};
 
-struct MetaChunk {
-    pub chunks: [[[Chunk; METACHUNKSIZE]; VERTICALCHUNKS]; METACHUNKSIZE],
+#[derive(Serialize, Deserialize)]
+pub struct MetaChunk {
+    pub chunks: Vec<Vec<Vec<Chunk>>>,
     pub pos: MetaChunkPos,
     pub seed: u32,
 }
 
 impl MetaChunk {
     pub fn load_or_gen(pos: MetaChunkPos, seed: u32) -> MetaChunk {
-        let mut chunks: [[[Chunk; METACHUNKSIZE]; VERTICALCHUNKS]; METACHUNKSIZE] =
-            MetaChunk::genx();
+        let loaded = MetaChunk::load_from_disk(&pos);
+        if loaded.is_some() {
+            return loaded.unwrap();
+        }
+
+        let mut chunks: Vec<Vec<Vec<Chunk>>> = Vec::with_capacity(METACHUNKSIZE);
+        for x in 0..METACHUNKSIZE {
+            chunks.push(Vec::new());
+            for y in 0..VERTICALCHUNKS {
+                chunks[x].push(Vec::new());
+                for z in 0..METACHUNKSIZE {
+                    chunks[x][y].push(generate_empty_chunk());
+                }
+            }
+        }
 
         for (x, cx) in chunks.iter_mut().enumerate() {
             for (y, cy) in cx.iter_mut().enumerate() {
@@ -33,14 +50,18 @@ impl MetaChunk {
         MetaChunk { pos, chunks, seed }
     }
 
+    pub fn load_from_disk(pos: &MetaChunkPos) -> Option<MetaChunk> {
+        let filename = format!("{}-{}-{}.txt", pos.x, pos.y, pos.z);
+        return read_meta_chunk_from_file(filename.as_str());
+    }
+
+    pub fn save_to_disk(&self) {
+        let filename = format!("{}-{}-{}.txt", self.pos.x, self.pos.y, self.pos.z);
+        write_to_file(filename.as_str(), self);
+    }
+
     pub fn genz() -> [Chunk; METACHUNKSIZE] {
         arr![generate_empty_chunk(); 32]
-    }
-    pub fn geny() -> [[Chunk; METACHUNKSIZE]; VERTICALCHUNKS] {
-        arr![MetaChunk::genz(); 4]
-    }
-    pub fn genx() -> [[[Chunk; METACHUNKSIZE]; VERTICALCHUNKS]; METACHUNKSIZE] {
-        arr![MetaChunk::geny(); 32]
     }
 
     pub fn set_block(&mut self, pos: GlobalBlockPos, block: Block) {}

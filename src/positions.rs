@@ -2,6 +2,7 @@ use crate::constants::CHUNKSIZE;
 use crate::utils::wrap;
 use core::ops;
 use num_traits::Pow;
+use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Copy, Clone)]
 pub struct GlobalBlockPos {
@@ -26,7 +27,7 @@ pub struct ChunkPos {
     pub y: i32,
     pub z: i32,
 }
-
+#[derive(Serialize, Deserialize)]
 pub struct MetaChunkPos {
     pub x: i32,
     pub y: i32,

@@ -3,7 +3,9 @@ use crate::constants::CHUNKSIZE;
 use crate::positions::{ChunkPos, LocalBlockPos};
 use crate::world_gen::basic::{floodfill_water, generate_empty_chunk, generate_landmass};
 use log::warn;
+use serde::{Deserialize, Serialize};
 
+#[derive(Serialize, Deserialize)]
 pub struct Chunk {
     pub blocks: Vec<Vec<Vec<Block>>>,
 }

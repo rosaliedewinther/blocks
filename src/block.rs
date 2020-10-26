@@ -2,6 +2,7 @@ use crate::positions::{GlobalBlockPos, ObjectPos};
 use crate::renderer::vertex::Vertex;
 use rand::distributions::{Distribution, Standard};
 use rand::Rng;
+use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Clone)]
 pub struct BlockSides {
@@ -26,7 +27,7 @@ impl BlockSides {
     }
 }
 
-#[derive(PartialEq, Clone, Copy)]
+#[derive(PartialEq, Clone, Copy, Deserialize, Serialize)]
 pub enum BlockType {
     Grass,
     Water,
@@ -36,7 +37,7 @@ pub enum BlockType {
     Air,
 }
 
-#[derive(Clone, Copy)]
+#[derive(Clone, Copy, Deserialize, Serialize)]
 pub struct Block {
     pub block_type: BlockType,
 }
