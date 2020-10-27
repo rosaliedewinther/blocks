@@ -1,16 +1,15 @@
 use crate::chunk_manager::ChunkManager;
-use crate::constants::{CHUNK_GEN_RANGE, VERTICALCHUNKS};
+use crate::constants::{METACHUNK_GEN_RANGE, VERTICALCHUNKS};
 use crate::player::Player;
-use crate::positions::ChunkPos;
+use crate::positions::MetaChunkPos;
 use crate::renderer::glium::{create_display, gen_draw_params, gen_program, DrawInfo};
 use crate::ui::UiRenderer;
-use crate::world::World;
 use glium::backend::glutin::glutin::event_loop::ControlFlow;
 use glium::glutin::event::Event;
 use glium::{glutin, Surface};
 use log::info;
 use std::collections::LinkedList;
-use std::time::{Instant, SystemTime, UNIX_EPOCH};
+use std::time::{Instant, SystemTime};
 
 pub struct MainLoop {
     //pub event_loop: EventLoop<()>,
@@ -40,20 +39,10 @@ impl MainLoop {
             draw_params: gen_draw_params(),
         };
         let mut ui_renderer = UiRenderer::init(&draw_info);
-        //MainLoop{event_loop, draw_info, ui_renderer};
 
         let mut player = Player::new();
         info!("generating chunk main");
-        let world_seed = 15u32;
-        let mut world = World {
-            chunk_manager: ChunkManager::new(world_seed),
-            seed: ((1f64
-                / SystemTime::now()
-                    .duration_since(UNIX_EPOCH)
-                    .unwrap()
-                    .as_secs_f64())
-                * 10000f64) as u32,
-        };
+        let mut chunk_manager = ChunkManager::new(10);
 
         let timer = Instant::now();
         let mut rerender_timer = Instant::now();
@@ -74,10 +63,8 @@ impl MainLoop {
             if update_timer.elapsed().as_millis() > 100 {
                 let dt = timer.elapsed().as_secs_f32();
                 update_timer = Instant::now();
-                MainLoop::on_game_tick(&dt, &mut player, &mut world);
-                world
-                    .chunk_manager
-                    .gen_vertex_buffers(&mut draw_info, &player);
+                MainLoop::on_game_tick(&dt, &mut player, &mut chunk_manager);
+                chunk_manager.gen_vertex_buffers(&mut draw_info, &player);
                 update_times.pop_front();
                 update_times.push_back(update_timer.elapsed().as_secs_f32());
             } else if 1f32 / rerender_timer.elapsed().as_secs_f32() < FRAMERATE {
@@ -90,7 +77,7 @@ impl MainLoop {
                     &update_times,
                     &draw_times,
                     &player,
-                    &world,
+                    &chunk_manager,
                     &mut draw_info,
                     &mut ui_renderer,
                 );
@@ -99,42 +86,38 @@ impl MainLoop {
             }
         });
     }
-    pub fn on_game_tick(dt: &f32, player: &mut Player, world: &mut World) {
+    pub fn on_game_tick(dt: &f32, player: &mut Player, world: &mut ChunkManager) {
         player.update(&dt);
         if player.generated_chunks_for != player.position.get_chunk() {
             MainLoop::on_player_moved_chunks(player, world);
         }
-        world.chunk_manager.update(&dt);
     }
-    pub fn on_player_moved_chunks(player: &mut Player, world: &mut World) {
+    pub fn on_player_moved_chunks(player: &mut Player, world: &mut ChunkManager) {
         let current_chunk = player.position.get_chunk();
-        for x in
-            current_chunk.x - CHUNK_GEN_RANGE as i32..current_chunk.x + CHUNK_GEN_RANGE as i32 + 1
+        for x in current_chunk.x - METACHUNK_GEN_RANGE as i32
+            ..current_chunk.x + METACHUNK_GEN_RANGE as i32 + 1
         {
             for y in 0..VERTICALCHUNKS as i32 {
-                for z in current_chunk.z - CHUNK_GEN_RANGE as i32
-                    ..current_chunk.z + CHUNK_GEN_RANGE as i32 + 1
+                for z in current_chunk.z - METACHUNK_GEN_RANGE as i32
+                    ..current_chunk.z + METACHUNK_GEN_RANGE as i32 + 1
                 {
-                    if ChunkManager::chunk_should_be_loaded(&player, &ChunkPos { x, y, z })
+                    if ChunkManager::meta_chunk_should_be_loaded(&player, &MetaChunkPos { x, y, z })
                         && !world
-                            .chunk_manager
                             .world_data
-                            .chunk_exists_or_generating(&ChunkPos { x, y, z })
+                            .chunk_exists_or_generating(&MetaChunkPos { x, y, z })
                     {
-                        world.chunk_manager.load_chunk(ChunkPos { x, y, z });
+                        world.load_chunk(MetaChunkPos { x, y, z });
                     }
                 }
             }
         }
         world
-            .chunk_manager
             .world_data
             .chunks
-            .retain(|pos, c| ChunkManager::chunk_should_be_loaded(&player, pos));
-        world
-            .chunk_manager
-            .vertex_buffers
-            .retain(|pos, c| ChunkManager::chunk_should_be_loaded(&player, pos));
+            .retain(|pos, c| ChunkManager::meta_chunk_should_be_loaded(&player, pos));
+        world.vertex_buffers.retain(|pos, c| {
+            ChunkManager::meta_chunk_should_be_loaded(&player, &pos.get_meta_chunk_pos())
+        });
         player.generated_chunks_for = player.position.get_chunk();
     }
     pub fn on_render(
@@ -142,7 +125,7 @@ impl MainLoop {
         update_buffer: &LinkedList<f32>,
         draw_buffer: &LinkedList<f32>,
         player: &Player,
-        world: &World,
+        world: &ChunkManager,
         draw_info: &mut DrawInfo,
         ui_renderer: &mut UiRenderer,
     ) {
@@ -168,25 +151,20 @@ impl MainLoop {
 
         let mut target = draw_info.display.draw();
         target.clear_color_and_depth((0.0, 0.0, 1.0, 0.0), 1.0);
-        world
-            .chunk_manager
-            .render_chunks(draw_info, &mut target, &player);
+        world.render_chunks(draw_info, &mut target, &player);
 
         let text = vec![
             format!("long up: {}", longest_update.to_string()),
             format!("ave up: {}", average_update.to_string()),
             format!("long dr: {}", longest_draw.to_string()),
             format!("ave dr: {}", average_draw.to_string()),
-            format!(
-                "total vertex buffers: {}",
-                world.chunk_manager.count_vertex_buffers()
-            ),
-            format!("total chunks: {}", world.chunk_manager.count_chunks()),
+            format!("total vertex buffers: {}", world.count_vertex_buffers()),
+            format!("total chunks: {}", world.count_chunks()),
             format!(
                 "total vertex buffers drawn: {}",
-                world.chunk_manager.count_vertex_buffers_in_range(&player)
+                world.count_vertex_buffers_in_range(&player)
             ),
-            format!("total vertices: {}", world.chunk_manager.count_vertices()),
+            format!("total vertices: {}", world.count_vertices()),
         ];
         ui_renderer.draw(&draw_info, &text, &mut target);
 

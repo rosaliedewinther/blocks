@@ -1,5 +1,5 @@
-use crate::block::{Block, BlockSides, BlockType};
-use crate::constants::{CHUNKSIZE, CHUNK_UNLOAD_RADIUS, VERTICALCHUNKS};
+use crate::block::{Block, BlockType};
+use crate::constants::{CHUNKSIZE, METACHUNK_UNLOAD_RADIUS};
 use crate::player::Player;
 use crate::positions::{ChunkPos, GlobalBlockPos, LocalBlockPos, MetaChunkPos};
 use crate::renderer::glium::{draw_vertices, DrawInfo};
@@ -7,12 +7,8 @@ use crate::renderer::vertex::Vertex;
 use crate::world::World;
 use crate::world_gen::chunk::Chunk;
 use crate::world_gen::chunk_gen_thread::ChunkGenThread;
-use crate::world_gen::meta_chunk::MetaChunk;
 use glium::{Frame, VertexBuffer};
-use rayon::iter::ParallelIterator;
-use rayon::prelude::IntoParallelIterator;
-use std::collections::{BTreeMap, HashMap, HashSet, VecDeque};
-use std::sync::{mpsc, Arc, Mutex};
+use std::collections::{BTreeMap, HashMap};
 use std::time::Instant;
 
 pub struct ChunkManager {
@@ -63,45 +59,49 @@ impl ChunkManager {
     pub fn gen_vertex_buffers(&mut self, draw_info: &DrawInfo, player: &Player) {
         let mut started = Instant::now();
         let mut to_render = BTreeMap::new();
-        for (pos, _) in &self.world_data.chunks {
-            if started.elapsed().as_secs_f32() > 0.01 {
-                break;
-            }
-            let distance = pos.get_distance(&player.position.get_chunk());
-            if distance > player.render_distance {
-                continue;
-            }
-            //if !self.surrounding_chunks_exist(pos) {
-            //    continue;
-            //}
-            let vertex_buffer_opt = self.vertex_buffers.get(pos);
-            if vertex_buffer_opt.is_none() || vertex_buffer_opt.unwrap().is_none() {
-                to_render.insert((distance * 10000f32) as i32, pos.clone());
+        for (_, meta_chunk) in &self.world_data.chunks {
+            for (_, (_, pos)) in meta_chunk.iter().enumerate() {
+                if started.elapsed().as_secs_f32() > 0.01 {
+                    break;
+                }
+                let distance = pos.get_distance(&player.position.get_chunk());
+                if distance > player.render_distance {
+                    continue;
+                }
+                //if !self.surrounding_chunks_exist(pos) {
+                //    continue;
+                //}
+                let vertex_buffer_opt = self.vertex_buffers.get(&pos);
+                if vertex_buffer_opt.is_none() || vertex_buffer_opt.unwrap().is_none() {
+                    to_render.insert((distance * 10000f32) as i32, pos.clone());
+                }
             }
         }
         started = Instant::now();
-        for pos in to_render.iter() {
+        for (_, pos) in to_render.iter() {
             if started.elapsed().as_secs_f32() > 0.01 {
                 break;
             }
-            let c = self.world_data.chunks.get(pos.1);
+
+            let c = self.world_data.chunks.get(&pos.get_meta_chunk_pos());
             if c.is_none() {
                 continue;
             }
-            let vertices = self.get_chunk_vertices(c.unwrap(), pos.1);
+            let local_pos = pos.get_local_chunk_pos();
+            let vertices = self.get_chunk_vertices(c.unwrap().get_chunk(&local_pos).unwrap(), pos);
             let vert_buffer = glium::VertexBuffer::new(&draw_info.display, &vertices).unwrap();
-            self.vertex_buffers.insert(pos.1.clone(), Some(vert_buffer));
+            self.vertex_buffers.insert(pos.clone(), Some(vert_buffer));
         }
     }
-    pub fn surrounding_chunks_exist(&self, pos: &ChunkPos) -> bool {
-        self.world_data.chunks.contains_key(&pos.get_diff(0, 0, 1))
+    /*pub fn surrounding_chunks_exist(&self, pos: &ChunkPos) -> bool {
+        self.world_data.chunks(&pos.get_diff(0, 0, 1))
             && self.world_data.chunks.contains_key(&pos.get_diff(0, 0, -1))
             && (pos.y + 2 > VERTICALCHUNKS as i32
                 || self.world_data.chunks.contains_key(&pos.get_diff(0, 1, 0)))
             && (pos.y <= 0 || self.world_data.chunks.contains_key(&pos.get_diff(0, -1, 0)))
             && self.world_data.chunks.contains_key(&pos.get_diff(1, 0, 0))
             && self.world_data.chunks.contains_key(&pos.get_diff(-1, 0, 0))
-    }
+    }*/
     pub fn load_generated_chunks(&mut self) {
         let message = self.chunk_gen_thread.get();
         if message.is_none() {
@@ -147,11 +147,11 @@ impl ChunkManager {
         player: &Player,
     ) {
         for (_, meta_chunk) in &self.world_data.chunks {
-            for (pos, _) in &self.world_data.chunks {
+            for (_, (_, pos)) in meta_chunk.iter().enumerate() {
                 if player.chunk_in_view_distance(&pos) {
                     continue;
                 }
-                let vertex_buffer_opt = self.vertex_buffers.get(pos);
+                let vertex_buffer_opt = self.vertex_buffers.get(&pos);
                 if vertex_buffer_opt.is_none() {
                     continue;
                 }
@@ -167,14 +167,14 @@ impl ChunkManager {
             }
         }
     }
-    pub fn chunk_should_be_loaded(player: &Player, pos: &ChunkPos) -> bool {
-        let player_chunk_pos = player.position.get_chunk();
-        pos.x < player_chunk_pos.x + CHUNK_UNLOAD_RADIUS as i32
-            && pos.x > player_chunk_pos.x - CHUNK_UNLOAD_RADIUS as i32
-            && pos.y < player_chunk_pos.y + CHUNK_UNLOAD_RADIUS as i32
-            && pos.y > player_chunk_pos.y - CHUNK_UNLOAD_RADIUS as i32
-            && pos.z < player_chunk_pos.z + CHUNK_UNLOAD_RADIUS as i32
-            && pos.z > player_chunk_pos.z - CHUNK_UNLOAD_RADIUS as i32
+    pub fn meta_chunk_should_be_loaded(player: &Player, pos: &MetaChunkPos) -> bool {
+        let player_chunk_pos = player.position.get_meta_chunk();
+        pos.x <= player_chunk_pos.x + METACHUNK_UNLOAD_RADIUS as i32
+            && pos.x >= player_chunk_pos.x - METACHUNK_UNLOAD_RADIUS as i32
+            && pos.y <= player_chunk_pos.y + METACHUNK_UNLOAD_RADIUS as i32
+            && pos.y >= player_chunk_pos.y - METACHUNK_UNLOAD_RADIUS as i32
+            && pos.z <= player_chunk_pos.z + METACHUNK_UNLOAD_RADIUS as i32
+            && pos.z >= player_chunk_pos.z - METACHUNK_UNLOAD_RADIUS as i32
     }
     pub fn count_vertices(&self) -> i64 {
         let mut counter = 0i64;

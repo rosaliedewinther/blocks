@@ -27,8 +27,13 @@ pub struct ChunkPos {
     pub y: i32,
     pub z: i32,
 }
-#[derive(Serialize, Deserialize)]
+#[derive(Serialize, Deserialize, Hash, PartialEq, Eq, Clone, Copy)]
 pub struct MetaChunkPos {
+    pub x: i32,
+    pub y: i32,
+    pub z: i32,
+}
+pub struct LocalChunkPos {
     pub x: i32,
     pub y: i32,
     pub z: i32,
@@ -91,6 +96,20 @@ impl ChunkPos {
             .sqrt()
             * CHUNKSIZE as f32
     }
+    pub fn get_local_chunk_pos(&self) -> LocalChunkPos {
+        LocalChunkPos {
+            x: wrap(self.x, METACHUNKSIZE as i32),
+            y: wrap(self.y, METACHUNKSIZE as i32),
+            z: wrap(self.z, METACHUNKSIZE as i32),
+        }
+    }
+    pub fn get_meta_chunk_pos(&self) -> MetaChunkPos {
+        MetaChunkPos {
+            x: self.x / METACHUNKSIZE as i32,
+            y: self.y / METACHUNKSIZE as i32,
+            z: self.z / METACHUNKSIZE as i32,
+        }
+    }
 }
 impl MetaChunkPos {
     pub fn get_diff(&self, x_diff: i32, y_diff: i32, z_diff: i32) -> MetaChunkPos {
@@ -108,6 +127,13 @@ impl ObjectPos {
             x: self.x as i32 / CHUNKSIZE as i32,
             y: self.y as i32 / CHUNKSIZE as i32,
             z: self.z as i32 / CHUNKSIZE as i32,
+        }
+    }
+    pub fn get_meta_chunk(&self) -> MetaChunkPos {
+        MetaChunkPos {
+            x: self.x as i32 / (CHUNKSIZE as i32 * METACHUNKSIZE as i32),
+            y: self.y as i32 / (CHUNKSIZE as i32 * METACHUNKSIZE as i32),
+            z: self.z as i32 / (CHUNKSIZE as i32 * METACHUNKSIZE as i32),
         }
     }
 }

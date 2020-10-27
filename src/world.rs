@@ -1,5 +1,4 @@
 use crate::block::{Block, BlockSides};
-use crate::chunk_manager::ChunkManager;
 use crate::positions::{GlobalBlockPos, MetaChunkPos};
 use crate::world_gen::meta_chunk::MetaChunk;
 use std::collections::{HashMap, HashSet};

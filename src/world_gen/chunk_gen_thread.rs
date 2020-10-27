@@ -1,10 +1,7 @@
-use crate::positions::{ChunkPos, MetaChunkPos};
-use crate::world_gen::chunk::Chunk;
+use crate::positions::MetaChunkPos;
 use crate::world_gen::meta_chunk::MetaChunk;
-use rayon::iter::IntoParallelIterator;
-use std::collections::VecDeque;
+use std::sync::mpsc;
 use std::sync::mpsc::{Receiver, Sender, TryRecvError};
-use std::sync::{mpsc, Arc, Mutex};
 use std::thread;
 use std::thread::JoinHandle;
 
@@ -25,9 +22,10 @@ impl ChunkGenThread {
                     return;
                 }
             } else {
+                let unwrapped_message = message.unwrap();
                 gen_chunk_request_done.send((
-                    MetaChunk::load_or_gen(message.unwrap().0, message.unwrap().1),
-                    message.unwrap().0,
+                    MetaChunk::load_or_gen(unwrapped_message.0, unwrapped_message.1),
+                    unwrapped_message.0,
                 ));
             }
         });
