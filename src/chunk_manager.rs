@@ -8,7 +8,11 @@ use crate::world::World;
 use crate::world_gen::chunk::Chunk;
 use crate::world_gen::chunk_gen_thread::ChunkGenThread;
 use glium::{Frame, VertexBuffer};
+use std::borrow::BorrowMut;
 use std::collections::{BTreeMap, HashMap};
+use std::convert::TryInto;
+use std::ops::DerefMut;
+use std::sync::{Arc, Mutex};
 use std::time::Instant;
 
 pub struct ChunkManager {
@@ -58,25 +62,31 @@ impl ChunkManager {
     }
     pub fn gen_vertex_buffers(&mut self, draw_info: &DrawInfo, player: &Player) {
         let mut started = Instant::now();
-        let mut to_render = BTreeMap::new();
-        for (_, meta_chunk) in &self.world_data.chunks {
-            for (_, (_, pos)) in meta_chunk.iter().enumerate() {
+        let mut to_render = Arc::new(Mutex::new(BTreeMap::new()));
+        let vertex_buffers = Box::new(&self.vertex_buffers);
+        for (_, meta_chunk) in &mut self.world_data.chunks {
+            meta_chunk.for_each(|chunk, pos| {
                 if started.elapsed().as_secs_f32() > 0.01 {
-                    break;
+                    return;
                 }
                 let distance = pos.get_distance(&player.position.get_chunk());
                 if distance > player.render_distance {
-                    continue;
+                    return;
                 }
                 //if !self.surrounding_chunks_exist(pos) {
                 //    continue;
                 //}
-                let vertex_buffer_opt = self.vertex_buffers.get(&pos);
+                let vertex_buffer_opt = vertex_buffers.get(&pos);
                 if vertex_buffer_opt.is_none() || vertex_buffer_opt.unwrap().is_none() {
-                    to_render.insert((distance * 10000f32) as i32, pos.clone());
+                    to_render
+                        .lock()
+                        .unwrap()
+                        .deref_mut()
+                        .insert((distance * 10000f32) as i32, pos.clone());
                 }
-            }
+            });
         }
+        let to_render = Arc::try_unwrap(to_render).unwrap().into_inner().unwrap();
         started = Instant::now();
         for (_, pos) in to_render.iter() {
             if started.elapsed().as_secs_f32() > 0.01 {
@@ -146,25 +156,32 @@ impl ChunkManager {
         mut frame: &mut Frame,
         player: &Player,
     ) {
+        let mut draw_info_ptr = Arc::new(Mutex::new(draw_info));
+        let mut frame_ptr = Arc::new(Mutex::new(frame));
         for (_, meta_chunk) in &self.world_data.chunks {
-            for (_, (_, pos)) in meta_chunk.iter().enumerate() {
-                if player.chunk_in_view_distance(&pos) {
-                    continue;
+            meta_chunk.for_each(|chunk, pos| {
+                if !player.chunk_in_view_distance(&pos) {
+                    return;
                 }
                 let vertex_buffer_opt = self.vertex_buffers.get(&pos);
                 if vertex_buffer_opt.is_none() {
-                    continue;
+                    return;
                 }
                 let vertex_buffer = vertex_buffer_opt.unwrap();
                 if vertex_buffer.is_none() {
-                    continue;
+                    return;
                 }
                 let real_vertex_buffer = vertex_buffer.as_ref().unwrap();
                 if real_vertex_buffer.len() == 0 {
-                    continue;
+                    return;
                 }
-                draw_vertices(&mut draw_info, &mut frame, real_vertex_buffer, player);
-            }
+                draw_vertices(
+                    &mut draw_info_ptr.lock().unwrap(),
+                    &mut frame_ptr.lock().unwrap(),
+                    real_vertex_buffer,
+                    player,
+                );
+            });
         }
     }
     pub fn meta_chunk_should_be_loaded(player: &Player, pos: &MetaChunkPos) -> bool {

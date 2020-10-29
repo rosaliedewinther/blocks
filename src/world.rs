@@ -55,7 +55,7 @@ impl World {
     pub fn should_render_against_block(&self, pos: &GlobalBlockPos) -> bool {
         let real_chunk_pos = pos.get_meta_chunk_pos();
         if !self.chunks.contains_key(&real_chunk_pos) {
-            return false;
+            //return false;
         }
         let block = self.get_block(&pos);
         if block.is_some() {

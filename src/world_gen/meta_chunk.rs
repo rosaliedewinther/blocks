@@ -6,6 +6,7 @@ use crate::positions::{ChunkPos, GlobalBlockPos, LocalChunkPos, MetaChunkPos};
 use crate::world_gen::basic::{floodfill_water, generate_empty_chunk, generate_landmass};
 use crate::world_gen::chunk::Chunk;
 use serde::{Deserialize, Serialize};
+use std::borrow::BorrowMut;
 
 #[derive(Serialize, Deserialize)]
 pub struct MetaChunk {
@@ -59,59 +60,54 @@ impl MetaChunk {
         write_to_file(filename.as_str(), self);
     }
 
-    pub fn set_block(&mut self, pos: &GlobalBlockPos, block: Block) {}
-    pub fn get_block(&self, pos: &GlobalBlockPos) -> Option<&Block> {
-        None
-    }
-    /*pub fn iter(self) -> MetaChunkIterator {
-        let pos = LocalChunkPos { x: 0, y: 0, z: 0 };
-        MetaChunkIterator {
-            meta_chunk: self,
-            pos,
+    pub fn set_block(&mut self, pos: &GlobalBlockPos, block: Block) {
+        let chunk_pos = pos.get_local_chunk();
+        let chunk = self.get_chunk_mut(&chunk_pos);
+        match chunk {
+            Some(c) => c.set_block(block, &pos.get_local_pos()),
+            None => {}
         }
-    }*/
-    pub fn for_each(&mut self, f: &dyn Fn(Chunk, ChunkPos)) {
+    }
+    pub fn get_block(&self, pos: &GlobalBlockPos) -> Option<&Block> {
+        let chunk_pos = pos.get_local_chunk();
+        let chunk = self.get_chunk(&chunk_pos);
+        match chunk {
+            Some(c) => c.get_block(&pos.get_local_pos()),
+            None => None,
+        }
+    }
+    pub fn for_each_mut(&mut self, f: impl Fn(&mut Chunk, ChunkPos)) {
         for x in 0..METACHUNKSIZE as i32 {
             for y in 0..VERTICALCHUNKS as i32 {
                 for z in 0..METACHUNKSIZE as i32 {
-                    f.call(self.get_chunk(&LocalChunkPos { x, y, z }));
+                    let pos = ChunkPos {
+                        x: self.pos.x * METACHUNKSIZE as i32 + x,
+                        y,
+                        z: self.pos.z * METACHUNKSIZE as i32 + z,
+                    };
+                    f.call((self.get_chunk_mut(&LocalChunkPos { x, y, z }).unwrap(), pos));
                 }
             }
         }
+    }
+    pub fn for_each(&self, f: impl Fn(&Chunk, ChunkPos)) {
+        for x in 0..METACHUNKSIZE as i32 {
+            for y in 0..VERTICALCHUNKS as i32 {
+                for z in 0..METACHUNKSIZE as i32 {
+                    let pos = ChunkPos {
+                        x: self.pos.x * METACHUNKSIZE as i32 + x,
+                        y,
+                        z: self.pos.z * METACHUNKSIZE as i32 + z,
+                    };
+                    f.call((self.get_chunk(&LocalChunkPos { x, y, z }).unwrap(), pos));
+                }
+            }
+        }
+    }
+    pub fn get_chunk_mut(&mut self, pos: &LocalChunkPos) -> Option<&mut Chunk> {
+        return Some(self.chunks[pos.x as usize][pos.y as usize][pos.z as usize].borrow_mut());
     }
     pub fn get_chunk(&self, pos: &LocalChunkPos) -> Option<&Chunk> {
         return Some(&self.chunks[pos.x as usize][pos.y as usize][pos.z as usize]);
     }
 }
-/*
-pub struct MetaChunkIterator {
-    pub meta_chunk: MetaChunk,
-    pub pos: LocalChunkPos,
-}
-
-impl Iterator for MetaChunkIterator {
-    type Item = (Chunk, ChunkPos);
-
-    fn next(&mut self) -> Option<(&Chunk, ChunkPos)> {
-        let &chunk =
-            &self.meta_chunk.chunks[self.pos.x as usize][self.pos.y as usize][self.pos.z as usize];
-        self.pos.x += 1;
-        if self.pos.x == METACHUNKSIZE as i32 {
-            self.pos.x = 0;
-            self.pos.y += 1;
-            if self.pos.y == VERTICALCHUNKS as i32 {
-                self.pos.y = 0;
-                self.pos.z += 1;
-                if self.pos.z == METACHUNKSIZE as i32 {
-                    return None;
-                }
-            }
-        }
-        let pos = ChunkPos {
-            x: self.pos.x + self.meta_chunk.pos.x * METACHUNKSIZE as i32,
-            y: self.pos.y + self.meta_chunk.pos.x * METACHUNKSIZE as i32,
-            z: self.pos.z + self.meta_chunk.pos.x * METACHUNKSIZE as i32,
-        };
-        return Some((&chunk, pos));
-    }
-}*/

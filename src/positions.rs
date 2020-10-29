@@ -27,12 +27,13 @@ pub struct ChunkPos {
     pub y: i32,
     pub z: i32,
 }
-#[derive(Serialize, Deserialize, Hash, PartialEq, Eq, Clone, Copy)]
+#[derive(Serialize, Deserialize, Hash, PartialEq, Eq, Clone, Copy, Debug)]
 pub struct MetaChunkPos {
     pub x: i32,
     pub y: i32,
     pub z: i32,
 }
+
 pub struct LocalChunkPos {
     pub x: i32,
     pub y: i32,
@@ -42,6 +43,13 @@ pub struct LocalChunkPos {
 impl Eq for ChunkPos {}
 
 impl GlobalBlockPos {
+    pub fn get_local_chunk(&self) -> LocalChunkPos {
+        LocalChunkPos {
+            x: (self.x as f32 / (CHUNKSIZE as f32 * METACHUNKSIZE as f32)).floor() as i32,
+            y: (self.y as f32 / (CHUNKSIZE as f32 * METACHUNKSIZE as f32)).floor() as i32,
+            z: (self.z as f32 / (CHUNKSIZE as f32 * METACHUNKSIZE as f32)).floor() as i32,
+        }
+    }
     pub fn get_diff(&self, x_diff: i32, y_diff: i32, z_diff: i32) -> GlobalBlockPos {
         GlobalBlockPos {
             x: self.x + x_diff,

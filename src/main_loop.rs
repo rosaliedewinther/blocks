@@ -88,12 +88,13 @@ impl MainLoop {
     }
     pub fn on_game_tick(dt: &f32, player: &mut Player, world: &mut ChunkManager) {
         player.update(&dt);
+        world.load_generated_chunks();
         if player.generated_chunks_for != player.position.get_chunk() {
             MainLoop::on_player_moved_chunks(player, world);
         }
     }
     pub fn on_player_moved_chunks(player: &mut Player, world: &mut ChunkManager) {
-        let current_chunk = player.position.get_chunk();
+        let current_chunk = player.position.get_meta_chunk();
         for x in current_chunk.x - METACHUNK_GEN_RANGE as i32
             ..current_chunk.x + METACHUNK_GEN_RANGE as i32 + 1
         {

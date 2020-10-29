@@ -17,16 +17,19 @@ impl ChunkGenThread {
         let (gen_chunk_request_done, gen_chunk_receiver_done) = mpsc::channel();
         let chunk_gen_thread = thread::spawn(move || loop {
             let message: Result<(MetaChunkPos, u32), TryRecvError> = gen_chunk_receiver.try_recv();
-            if message.is_err() {
-                if message.err().unwrap() == TryRecvError::Disconnected {
-                    return;
+            match message {
+                Ok((pos, seed)) => {
+                    println!("started generation for {:?}", pos);
+                    gen_chunk_request_done.send((MetaChunk::load_or_gen(pos, seed), pos));
                 }
+                Err(e) => {
+                    if e == TryRecvError::Disconnected {
+                        return;
+                    }
+                }
+            }
+            if message.is_err() {
             } else {
-                let unwrapped_message = message.unwrap();
-                gen_chunk_request_done.send((
-                    MetaChunk::load_or_gen(unwrapped_message.0, unwrapped_message.1),
-                    unwrapped_message.0,
-                ));
             }
         });
         return ChunkGenThread {
@@ -40,10 +43,9 @@ impl ChunkGenThread {
     }
     pub fn get(&self) -> Option<(MetaChunk, MetaChunkPos)> {
         let message = self.chunk_generator_receiver.try_recv();
-        if message.is_ok() {
-            return Some(message.unwrap());
-        } else {
-            return None;
+        match message {
+            Ok(m) => Some(m),
+            Err(e) => None,
         }
     }
 }

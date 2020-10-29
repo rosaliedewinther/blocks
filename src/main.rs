@@ -1,3 +1,4 @@
+#![feature(fn_traits)]
 #[macro_use]
 extern crate glium;
 
@@ -30,18 +31,8 @@ fn main() {
 
     info!("starting up");
 
-    let started = Instant::now();
-    let c = MetaChunk::load_or_gen(MetaChunkPos { x: 0, y: 0, z: 0 }, 0);
-    println!("load: {}", started.elapsed().as_secs_f32());
-    sleep(Duration::new(10, 0));
-    let started = Instant::now();
-    c.save_to_disk();
-    println!("save: {}", started.elapsed().as_secs_f32());
+    let mut main_loop = MainLoop::new();
+    main_loop.run();
 
-    return;
-
-    //let mut main_loop = MainLoop::new();
-    //main_loop.run();
-
-    //println!("done dumping");
+    println!("done dumping");
 }
