@@ -1,5 +1,5 @@
-use crate::constants::{CHUNKSIZE, METACHUNKSIZE};
-use crate::utils::wrap;
+use crate::constants::{CHUNKSIZE, METACHUNKSIZE, VERTICALCHUNKS};
+use crate::utils::{wrap, wrapf};
 use core::ops;
 use num_traits::Pow;
 use serde::{Deserialize, Serialize};
@@ -30,10 +30,9 @@ pub struct ChunkPos {
 #[derive(Serialize, Deserialize, Hash, PartialEq, Eq, Clone, Copy, Debug)]
 pub struct MetaChunkPos {
     pub x: i32,
-    pub y: i32,
     pub z: i32,
 }
-
+#[derive(Debug)]
 pub struct LocalChunkPos {
     pub x: i32,
     pub y: i32,
@@ -45,9 +44,9 @@ impl Eq for ChunkPos {}
 impl GlobalBlockPos {
     pub fn get_local_chunk(&self) -> LocalChunkPos {
         LocalChunkPos {
-            x: (self.x as f32 / (CHUNKSIZE as f32 * METACHUNKSIZE as f32)).floor() as i32,
-            y: (self.y as f32 / (CHUNKSIZE as f32 * METACHUNKSIZE as f32)).floor() as i32,
-            z: (self.z as f32 / (CHUNKSIZE as f32 * METACHUNKSIZE as f32)).floor() as i32,
+            x: wrapf(self.x as f32 / (CHUNKSIZE as f32), METACHUNKSIZE as f32).floor() as i32,
+            y: wrapf(self.y as f32 / (CHUNKSIZE as f32), VERTICALCHUNKS as f32).floor() as i32,
+            z: wrapf(self.z as f32 / (CHUNKSIZE as f32), METACHUNKSIZE as f32).floor() as i32,
         }
     }
     pub fn get_diff(&self, x_diff: i32, y_diff: i32, z_diff: i32) -> GlobalBlockPos {
@@ -56,9 +55,6 @@ impl GlobalBlockPos {
             y: self.y + y_diff,
             z: self.z + z_diff,
         }
-    }
-    pub fn new() -> GlobalBlockPos {
-        GlobalBlockPos { x: 0, y: 0, z: 0 }
     }
     pub fn get_local_pos(&self) -> LocalBlockPos {
         LocalBlockPos {
@@ -84,7 +80,6 @@ impl GlobalBlockPos {
     pub fn get_meta_chunk_pos(&self) -> MetaChunkPos {
         MetaChunkPos {
             x: (self.x as f32 / (CHUNKSIZE as f32 * METACHUNKSIZE as f32)).floor() as i32,
-            y: (self.y as f32 / (CHUNKSIZE as f32 * METACHUNKSIZE as f32)).floor() as i32,
             z: (self.z as f32 / (CHUNKSIZE as f32 * METACHUNKSIZE as f32)).floor() as i32,
         }
     }
@@ -114,16 +109,14 @@ impl ChunkPos {
     pub fn get_meta_chunk_pos(&self) -> MetaChunkPos {
         MetaChunkPos {
             x: self.x / METACHUNKSIZE as i32,
-            y: self.y / METACHUNKSIZE as i32,
             z: self.z / METACHUNKSIZE as i32,
         }
     }
 }
 impl MetaChunkPos {
-    pub fn get_diff(&self, x_diff: i32, y_diff: i32, z_diff: i32) -> MetaChunkPos {
+    pub fn get_diff(&self, x_diff: i32, z_diff: i32) -> MetaChunkPos {
         MetaChunkPos {
             x: self.x + x_diff,
-            y: self.y + y_diff,
             z: self.z + z_diff,
         }
     }
@@ -140,7 +133,6 @@ impl ObjectPos {
     pub fn get_meta_chunk(&self) -> MetaChunkPos {
         MetaChunkPos {
             x: self.x as i32 / (CHUNKSIZE as i32 * METACHUNKSIZE as i32),
-            y: self.y as i32 / (CHUNKSIZE as i32 * METACHUNKSIZE as i32),
             z: self.z as i32 / (CHUNKSIZE as i32 * METACHUNKSIZE as i32),
         }
     }

@@ -40,9 +40,9 @@ impl MainLoop {
         };
         let mut ui_renderer = UiRenderer::init(&draw_info);
 
-        let mut player = Player::new();
         info!("generating chunk main");
         let mut chunk_manager = ChunkManager::new(10);
+        let mut player = Player::new();
 
         let timer = Instant::now();
         let mut rerender_timer = Instant::now();
@@ -93,34 +93,7 @@ impl MainLoop {
             MainLoop::on_player_moved_chunks(player, world);
         }
     }
-    pub fn on_player_moved_chunks(player: &mut Player, world: &mut ChunkManager) {
-        let current_chunk = player.position.get_meta_chunk();
-        for x in current_chunk.x - METACHUNK_GEN_RANGE as i32
-            ..current_chunk.x + METACHUNK_GEN_RANGE as i32 + 1
-        {
-            for y in 0..VERTICALCHUNKS as i32 {
-                for z in current_chunk.z - METACHUNK_GEN_RANGE as i32
-                    ..current_chunk.z + METACHUNK_GEN_RANGE as i32 + 1
-                {
-                    if ChunkManager::meta_chunk_should_be_loaded(&player, &MetaChunkPos { x, y, z })
-                        && !world
-                            .world_data
-                            .chunk_exists_or_generating(&MetaChunkPos { x, y, z })
-                    {
-                        world.load_chunk(MetaChunkPos { x, y, z });
-                    }
-                }
-            }
-        }
-        world
-            .world_data
-            .chunks
-            .retain(|pos, c| ChunkManager::meta_chunk_should_be_loaded(&player, pos));
-        world.vertex_buffers.retain(|pos, c| {
-            ChunkManager::meta_chunk_should_be_loaded(&player, &pos.get_meta_chunk_pos())
-        });
-        player.generated_chunks_for = player.position.get_chunk();
-    }
+
     pub fn on_render(
         dt: &f32,
         update_buffer: &LinkedList<f32>,
@@ -171,7 +144,32 @@ impl MainLoop {
 
         target.finish().unwrap();
     }
-
+    pub fn on_player_moved_chunks(player: &mut Player, world: &mut ChunkManager) {
+        let current_chunk = player.position.get_meta_chunk();
+        for x in current_chunk.x - METACHUNK_GEN_RANGE as i32 - 1
+            ..current_chunk.x + METACHUNK_GEN_RANGE as i32 + 1
+        {
+            for z in current_chunk.z - METACHUNK_GEN_RANGE as i32 - 1
+                ..current_chunk.z + METACHUNK_GEN_RANGE as i32 + 1
+            {
+                if ChunkManager::meta_chunk_should_be_loaded(&player, &MetaChunkPos { x, z })
+                    && !world
+                        .world_data
+                        .chunk_exists_or_generating(&MetaChunkPos { x, z })
+                {
+                    world.load_chunk(MetaChunkPos { x, z });
+                }
+            }
+        }
+        world
+            .world_data
+            .chunks
+            .retain(|pos, c| ChunkManager::meta_chunk_should_be_loaded(&player, pos));
+        world.vertex_buffers.retain(|pos, c| {
+            ChunkManager::meta_chunk_should_be_loaded(&player, &pos.get_meta_chunk_pos())
+        });
+        player.generated_chunks_for = player.position.get_chunk();
+    }
     pub fn event_handler(event: Event<()>, control_flow: &mut ControlFlow) {
         *control_flow = match event {
             glutin::event::Event::WindowEvent { event, .. } => match event {

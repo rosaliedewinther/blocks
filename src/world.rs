@@ -1,5 +1,7 @@
 use crate::block::{Block, BlockSides};
+use crate::player::Player;
 use crate::positions::{GlobalBlockPos, MetaChunkPos};
+use crate::world_gen::chunk_loader::ChunkLoader;
 use crate::world_gen::meta_chunk::MetaChunk;
 use std::collections::{HashMap, HashSet};
 
@@ -7,6 +9,8 @@ pub struct World {
     pub chunks: HashMap<MetaChunkPos, MetaChunk>,
     pub loading_chunks: HashSet<MetaChunkPos>,
     pub world_seed: u32,
+    pub chunk_loader: ChunkLoader,
+    pub players: HashMap<String, Player>,
 }
 
 impl World {
@@ -15,7 +19,12 @@ impl World {
             chunks: HashMap::new(),
             loading_chunks: HashSet::new(),
             world_seed: seed,
+            chunk_loader: ChunkLoader::new(),
+            players: HashMap::new(),
         }
+    }
+    pub fn add_player(&mut self, name: String, player: Player) {
+        self.players.insert(name, player);
     }
     pub fn get_block(&self, pos: &GlobalBlockPos) -> Option<&Block> {
         return match self.chunks.get(&pos.get_meta_chunk_pos()) {
@@ -55,12 +64,12 @@ impl World {
     pub fn should_render_against_block(&self, pos: &GlobalBlockPos) -> bool {
         let real_chunk_pos = pos.get_meta_chunk_pos();
         if !self.chunks.contains_key(&real_chunk_pos) {
-            //return false;
+            return false;
         }
         let block = self.get_block(&pos);
-        if block.is_some() {
-            return block.unwrap().should_render_against();
+        match block {
+            Some(b) => b.should_render_against(),
+            None => true,
         }
-        return true;
     }
 }

@@ -55,3 +55,10 @@ pub fn wrap(val: i32, max: i32) -> i32 {
         val % max
     }
 }
+pub fn wrapf(val: f32, max: f32) -> f32 {
+    if val < 0f32 {
+        ((val % max) + max) % max
+    } else {
+        val % max
+    }
+}

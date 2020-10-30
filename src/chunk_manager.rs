@@ -1,5 +1,5 @@
 use crate::block::{Block, BlockType};
-use crate::constants::{CHUNKSIZE, METACHUNK_UNLOAD_RADIUS};
+use crate::constants::{CHUNKSIZE, METACHUNK_GEN_RANGE, METACHUNK_UNLOAD_RADIUS};
 use crate::player::Player;
 use crate::positions::{ChunkPos, GlobalBlockPos, LocalBlockPos, MetaChunkPos};
 use crate::renderer::glium::{draw_vertices, DrawInfo};
@@ -8,7 +8,7 @@ use crate::world::World;
 use crate::world_gen::chunk::Chunk;
 use crate::world_gen::chunk_gen_thread::ChunkGenThread;
 use glium::{Frame, VertexBuffer};
-use std::borrow::BorrowMut;
+use std::borrow::{Borrow, BorrowMut};
 use std::collections::{BTreeMap, HashMap};
 use std::convert::TryInto;
 use std::ops::DerefMut;
@@ -59,10 +59,49 @@ impl ChunkManager {
     }
     pub fn update(&mut self, dt: &f32) {
         self.load_generated_chunks();
+        /*let player = self.world_data.players.get("deJasper36").unwrap();
+        if player.generated_chunks_for != player.position.get_chunk() {
+            let to_load = self.on_player_moved_chunks(player);
+            for load in to_load.into_iter() {
+                self.load_chunk(load);
+            }
+            self.world_data
+                .players
+                .get_mut("deJasper36")
+                .unwrap()
+                .generated_chunks_for = player.position.get_chunk();
+        }*/
     }
+    /*pub fn on_player_moved_chunks(&self, player: &Player) -> Vec<MetaChunkPos> {
+        let mut to_load = Vec::new();
+        let current_chunk = player.position.get_meta_chunk();
+        for x in current_chunk.x - METACHUNK_GEN_RANGE as i32 - 1
+            ..current_chunk.x + METACHUNK_GEN_RANGE as i32 + 1
+        {
+            for z in current_chunk.z - METACHUNK_GEN_RANGE as i32 - 1
+                ..current_chunk.z + METACHUNK_GEN_RANGE as i32 + 1
+            {
+                if ChunkManager::meta_chunk_should_be_loaded(&player, &MetaChunkPos { x, z })
+                    && !self
+                        .world_data
+                        .chunk_exists_or_generating(&MetaChunkPos { x, z })
+                {
+                    to_load.push(MetaChunkPos { x, z })
+                }
+            }
+        }
+        //world
+        //    .chunks
+        //    .retain(|pos, c| ChunkManager::meta_chunk_should_be_loaded(&player, pos));
+        //vertex_buffers.retain(|pos, c| {
+        //    ChunkManager::meta_chunk_should_be_loaded(&player, &pos.get_meta_chunk_pos())
+        //});
+
+        return to_load;
+    }*/
     pub fn gen_vertex_buffers(&mut self, draw_info: &DrawInfo, player: &Player) {
         let mut started = Instant::now();
-        let mut to_render = Arc::new(Mutex::new(BTreeMap::new()));
+        let to_render = Arc::new(Mutex::new(BTreeMap::new()));
         let vertex_buffers = Box::new(&self.vertex_buffers);
         for (_, meta_chunk) in &mut self.world_data.chunks {
             meta_chunk.for_each(|chunk, pos| {
@@ -103,23 +142,15 @@ impl ChunkManager {
             self.vertex_buffers.insert(pos.clone(), Some(vert_buffer));
         }
     }
-    /*pub fn surrounding_chunks_exist(&self, pos: &ChunkPos) -> bool {
-        self.world_data.chunks(&pos.get_diff(0, 0, 1))
-            && self.world_data.chunks.contains_key(&pos.get_diff(0, 0, -1))
-            && (pos.y + 2 > VERTICALCHUNKS as i32
-                || self.world_data.chunks.contains_key(&pos.get_diff(0, 1, 0)))
-            && (pos.y <= 0 || self.world_data.chunks.contains_key(&pos.get_diff(0, -1, 0)))
-            && self.world_data.chunks.contains_key(&pos.get_diff(1, 0, 0))
-            && self.world_data.chunks.contains_key(&pos.get_diff(-1, 0, 0))
-    }*/
     pub fn load_generated_chunks(&mut self) {
         let message = self.chunk_gen_thread.get();
-        if message.is_none() {
-            return;
+        match message {
+            Some((chunk, pos)) => {
+                self.world_data.loading_chunks.remove(&pos);
+                self.world_data.chunks.insert(pos, chunk);
+            }
+            None => return,
         }
-        let (chunk, pos) = message.unwrap();
-        self.world_data.loading_chunks.remove(&pos);
-        self.world_data.chunks.insert(pos, chunk);
     }
 
     pub fn get_chunk_vertices(&self, chunk: &Chunk, chunk_pos: &ChunkPos) -> Vec<Vertex> {
@@ -188,8 +219,6 @@ impl ChunkManager {
         let player_chunk_pos = player.position.get_meta_chunk();
         pos.x <= player_chunk_pos.x + METACHUNK_UNLOAD_RADIUS as i32
             && pos.x >= player_chunk_pos.x - METACHUNK_UNLOAD_RADIUS as i32
-            && pos.y <= player_chunk_pos.y + METACHUNK_UNLOAD_RADIUS as i32
-            && pos.y >= player_chunk_pos.y - METACHUNK_UNLOAD_RADIUS as i32
             && pos.z <= player_chunk_pos.z + METACHUNK_UNLOAD_RADIUS as i32
             && pos.z >= player_chunk_pos.z - METACHUNK_UNLOAD_RADIUS as i32
     }

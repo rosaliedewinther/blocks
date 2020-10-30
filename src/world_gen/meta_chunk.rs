@@ -51,12 +51,12 @@ impl MetaChunk {
     }
 
     pub fn load_from_disk(pos: &MetaChunkPos) -> Option<MetaChunk> {
-        let filename = format!("{}-{}-{}.txt", pos.x, pos.y, pos.z);
+        let filename = format!("{}-{}.txt", pos.x, pos.z);
         return read_meta_chunk_from_file(filename.as_str());
     }
 
     pub fn save_to_disk(&self) {
-        let filename = format!("{}-{}-{}.txt", self.pos.x, self.pos.y, self.pos.z);
+        let filename = format!("{}-{}.txt", self.pos.x, self.pos.z);
         write_to_file(filename.as_str(), self);
     }
 
