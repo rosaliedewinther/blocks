@@ -1,4 +1,3 @@
-#![feature(fn_traits)]
 #[macro_use]
 extern crate glium;
 
@@ -11,6 +10,7 @@ use crate::world_gen::meta_chunk::MetaChunk;
 use std::thread::sleep;
 use std::time::{Duration, Instant};
 
+mod algorithms;
 mod block;
 mod chunk_manager;
 mod constants;

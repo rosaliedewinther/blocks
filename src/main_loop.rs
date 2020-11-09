@@ -139,6 +139,10 @@ impl MainLoop {
                 world.count_vertex_buffers_in_range(&player)
             ),
             format!("total vertices: {}", world.count_vertices()),
+            format!(
+                "x: {} y: {} z: {}",
+                player.position.x as i32, player.position.y as i32, player.position.z as i32
+            ),
         ];
         ui_renderer.draw(&draw_info, &text, &mut target);
 

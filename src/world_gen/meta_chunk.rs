@@ -1,5 +1,6 @@
-use crate::block::Block;
-use crate::constants::{METACHUNKSIZE, VERTICALCHUNKS};
+use crate::algorithms::bfs_world::bfs_world_air;
+use crate::block::{Block, BlockType};
+use crate::constants::{CHUNKSIZE, METACHUNKSIZE, VERTICALCHUNKS};
 use crate::io::file_reader::read_meta_chunk_from_file;
 use crate::io::file_writer::write_to_file;
 use crate::positions::{ChunkPos, GlobalBlockPos, LocalChunkPos, MetaChunkPos};
@@ -47,7 +48,31 @@ impl MetaChunk {
             }
         }
 
-        MetaChunk { pos, chunks, seed }
+        let mut chunk = MetaChunk { pos, chunks, seed };
+
+        let structure_x = pos.x * METACHUNKSIZE as i32 + 20;
+        let structure_z = pos.z * METACHUNKSIZE as i32 + 20;
+        let structure_y = chunk.first_open_y(structure_x, structure_z);
+        let global_center_pos = GlobalBlockPos {
+            x: structure_x,
+            y: structure_y,
+            z: structure_y,
+        };
+        bfs_world_air(&global_center_pos, 10, &mut chunk, |b| {
+            Block::new(BlockType::Sand)
+        });
+
+        return chunk;
+    }
+    pub fn first_open_y(&self, x: i32, z: i32) -> i32 {
+        let mut y = VERTICALCHUNKS as i32 * CHUNKSIZE as i32 - 1;
+        while let Some(b) = self.get_block(&GlobalBlockPos { x, y, z }) {
+            if b.block_type != BlockType::Air {
+                return y + 1;
+            }
+            y -= 1;
+        }
+        return y;
     }
 
     pub fn load_from_disk(pos: &MetaChunkPos) -> Option<MetaChunk> {
@@ -85,7 +110,7 @@ impl MetaChunk {
                         y,
                         z: self.pos.z * METACHUNKSIZE as i32 + z,
                     };
-                    f.call((self.get_chunk_mut(&LocalChunkPos { x, y, z }).unwrap(), pos));
+                    f(self.get_chunk_mut(&LocalChunkPos { x, y, z }).unwrap(), pos);
                 }
             }
         }
@@ -99,7 +124,7 @@ impl MetaChunk {
                         y,
                         z: self.pos.z * METACHUNKSIZE as i32 + z,
                     };
-                    f.call((self.get_chunk(&LocalChunkPos { x, y, z }).unwrap(), pos));
+                    f(self.get_chunk(&LocalChunkPos { x, y, z }).unwrap(), pos);
                 }
             }
         }

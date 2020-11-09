@@ -4,34 +4,40 @@ use core::ops;
 use num_traits::Pow;
 use serde::{Deserialize, Serialize};
 
-#[derive(Debug, Copy, Clone)]
+#[derive(Debug, Copy, Clone, Eq, PartialEq, Hash)]
 pub struct GlobalBlockPos {
     pub x: i32,
     pub y: i32,
     pub z: i32,
 }
+//block pos within a chunk
 #[derive(Hash, PartialEq, Eq, Debug, Clone)]
 pub struct LocalBlockPos {
     pub x: i32,
     pub y: i32,
     pub z: i32,
 }
+//position of entities
+#[derive(Debug)]
 pub struct ObjectPos {
     pub x: f32,
     pub y: f32,
     pub z: f32,
 }
+//position of global chunk
 #[derive(Hash, PartialEq, Debug, Clone)]
 pub struct ChunkPos {
     pub x: i32,
     pub y: i32,
     pub z: i32,
 }
+//meta chunk location
 #[derive(Serialize, Deserialize, Hash, PartialEq, Eq, Clone, Copy, Debug)]
 pub struct MetaChunkPos {
     pub x: i32,
     pub z: i32,
 }
+//chunk pos within a metachunk
 #[derive(Debug)]
 pub struct LocalChunkPos {
     pub x: i32,
