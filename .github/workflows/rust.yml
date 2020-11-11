@@ -16,7 +16,7 @@ jobs:
 
     steps:
     - name: install_deps
-      run: sudo apt install xdotool
+      run: sudo apt install xdo xdotool
     - uses: actions/checkout@v2
     - name: Build
       run: cargo build --verbose
