@@ -21,6 +21,7 @@ mod main_loop;
 mod player;
 mod positions;
 mod renderer;
+mod structures;
 mod ui;
 mod utils;
 mod world;

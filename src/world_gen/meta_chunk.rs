@@ -4,6 +4,7 @@ use crate::constants::{CHUNKSIZE, METACHUNKSIZE, VERTICALCHUNKS};
 use crate::io::file_reader::read_meta_chunk_from_file;
 use crate::io::file_writer::write_to_file;
 use crate::positions::{ChunkPos, GlobalBlockPos, LocalChunkPos, MetaChunkPos};
+use crate::structures::square::place_square;
 use crate::world_gen::basic::{floodfill_water, generate_empty_chunk, generate_landmass};
 use crate::world_gen::chunk::Chunk;
 use serde::{Deserialize, Serialize};
@@ -61,6 +62,16 @@ impl MetaChunk {
         bfs_world_air(&global_center_pos, 10, &mut chunk, |b| {
             Block::new(BlockType::Sand)
         });
+
+        let structure_x = pos.x * METACHUNKSIZE as i32 + 40;
+        let structure_z = pos.z * METACHUNKSIZE as i32 + 40;
+        let structure_y = chunk.first_open_y(structure_x, structure_z);
+        let global_center_pos = GlobalBlockPos {
+            x: structure_x,
+            y: structure_y,
+            z: structure_y,
+        };
+        place_square(&global_center_pos, 10, &mut chunk);
 
         return chunk;
     }
