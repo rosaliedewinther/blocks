@@ -1,5 +1,5 @@
 use crate::chunk_manager::ChunkManager;
-use crate::constants::{METACHUNK_GEN_RANGE, VERTICALCHUNKS};
+use crate::constants::METACHUNK_GEN_RANGE;
 use crate::player::Player;
 use crate::positions::MetaChunkPos;
 use crate::renderer::glium::{create_display, gen_draw_params, gen_program, DrawInfo};
@@ -95,7 +95,7 @@ impl MainLoop {
     }
 
     pub fn on_render(
-        dt: &f32,
+        _dt: &f32,
         update_buffer: &LinkedList<f32>,
         draw_buffer: &LinkedList<f32>,
         player: &Player,
@@ -144,7 +144,11 @@ impl MainLoop {
                 player.position.x as i32, player.position.y as i32, player.position.z as i32
             ),
         ];
-        ui_renderer.draw(&draw_info, &text, &mut target);
+        let draw_result = ui_renderer.draw(&draw_info, &text, &mut target);
+        match draw_result {
+            Ok(_) => (),
+            Err(e) => println!("error when drawing ui: {}", e),
+        }
 
         target.finish().unwrap();
     }
@@ -168,8 +172,8 @@ impl MainLoop {
         world
             .world_data
             .chunks
-            .retain(|pos, c| ChunkManager::meta_chunk_should_be_loaded(&player, pos));
-        world.vertex_buffers.retain(|pos, c| {
+            .retain(|pos, _| ChunkManager::meta_chunk_should_be_loaded(&player, pos));
+        world.vertex_buffers.retain(|pos, _| {
             ChunkManager::meta_chunk_should_be_loaded(&player, &pos.get_meta_chunk_pos())
         });
         player.generated_chunks_for = player.position.get_chunk();
@@ -179,19 +183,6 @@ impl MainLoop {
             glutin::event::Event::WindowEvent { event, .. } => match event {
                 // Break from the main loop when the window is closed.
                 glutin::event::WindowEvent::CloseRequested => glutin::event_loop::ControlFlow::Exit,
-                glutin::event::WindowEvent::KeyboardInput {
-                    device_id,
-                    input,
-                    is_synthetic,
-                } => {
-                    if input.virtual_keycode.is_some()
-                        && input.virtual_keycode.unwrap() == glutin::event::VirtualKeyCode::Escape
-                    {
-                        glutin::event_loop::ControlFlow::Exit
-                    } else {
-                        glutin::event_loop::ControlFlow::Poll
-                    }
-                }
 
                 // Redraw the triangle when the window is resized.
                 glutin::event::WindowEvent::Resized(..) => glutin::event_loop::ControlFlow::Poll,

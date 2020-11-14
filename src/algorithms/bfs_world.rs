@@ -1,6 +1,5 @@
 use crate::block::{Block, BlockType};
 use crate::positions::GlobalBlockPos;
-use crate::world::World;
 use crate::world_gen::meta_chunk::MetaChunk;
 use std::collections::{HashSet, VecDeque};
 use std::time::Instant;
@@ -26,12 +25,7 @@ impl Blocksides {
     }
 }
 
-pub fn bfs_world_air(
-    pos: &GlobalBlockPos,
-    depth: u32,
-    world: &mut MetaChunk,
-    f: impl Fn(&Block) -> Block,
-) {
+pub fn bfs_world_air(pos: &GlobalBlockPos, depth: u32, world: &mut MetaChunk, block: Block) {
     let time = Instant::now();
     let mut visited = HashSet::new();
     let mut queue = VecDeque::new();
@@ -40,9 +34,7 @@ pub fn bfs_world_air(
     visited.insert(*pos);
     while let Some((temp_pos, d)) = queue.pop_front() {
         if d == depth {
-            if let Some(b) = world.get_block(&temp_pos) {
-                world.set_block(&temp_pos, f(b));
-            }
+            world.set_block(&temp_pos, block);
             continue;
         }
         let sides =
@@ -117,7 +109,7 @@ fn update_side(
     world: &MetaChunk,
     pos: &GlobalBlockPos,
     f: impl Fn(&Block) -> bool,
-    mut side: &mut bool,
+    side: &mut bool,
 ) {
     let b = world.get_block(&pos);
     match b {

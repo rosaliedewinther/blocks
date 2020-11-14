@@ -1,8 +1,8 @@
 use crate::renderer::glium::DrawInfo;
 use glium::Frame;
 use imgui::im_str;
-use imgui_glium_renderer::imgui;
 use imgui_glium_renderer::imgui::{Condition, Window};
+use imgui_glium_renderer::{imgui, RendererError};
 use imgui_winit_support::{HiDpiMode, WinitPlatform};
 
 pub struct UiRenderer {
@@ -29,7 +29,12 @@ impl UiRenderer {
             platform,
         }
     }
-    pub fn draw(&mut self, draw_info: &DrawInfo, strings: &Vec<String>, target: &mut Frame) {
+    pub fn draw(
+        &mut self,
+        draw_info: &DrawInfo,
+        strings: &Vec<String>,
+        target: &mut Frame,
+    ) -> Result<(), RendererError> {
         let ui = self.context.frame();
 
         Window::new(im_str!("it just works"))
@@ -43,6 +48,6 @@ impl UiRenderer {
 
         self.platform
             .prepare_render(&ui, draw_info.display.gl_window().window());
-        self.renderer.render(target, ui.render());
+        self.renderer.render(target, ui.render())
     }
 }

@@ -29,7 +29,7 @@ impl MetaChunk {
             chunks.push(Vec::new());
             for y in 0..VERTICALCHUNKS {
                 chunks[x].push(Vec::new());
-                for z in 0..METACHUNKSIZE {
+                for _ in 0..METACHUNKSIZE {
                     chunks[x][y].push(generate_empty_chunk());
                 }
             }
@@ -59,9 +59,12 @@ impl MetaChunk {
             y: structure_y,
             z: structure_y,
         };
-        bfs_world_air(&global_center_pos, 10, &mut chunk, |b| {
-            Block::new(BlockType::Sand)
-        });
+        bfs_world_air(
+            &global_center_pos,
+            10,
+            &mut chunk,
+            Block::new(BlockType::Sand),
+        );
 
         let structure_x = pos.x * METACHUNKSIZE as i32 + 40;
         let structure_z = pos.z * METACHUNKSIZE as i32 + 40;
@@ -91,9 +94,9 @@ impl MetaChunk {
         return read_meta_chunk_from_file(filename.as_str());
     }
 
-    pub fn save_to_disk(&self) {
+    pub fn save_to_disk(&self) -> serde_cbor::Result<()> {
         let filename = format!("{}-{}.txt", self.pos.x, self.pos.z);
-        write_to_file(filename.as_str(), self);
+        write_to_file(filename.as_str(), self)
     }
 
     pub fn set_block(&mut self, pos: &GlobalBlockPos, block: Block) {

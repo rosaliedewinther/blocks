@@ -1,7 +1,7 @@
 use crate::positions::MetaChunkPos;
 use crate::world_gen::meta_chunk::MetaChunk;
 use std::sync::mpsc;
-use std::sync::mpsc::{Receiver, Sender, TryRecvError};
+use std::sync::mpsc::{Receiver, SendError, Sender, TryRecvError};
 use std::thread;
 use std::thread::JoinHandle;
 
@@ -20,7 +20,12 @@ impl ChunkGenThread {
             match message {
                 Ok((pos, seed)) => {
                     println!("started generation for {:?}", pos);
-                    gen_chunk_request_done.send((MetaChunk::load_or_gen(pos, seed), pos));
+                    let result =
+                        gen_chunk_request_done.send((MetaChunk::load_or_gen(pos, seed), pos));
+                    match result {
+                        Err(e) => println!("error while sending generated chunk: {}", e),
+                        Ok(_) => (),
+                    }
                 }
                 Err(e) => {
                     if e == TryRecvError::Disconnected {
@@ -38,14 +43,14 @@ impl ChunkGenThread {
             chunk_generator_thread: chunk_gen_thread,
         };
     }
-    pub fn request(&self, pos: MetaChunkPos, seed: u32) {
-        self.chunk_generator_requester.send((pos, seed));
+    pub fn request(
+        &self,
+        pos: MetaChunkPos,
+        seed: u32,
+    ) -> Result<(), SendError<(MetaChunkPos, u32)>> {
+        self.chunk_generator_requester.send((pos, seed))
     }
-    pub fn get(&self) -> Option<(MetaChunk, MetaChunkPos)> {
-        let message = self.chunk_generator_receiver.try_recv();
-        match message {
-            Ok(m) => Some(m),
-            Err(e) => None,
-        }
+    pub fn get(&self) -> Result<(MetaChunk, MetaChunkPos), TryRecvError> {
+        self.chunk_generator_receiver.try_recv()
     }
 }

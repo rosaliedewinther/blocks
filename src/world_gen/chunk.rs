@@ -18,7 +18,7 @@ impl Chunk {
         return chunk;
     }
 
-    pub fn update(&mut self, dt: f32) -> bool {
+    pub fn update(&mut self, _dt: f32) -> bool {
         return false;
     }
 

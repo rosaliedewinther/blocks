@@ -3,7 +3,9 @@ use crate::player::Player;
 use crate::renderer::vertex::Vertex;
 use crate::utils::get_rotation_matrix_y;
 use glium::backend::glutin::glutin::event_loop::EventLoop;
-use glium::{glutin, Blend, Display, DrawParameters, Frame, Program, Surface, VertexBuffer};
+use glium::{
+    glutin, Blend, Display, DrawError, DrawParameters, Frame, Program, Surface, VertexBuffer,
+};
 use nalgebra::Vector3;
 use std::f32::consts::PI;
 use std::time::SystemTime;
@@ -22,7 +24,7 @@ pub fn draw_vertices(
     target: &mut Frame,
     vertex_buffer: &VertexBuffer<Vertex>,
     player: &Player,
-) {
+) -> Result<(), DrawError> {
     let time: f32 = draw_info.program_start.elapsed().unwrap().as_secs_f32();
     let rot_mat = get_rotation_matrix_y(time);
     let light_dir = rot_mat * Vector3::new(1.0, 0.3, 0.0);
@@ -38,7 +40,7 @@ pub fn draw_vertices(
         &draw_info.program,
         &uniforms,
         &draw_info.draw_params,
-    );
+    )
 }
 
 pub fn gen_persective_mat(target: &mut Frame) -> [[f32; 4]; 4] {

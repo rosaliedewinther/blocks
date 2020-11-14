@@ -1,5 +1,5 @@
 use crate::block::{Block, BlockType};
-use crate::constants::{CHUNKSIZE, METACHUNK_GEN_RANGE, METACHUNK_UNLOAD_RADIUS};
+use crate::constants::{CHUNKSIZE, METACHUNK_UNLOAD_RADIUS};
 use crate::player::Player;
 use crate::positions::{ChunkPos, GlobalBlockPos, LocalBlockPos, MetaChunkPos};
 use crate::renderer::glium::{draw_vertices, DrawInfo};
@@ -8,9 +8,7 @@ use crate::world::World;
 use crate::world_gen::chunk::Chunk;
 use crate::world_gen::chunk_gen_thread::ChunkGenThread;
 use glium::{Frame, VertexBuffer};
-use std::borrow::{Borrow, BorrowMut};
 use std::collections::{BTreeMap, HashMap};
-use std::convert::TryInto;
 use std::ops::DerefMut;
 use std::sync::{Arc, Mutex};
 use std::time::Instant;
@@ -34,8 +32,13 @@ impl ChunkManager {
             return;
         }
         self.world_data.loading_chunks.insert(pos.clone());
-        self.chunk_gen_thread
+        let chunk_request_result = self
+            .chunk_gen_thread
             .request(pos, self.world_data.world_seed);
+        match chunk_request_result {
+            Ok(_) => (),
+            Err(e) => println!("error while trying to load a chunk: {}", e),
+        }
     }
     pub fn reset_surrounding_vertex_buffers(&mut self, pos: &ChunkPos) {
         if self.vertex_buffers.contains_key(&pos.get_diff(0, 0, 1)) {
@@ -57,7 +60,7 @@ impl ChunkManager {
             self.vertex_buffers.insert(pos.get_diff(-1, 0, 0), None);
         }
     }
-    pub fn update(&mut self, dt: &f32) {
+    pub fn update(&mut self, _dt: &f32) {
         self.load_generated_chunks();
         /*let player = self.world_data.players.get("deJasper36").unwrap();
         if player.generated_chunks_for != player.position.get_chunk() {
@@ -104,7 +107,7 @@ impl ChunkManager {
         let to_render = Arc::new(Mutex::new(BTreeMap::new()));
         let vertex_buffers = Box::new(&self.vertex_buffers);
         for (_, meta_chunk) in &mut self.world_data.chunks {
-            meta_chunk.for_each(|chunk, pos| {
+            meta_chunk.for_each(|_, pos| {
                 if started.elapsed().as_secs_f32() > 0.01 {
                     return;
                 }
@@ -145,11 +148,11 @@ impl ChunkManager {
     pub fn load_generated_chunks(&mut self) {
         let message = self.chunk_gen_thread.get();
         match message {
-            Some((chunk, pos)) => {
+            Ok((chunk, pos)) => {
                 self.world_data.loading_chunks.remove(&pos);
                 self.world_data.chunks.insert(pos, chunk);
             }
-            None => return,
+            Err(_) => return,
         }
     }
 
@@ -181,16 +184,11 @@ impl ChunkManager {
         return temp_vertex_buffer;
     }
 
-    pub fn render_chunks(
-        &self,
-        mut draw_info: &mut DrawInfo,
-        mut frame: &mut Frame,
-        player: &Player,
-    ) {
-        let mut draw_info_ptr = Arc::new(Mutex::new(draw_info));
-        let mut frame_ptr = Arc::new(Mutex::new(frame));
+    pub fn render_chunks(&self, draw_info: &mut DrawInfo, frame: &mut Frame, player: &Player) {
+        let draw_info_ptr = Arc::new(Mutex::new(draw_info));
+        let frame_ptr = Arc::new(Mutex::new(frame));
         for (_, meta_chunk) in &self.world_data.chunks {
-            meta_chunk.for_each(|chunk, pos| {
+            meta_chunk.for_each(|_, pos| {
                 if !player.chunk_in_view_distance(&pos) {
                     return;
                 }
@@ -206,12 +204,16 @@ impl ChunkManager {
                 if real_vertex_buffer.len() == 0 {
                     return;
                 }
-                draw_vertices(
+                let draw_result = draw_vertices(
                     &mut draw_info_ptr.lock().unwrap(),
                     &mut frame_ptr.lock().unwrap(),
                     real_vertex_buffer,
                     player,
                 );
+                match draw_result {
+                    Ok(_) => (),
+                    Err(e) => println!("error while drawing chunks: {}", e),
+                }
             });
         }
     }

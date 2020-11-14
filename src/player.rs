@@ -102,7 +102,7 @@ impl Player {
         }
     }
 
-    pub fn update(&mut self, dt: &f32) {}
+    pub fn update(&mut self, _dt: &f32) {}
 
     pub fn get_view_matrix(&self) -> [[f32; 4]; 4] {
         let f = {

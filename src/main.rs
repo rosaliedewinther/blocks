@@ -1,3 +1,4 @@
+#![allow(dead_code)]
 #[macro_use]
 extern crate glium;
 
@@ -5,10 +6,6 @@ use log::info;
 
 use crate::logger::setup_logger;
 use crate::main_loop::MainLoop;
-use crate::positions::MetaChunkPos;
-use crate::world_gen::meta_chunk::MetaChunk;
-use std::thread::sleep;
-use std::time::{Duration, Instant};
 
 mod algorithms;
 mod block;
