@@ -20,9 +20,9 @@ impl Player {
     pub fn new() -> Player {
         Player {
             position: ObjectPos {
-                x: 0f32,
-                y: 0f32,
-                z: 0f32,
+                x: 1f32,
+                y: 1f32,
+                z: 1f32,
             },
             direction: Vector3::new(0f32, 0.0f32, 1.0f32),
             up: [0f32, 1.0f32, 0f32],

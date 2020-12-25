@@ -1,6 +1,7 @@
 use crate::constants::{CHUNKSIZE, METACHUNKSIZE, VERTICALCHUNKS};
 use crate::utils::{wrap, wrapf};
 use core::ops;
+use num_traits::real::Real;
 use num_traits::Pow;
 use serde::{Deserialize, Serialize};
 
@@ -18,7 +19,7 @@ pub struct LocalBlockPos {
     pub z: i32,
 }
 //position of entities
-#[derive(Debug)]
+#[derive(Debug, PartialEq)]
 pub struct ObjectPos {
     pub x: f32,
     pub y: f32,
@@ -32,13 +33,13 @@ pub struct ChunkPos {
     pub z: i32,
 }
 //meta chunk location
-#[derive(Serialize, Deserialize, Hash, PartialEq, Eq, Clone, Copy, Debug)]
+#[derive(Serialize, Deserialize, Hash, PartialEq, Eq, Clone, Copy, Debug, PartialOrd, Ord)]
 pub struct MetaChunkPos {
     pub x: i32,
     pub z: i32,
 }
 //chunk pos within a metachunk
-#[derive(Debug)]
+#[derive(Debug, PartialEq, Eq)]
 pub struct LocalChunkPos {
     pub x: i32,
     pub y: i32,
@@ -78,9 +79,9 @@ impl GlobalBlockPos {
     }
     pub fn get_block_centre(&self) -> ObjectPos {
         ObjectPos {
-            x: self.x as f32,
-            y: self.y as f32,
-            z: self.z as f32,
+            x: self.x as f32 + 0.5,
+            y: self.y as f32 + 0.5,
+            z: self.z as f32 + 0.5,
         }
     }
     pub fn get_meta_chunk_pos(&self) -> MetaChunkPos {
@@ -114,16 +115,38 @@ impl ChunkPos {
     }
     pub fn get_meta_chunk_pos(&self) -> MetaChunkPos {
         MetaChunkPos {
-            x: self.x / METACHUNKSIZE as i32,
-            z: self.z / METACHUNKSIZE as i32,
+            x: (self.x as f32 / METACHUNKSIZE as f32).floor() as i32,
+            z: (self.z as f32 / METACHUNKSIZE as f32).floor() as i32,
         }
     }
 }
+
 impl MetaChunkPos {
     pub fn get_diff(&self, x_diff: i32, z_diff: i32) -> MetaChunkPos {
         MetaChunkPos {
             x: self.x + x_diff,
             z: self.z + z_diff,
+        }
+    }
+    pub fn get_distance_to_object(&self, pos: &ObjectPos) -> f32 {
+        let center_pos = self.get_center_pos();
+        ((center_pos.x - pos.x).pow(2) as f32 + (center_pos.z - pos.z).pow(2) as f32)
+    }
+    pub fn get_center_pos(&self) -> ObjectPos {
+        let mut x = self.x as f32;
+        if x == 0.0 {
+            x = 0.00000001;
+        }
+        let mut z = self.z as f32;
+        if z == 0.0 {
+            z = 0.00000001;
+        }
+        ObjectPos {
+            x: self.x as f32 * METACHUNKSIZE as f32 * CHUNKSIZE as f32
+                + CHUNKSIZE as f32 * ((self.x as f32).abs() / x) / 2.0,
+            y: 0f32,
+            z: self.z as f32 * METACHUNKSIZE as f32 * CHUNKSIZE as f32
+                + CHUNKSIZE as f32 * ((self.z as f32).abs() / z) / 2.0,
         }
     }
 }

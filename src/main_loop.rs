@@ -8,7 +8,7 @@ use glium::backend::glutin::glutin::event_loop::ControlFlow;
 use glium::glutin::event::Event;
 use glium::{glutin, Surface};
 use log::info;
-use std::collections::LinkedList;
+use std::collections::{BinaryHeap, LinkedList};
 use std::time::{Instant, SystemTime};
 
 pub struct MainLoop {
@@ -154,6 +154,7 @@ impl MainLoop {
     }
     pub fn on_player_moved_chunks(player: &mut Player, world: &mut ChunkManager) {
         let current_chunk = player.position.get_meta_chunk();
+        let mut to_load = BinaryHeap::new();
         for x in current_chunk.x - METACHUNK_GEN_RANGE as i32 - 1
             ..current_chunk.x + METACHUNK_GEN_RANGE as i32 + 1
         {
@@ -165,10 +166,22 @@ impl MainLoop {
                         .world_data
                         .chunk_exists_or_generating(&MetaChunkPos { x, z })
                 {
-                    world.load_chunk(MetaChunkPos { x, z });
+                    let chunk_pos = MetaChunkPos { x, z };
+                    to_load.push((
+                        (chunk_pos.get_distance_to_object(&player.position) * 10f32) as i64 * -1,
+                        chunk_pos,
+                    ));
+                    println!(
+                        "brrr: {}",
+                        (chunk_pos.get_distance_to_object(&player.position) * 10f32) as i64 * -1
+                    );
                 }
             }
         }
+        while !to_load.is_empty() {
+            world.load_chunk(to_load.pop().unwrap().1);
+        }
+
         world
             .world_data
             .chunks
