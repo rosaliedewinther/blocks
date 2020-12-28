@@ -130,23 +130,13 @@ impl MetaChunkPos {
     }
     pub fn get_distance_to_object(&self, pos: &ObjectPos) -> f32 {
         let center_pos = self.get_center_pos();
-        ((center_pos.x - pos.x).pow(2) as f32 + (center_pos.z - pos.z).pow(2) as f32)
+        ((center_pos.x - pos.x).pow(2) as f32 + (center_pos.z - pos.z).pow(2) as f32).sqrt()
     }
     pub fn get_center_pos(&self) -> ObjectPos {
-        let mut x = self.x as f32;
-        if x == 0.0 {
-            x = 0.00000001;
-        }
-        let mut z = self.z as f32;
-        if z == 0.0 {
-            z = 0.00000001;
-        }
         ObjectPos {
-            x: self.x as f32 * METACHUNKSIZE as f32 * CHUNKSIZE as f32
-                + CHUNKSIZE as f32 * ((self.x as f32).abs() / x) / 2.0,
+            x: self.x as f32 * METACHUNKSIZE as f32 * CHUNKSIZE as f32 + CHUNKSIZE as f32 / 2.0,
             y: 0f32,
-            z: self.z as f32 * METACHUNKSIZE as f32 * CHUNKSIZE as f32
-                + CHUNKSIZE as f32 * ((self.z as f32).abs() / z) / 2.0,
+            z: self.z as f32 * METACHUNKSIZE as f32 * CHUNKSIZE as f32 + CHUNKSIZE as f32 / 2.0,
         }
     }
 }
