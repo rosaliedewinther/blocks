@@ -5,10 +5,13 @@ use crate::io::file_reader::read_meta_chunk_from_file;
 use crate::io::file_writer::write_to_file;
 use crate::positions::{ChunkPos, GlobalBlockPos, LocalChunkPos, MetaChunkPos};
 use crate::structures::square::place_square;
+use crate::structures::tree::place_tree;
 use crate::world_gen::basic::{floodfill_water, generate_empty_chunk, generate_landmass};
 use crate::world_gen::chunk::Chunk;
+use rand::distributions::{Distribution, Uniform};
 use serde::{Deserialize, Serialize};
 use std::borrow::BorrowMut;
+use std::time::Instant;
 
 #[derive(Serialize, Deserialize)]
 pub struct MetaChunk {
@@ -53,7 +56,7 @@ impl MetaChunk {
 
         let structure_x = pos.x * METACHUNKSIZE as i32 + 20;
         let structure_z = pos.z * METACHUNKSIZE as i32 + 20;
-        let structure_y = chunk.first_open_y(structure_x, structure_z);
+        let structure_y = chunk.first_above_land_y(structure_x, structure_z);
         let global_center_pos = GlobalBlockPos {
             x: structure_x,
             y: structure_y,
@@ -61,27 +64,47 @@ impl MetaChunk {
         };
         bfs_world_air(
             &global_center_pos,
-            10,
+            5,
             &mut chunk,
             Block::new(BlockType::Sand),
         );
 
-        let structure_x = pos.x * METACHUNKSIZE as i32 + 40;
-        let structure_z = pos.z * METACHUNKSIZE as i32 + 40;
-        let structure_y = chunk.first_open_y(structure_x, structure_z);
+        let structure_x = pos.x * METACHUNKSIZE as i32 + 3;
+        let structure_z = pos.z * METACHUNKSIZE as i32 + 60;
+        let structure_y = chunk.first_above_land_y(structure_x, structure_z);
         let global_center_pos = GlobalBlockPos {
             x: structure_x,
             y: structure_y,
-            z: structure_y,
+            z: structure_z,
         };
         place_square(&global_center_pos, 10, &mut chunk);
 
+        let time = Instant::now();
+        let mut rng = rand::thread_rng();
+        let location_range = Uniform::from(0..(METACHUNKSIZE * CHUNKSIZE));
+        for _ in 0..1000 {
+            let structure_x = pos.x * METACHUNKSIZE as i32 + location_range.sample(&mut rng) as i32;
+            let structure_z = pos.z * METACHUNKSIZE as i32 + location_range.sample(&mut rng) as i32;
+            let structure_y = chunk.first_above_land_y(structure_x, structure_z);
+            let global_center_pos = GlobalBlockPos {
+                x: structure_x,
+                y: structure_y,
+                z: structure_z,
+            };
+            place_tree(&global_center_pos, &mut chunk);
+        }
+        println!("tree generation took: {}", time.elapsed().as_secs_f64());
+
         return chunk;
     }
-    pub fn first_open_y(&self, x: i32, z: i32) -> i32 {
+    pub fn first_above_land_y(&self, x: i32, z: i32) -> i32 {
         let mut y = VERTICALCHUNKS as i32 * CHUNKSIZE as i32 - 1;
         while let Some(b) = self.get_block(&GlobalBlockPos { x, y, z }) {
-            if b.block_type != BlockType::Air {
+            if b.block_type == BlockType::Grass
+                || b.block_type == BlockType::Water
+                || b.block_type == BlockType::Dirt
+                || b.block_type == BlockType::Stone
+            {
                 return y + 1;
             }
             y -= 1;

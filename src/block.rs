@@ -35,6 +35,7 @@ pub enum BlockType {
     Stone,
     Sand,
     Air,
+    Leaf,
 }
 
 #[derive(Clone, Copy, Deserialize, Serialize)]
@@ -44,7 +45,7 @@ pub struct Block {
 
 impl Distribution<BlockType> for Standard {
     fn sample<R: Rng + ?Sized>(&self, rng: &mut R) -> BlockType {
-        match rng.gen_range(1, 5) {
+        match rng.gen_range(1..5) {
             0 => BlockType::Water,
             1 => BlockType::Dirt,
             2 => BlockType::Sand,
@@ -73,6 +74,7 @@ impl Block {
             BlockType::Stone => [128, 128, 128, 255],
             BlockType::Sand => [255, 0, 0, 255],
             BlockType::Air => [255, 0, 255, 0],
+            BlockType::Leaf => [0, 128, 0, 255],
         }
     }
 

@@ -9,7 +9,7 @@ edition = "2018"
 [dependencies]
 glium = "0.27"
 image = "0.23"
-rand = "0.7"
+rand = "0.8"
 array-init = "0.1"
 log = "0.4"
 fern = "0.6"

@@ -171,10 +171,6 @@ impl MainLoop {
                         (chunk_pos.get_distance_to_object(&player.position) * 10f32) as i64 * -1,
                         chunk_pos,
                     ));
-                    println!(
-                        "brrr: {}",
-                        (chunk_pos.get_distance_to_object(&player.position) * 10f32) as i64 * -1
-                    );
                 }
             }
         }
