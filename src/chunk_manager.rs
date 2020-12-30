@@ -8,6 +8,8 @@ use crate::world::World;
 use crate::world_gen::chunk::Chunk;
 use crate::world_gen::chunk_gen_thread::ChunkGenThread;
 use glium::{Frame, VertexBuffer};
+use rayon::iter::ParallelIterator;
+use rayon::iter::{IntoParallelIterator, IntoParallelRefIterator};
 use std::collections::{BTreeMap, HashMap};
 use std::ops::DerefMut;
 use std::sync::{Arc, Mutex};
@@ -104,46 +106,64 @@ impl ChunkManager {
     }*/
     pub fn gen_vertex_buffers(&mut self, draw_info: &DrawInfo, player: &Player) {
         let mut started = Instant::now();
-        let to_render = Arc::new(Mutex::new(BTreeMap::new()));
-        let vertex_buffers = Box::new(&self.vertex_buffers);
-        for (_, meta_chunk) in &mut self.world_data.chunks {
+
+        let mut vertex_buffers_ptr = Arc::new(Mutex::new(&self.vertex_buffers));
+        let mut draw_info_mutex = Mutex::new(draw_info);
+        let mut this = Mutex::new(&mut self);
+        let to_render = self.vertex_buffers_to_generate(player);
+        started = Instant::now();
+        to_render.par_iter().for_each(|(_, pos)| {
+            if started.elapsed().as_secs_f32() > 0.01 {
+                return;
+            }
+
+            let meta_chunk = this
+                .lock()
+                .unwrap()
+                .world_data
+                .chunks
+                .get(&pos.get_meta_chunk_pos());
+            let local_pos = pos.get_local_chunk_pos();
+            let vertices = this
+                .lock()
+                .unwrap()
+                .get_chunk_vertices(meta_chunk.unwrap().get_chunk(&local_pos).unwrap(), &pos);
+            let vert_buffer =
+                glium::VertexBuffer::new(&draw_info_mutex.lock().unwrap().display, &vertices)
+                    .unwrap();
+            vertex_buffers_ptr
+                .lock()
+                .unwrap()
+                .insert(pos.clone(), Some(vert_buffer));
+        });
+    }
+    pub fn vertex_buffers_to_generate(&self, player: &Player) -> BTreeMap<i32, ChunkPos> {
+        let mut to_render = BTreeMap::new();
+        for (_, meta_chunk) in &self.world_data.chunks {
             meta_chunk.for_each(|_, pos| {
-                if started.elapsed().as_secs_f32() > 0.01 {
-                    return;
-                }
-                let distance = pos.get_distance(&player.position.get_chunk());
-                if distance > player.render_distance {
-                    return;
-                }
-                //if !self.surrounding_chunks_exist(pos) {
-                //    continue;
-                //}
-                let vertex_buffer_opt = vertex_buffers.get(&pos);
-                if vertex_buffer_opt.is_none() || vertex_buffer_opt.unwrap().is_none() {
-                    to_render
-                        .lock()
-                        .unwrap()
-                        .deref_mut()
-                        .insert((distance * 10000f32) as i32, pos.clone());
+                if self.should_generate_vertex_buffers(pos, player) {
+                    let distance = pos.get_distance(&player.position.get_chunk());
+                    to_render.insert((distance * 10000f32) as i32, pos.clone());
                 }
             });
         }
-        let to_render = Arc::try_unwrap(to_render).unwrap().into_inner().unwrap();
-        started = Instant::now();
-        for (_, pos) in to_render.iter() {
-            if started.elapsed().as_secs_f32() > 0.01 {
-                break;
-            }
-
-            let c = self.world_data.chunks.get(&pos.get_meta_chunk_pos());
-            if c.is_none() {
-                continue;
-            }
-            let local_pos = pos.get_local_chunk_pos();
-            let vertices = self.get_chunk_vertices(c.unwrap().get_chunk(&local_pos).unwrap(), pos);
-            let vert_buffer = glium::VertexBuffer::new(&draw_info.display, &vertices).unwrap();
-            self.vertex_buffers.insert(pos.clone(), Some(vert_buffer));
+        return to_render;
+    }
+    pub fn should_generate_vertex_buffers(&self, pos: ChunkPos, player: &Player) -> bool {
+        let distance = pos.get_distance(&player.position.get_chunk());
+        if distance > player.render_distance {
+            return false;
         }
+        let c = self.world_data.chunks.get(&pos.get_meta_chunk_pos());
+        if c.is_none() {
+            return false;
+        }
+        let vertex_buffer_opt = self.vertex_buffers.get(&pos);
+        return if vertex_buffer_opt.is_none() || vertex_buffer_opt.unwrap().is_none() {
+            true
+        } else {
+            false
+        };
     }
     pub fn load_generated_chunks(&mut self) {
         let message = self.chunk_gen_thread.get();
