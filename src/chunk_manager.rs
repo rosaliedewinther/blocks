@@ -8,10 +8,8 @@ use crate::world::World;
 use crate::world_gen::chunk::Chunk;
 use crate::world_gen::chunk_gen_thread::ChunkGenThread;
 use glium::{Frame, VertexBuffer};
-use rayon::iter::ParallelIterator;
-use rayon::iter::{IntoParallelIterator, IntoParallelRefIterator};
+use std::borrow::BorrowMut;
 use std::collections::{BTreeMap, HashMap};
-use std::ops::DerefMut;
 use std::sync::{Arc, Mutex};
 use std::time::Instant;
 
@@ -106,48 +104,35 @@ impl ChunkManager {
     }*/
     pub fn gen_vertex_buffers(&mut self, draw_info: &DrawInfo, player: &Player) {
         let mut started = Instant::now();
-
-        let mut vertex_buffers_ptr = Arc::new(Mutex::new(&self.vertex_buffers));
-        let mut draw_info_mutex = Mutex::new(draw_info);
-        let mut this = Mutex::new(&mut self);
         let to_render = self.vertex_buffers_to_generate(player);
         started = Instant::now();
-        to_render.par_iter().for_each(|(_, pos)| {
+        for (_, pos) in to_render {
             if started.elapsed().as_secs_f32() > 0.01 {
                 return;
             }
 
-            let meta_chunk = this
-                .lock()
-                .unwrap()
-                .world_data
-                .chunks
-                .get(&pos.get_meta_chunk_pos());
+            let meta_chunk = self.world_data.chunks.get(&pos.get_meta_chunk_pos());
             let local_pos = pos.get_local_chunk_pos();
-            let vertices = this
-                .lock()
-                .unwrap()
-                .get_chunk_vertices(meta_chunk.unwrap().get_chunk(&local_pos).unwrap(), &pos);
-            let vert_buffer =
-                glium::VertexBuffer::new(&draw_info_mutex.lock().unwrap().display, &vertices)
-                    .unwrap();
-            vertex_buffers_ptr
-                .lock()
-                .unwrap()
-                .insert(pos.clone(), Some(vert_buffer));
-        });
+            let vertices =
+                self.get_chunk_vertices(meta_chunk.unwrap().get_chunk(&local_pos).unwrap(), &pos);
+            let vert_buffer = glium::VertexBuffer::new(&draw_info.display, &vertices).unwrap();
+            self.vertex_buffers.insert(pos.clone(), Some(vert_buffer));
+        }
     }
     pub fn vertex_buffers_to_generate(&self, player: &Player) -> BTreeMap<i32, ChunkPos> {
-        let mut to_render = BTreeMap::new();
+        let to_render = Mutex::new(BTreeMap::new());
         for (_, meta_chunk) in &self.world_data.chunks {
             meta_chunk.for_each(|_, pos| {
-                if self.should_generate_vertex_buffers(pos, player) {
+                if self.should_generate_vertex_buffers(pos.clone(), player) {
                     let distance = pos.get_distance(&player.position.get_chunk());
-                    to_render.insert((distance * 10000f32) as i32, pos.clone());
+                    to_render
+                        .lock()
+                        .unwrap()
+                        .insert((distance * 10000f32) as i32, pos.clone());
                 }
             });
         }
-        return to_render;
+        return to_render.into_inner().unwrap();
     }
     pub fn should_generate_vertex_buffers(&self, pos: ChunkPos, player: &Player) -> bool {
         let distance = pos.get_distance(&player.position.get_chunk());
