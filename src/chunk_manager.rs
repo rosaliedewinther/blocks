@@ -8,7 +8,6 @@ use crate::world::World;
 use crate::world_gen::chunk::Chunk;
 use crate::world_gen::chunk_gen_thread::ChunkGenThread;
 use glium::{Frame, VertexBuffer};
-use std::borrow::BorrowMut;
 use std::collections::{BTreeMap, HashMap};
 use std::sync::{Arc, Mutex};
 use std::time::Instant;
@@ -103,9 +102,8 @@ impl ChunkManager {
         return to_load;
     }*/
     pub fn gen_vertex_buffers(&mut self, draw_info: &DrawInfo, player: &Player) {
-        let mut started = Instant::now();
         let to_render = self.vertex_buffers_to_generate(player);
-        started = Instant::now();
+        let started = Instant::now();
         for (_, pos) in to_render {
             if started.elapsed().as_secs_f32() > 0.01 {
                 return;

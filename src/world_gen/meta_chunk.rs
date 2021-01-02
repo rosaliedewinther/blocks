@@ -11,7 +11,6 @@ use crate::world_gen::chunk::Chunk;
 use rand::distributions::{Distribution, Uniform};
 use serde::{Deserialize, Serialize};
 use std::borrow::BorrowMut;
-use std::time::Instant;
 
 #[derive(Serialize, Deserialize)]
 pub struct MetaChunk {
@@ -21,10 +20,12 @@ pub struct MetaChunk {
 }
 
 impl MetaChunk {
-    pub fn load_or_gen(pos: MetaChunkPos, seed: u32) -> MetaChunk {
-        let loaded = MetaChunk::load_from_disk(&pos);
-        if loaded.is_some() {
-            return loaded.unwrap();
+    pub fn load_or_gen(pos: MetaChunkPos, seed: u32, force_gen: bool) -> MetaChunk {
+        if !force_gen {
+            let loaded = MetaChunk::load_from_disk(&pos);
+            if loaded.is_some() {
+                return loaded.unwrap();
+            }
         }
 
         let mut chunks: Vec<Vec<Vec<Chunk>>> = Vec::with_capacity(METACHUNKSIZE);
@@ -79,7 +80,6 @@ impl MetaChunk {
         };
         place_square(&global_center_pos, 10, &mut chunk);
 
-        let time = Instant::now();
         let mut rng = rand::thread_rng();
         let location_range = Uniform::from(0..(METACHUNKSIZE * CHUNKSIZE));
         for _ in 0..1000 {
@@ -93,7 +93,6 @@ impl MetaChunk {
             };
             place_tree(&global_center_pos, &mut chunk);
         }
-        println!("tree generation took: {}", time.elapsed().as_secs_f64());
 
         return chunk;
     }
@@ -117,7 +116,7 @@ impl MetaChunk {
         return read_meta_chunk_from_file(filename.as_str());
     }
 
-    pub fn save_to_disk(&self) -> serde_cbor::Result<()> {
+    pub fn save_to_disk(&self) {
         let filename = format!("{}-{}.txt", self.pos.x, self.pos.z);
         write_to_file(filename.as_str(), self)
     }

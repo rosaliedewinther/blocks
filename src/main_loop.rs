@@ -43,6 +43,8 @@ impl MainLoop {
         info!("generating chunk main");
         let mut chunk_manager = ChunkManager::new(10);
         let mut player = Player::new();
+        let mut busy_frame_time = 0f64;
+        let mut busy_update_time = 0f64;
 
         let timer = Instant::now();
         let mut rerender_timer = Instant::now();
@@ -58,6 +60,12 @@ impl MainLoop {
         }
         info!("starting main loop");
         event_loop.run(move |event, _, control_flow| {
+            if draw_info.program_start.elapsed().unwrap().as_secs_f64() > 60f64 {
+                println!("busy frame time: {}", busy_frame_time);
+                println!("busy update time: {}", busy_update_time);
+                MainLoop::kill_game_loop(control_flow);
+                return;
+            }
             MainLoop::event_handler(event, control_flow);
 
             if update_timer.elapsed().as_millis() > 100 {
@@ -67,6 +75,7 @@ impl MainLoop {
                 chunk_manager.gen_vertex_buffers(&mut draw_info, &player);
                 update_times.pop_front();
                 update_times.push_back(update_timer.elapsed().as_secs_f32());
+                busy_update_time += update_timer.elapsed().as_secs_f64();
             } else if 1f32 / rerender_timer.elapsed().as_secs_f32() < FRAMERATE {
                 let dt = rerender_timer.elapsed().as_secs_f32();
                 rerender_timer = Instant::now();
@@ -83,6 +92,7 @@ impl MainLoop {
                 );
                 draw_times.pop_front();
                 draw_times.push_back(rerender_timer.elapsed().as_secs_f32());
+                busy_frame_time += rerender_timer.elapsed().as_secs_f64();
             }
         });
     }
@@ -199,5 +209,8 @@ impl MainLoop {
             },
             _ => glutin::event_loop::ControlFlow::Poll,
         };
+    }
+    pub fn kill_game_loop(control_flow: &mut ControlFlow) {
+        *control_flow = glutin::event_loop::ControlFlow::Exit;
     }
 }

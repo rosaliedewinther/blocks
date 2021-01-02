@@ -19,6 +19,7 @@ mod player;
 mod positions;
 mod renderer;
 mod structures;
+mod tests;
 mod ui;
 mod utils;
 mod world;

@@ -20,8 +20,8 @@ impl ChunkGenThread {
             match message {
                 Ok((pos, seed)) => {
                     println!("started generation for {:?}", pos);
-                    let result =
-                        gen_chunk_request_done.send((MetaChunk::load_or_gen(pos, seed), pos));
+                    let result = gen_chunk_request_done
+                        .send((MetaChunk::load_or_gen(pos, seed, false), pos));
                     match result {
                         Err(e) => println!("error while sending generated chunk: {}", e),
                         Ok(_) => (),

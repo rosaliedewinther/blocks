@@ -8,7 +8,7 @@ pub fn read_meta_chunk_from_file(filename: &str) -> Option<MetaChunk> {
     if f.is_ok() {
         let reader = BufReader::new(f.unwrap());
         let decoder = Decoder::new(reader).unwrap();
-        let obj: MetaChunk = serde_cbor::from_reader(decoder).unwrap();
+        let obj: MetaChunk = bincode::deserialize_from(decoder).unwrap();
         return Some(obj);
     }
     return None;

@@ -2,7 +2,6 @@ use crate::block::{Block, BlockType};
 use crate::positions::GlobalBlockPos;
 use crate::world_gen::meta_chunk::MetaChunk;
 use std::collections::{HashSet, VecDeque};
-use std::time::Instant;
 
 pub struct Blocksides {
     pub top: bool,
@@ -42,7 +41,6 @@ impl Blocksides {
 }
 
 pub fn bfs_world_air(pos: &GlobalBlockPos, depth: u32, world: &mut MetaChunk, block: Block) {
-    let time = Instant::now();
     let mut visited = HashSet::new();
     let mut queue = VecDeque::new();
     let sides = get_surrounding_blocks(world, pos, |b: &Block| b.block_type == BlockType::Air);
@@ -58,7 +56,6 @@ pub fn bfs_world_air(pos: &GlobalBlockPos, depth: u32, world: &mut MetaChunk, bl
         push_sides(&mut queue, &visited, &sides, &temp_pos, d + 1);
         visited.insert(temp_pos);
     }
-    println!("bfs took: {}", time.elapsed().as_secs_f64());
 }
 
 fn push_sides(

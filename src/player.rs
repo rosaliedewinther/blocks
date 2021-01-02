@@ -21,12 +21,12 @@ impl Player {
         Player {
             position: ObjectPos {
                 x: 1f32,
-                y: 1f32,
+                y: 40f32,
                 z: 1f32,
             },
             direction: Vector3::new(0f32, 0.0f32, 1.0f32),
             up: [0f32, 1.0f32, 0f32],
-            speed: 50f32,
+            speed: 25f32,
             camera_speed: 1f32,
             input: Input::new(),
             render_distance: 500f32,

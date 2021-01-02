@@ -1,7 +1,6 @@
 use crate::constants::{CHUNKSIZE, METACHUNKSIZE, VERTICALCHUNKS};
 use crate::utils::{wrap, wrapf};
 use core::ops;
-use num_traits::real::Real;
 use num_traits::Pow;
 use serde::{Deserialize, Serialize};
 
