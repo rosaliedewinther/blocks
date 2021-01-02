@@ -11,20 +11,10 @@ use log::info;
 use std::collections::{BinaryHeap, LinkedList};
 use std::time::{Instant, SystemTime};
 
-pub struct MainLoop {
-    //pub event_loop: EventLoop<()>,
-//pub draw_info: DrawInfo<'a>,
-//pub ui_renderer: UiRenderer
-}
+pub struct MainLoop {}
 
 impl MainLoop {
     pub fn new() -> MainLoop {
-        /*let event_loop = glutin::event_loop::EventLoop::new();
-        let display = create_display(&event_loop);
-        let program = gen_program(&display);
-        let mut draw_info = DrawInfo{display: display, program: program, program_start: SystemTime::now(), draw_params: gen_draw_params()};
-        let mut ui_renderer = UiRenderer::init(&draw_info);
-        MainLoop{event_loop, draw_info, ui_renderer}*/
         return MainLoop {};
     }
 
