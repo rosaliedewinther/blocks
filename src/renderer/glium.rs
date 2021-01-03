@@ -2,14 +2,10 @@ use crate::constants::{HEIGHT, WIDTH};
 use crate::player::Player;
 use crate::renderer::vertex::Vertex;
 use crate::utils::get_rotation_matrix_y;
-use glium::backend::glutin::glutin::event_loop::EventLoop;
-use glium::{
-    glutin, Blend, Display, DrawError, DrawParameters, Frame, Program, Surface, VertexBuffer,
-};
 use nalgebra::Vector3;
 use std::f32::consts::PI;
 use std::time::SystemTime;
-
+/*
 implement_vertex!(Vertex, position, color, normal);
 
 pub struct DrawInfo<'a> {
@@ -78,14 +74,14 @@ pub fn gen_program(display: &Display) -> Program {
                 #version 150
                 uniform mat4 perspective;
                 uniform mat4 view;
-                
+
                 in vec3 position;
                 in vec3 normal;
                 in vec4 color;
-                
+
                 out vec3 vnormal;
                 out vec4 vcolor;
-                
+
                 void main() {
                     vnormal = normal;
                     vcolor = color;
@@ -95,14 +91,14 @@ pub fn gen_program(display: &Display) -> Program {
             fragment: "
                 #version 140
                 uniform vec3 viewer_pos;
-                
+
                 in vec4 vcolor;
                 in vec3 vnormal;
-                
+
                 out vec4 f_color;
-                
+
                 const vec3 diffuse_color = vec3(1.0, 1.0, 1.0);
-                
+
                 void main() {
                     float diffuse = max(dot(normalize(vnormal), normalize(viewer_pos)), 0.1);
                     vec4 new_color = vec4(vcolor[0]/255,vcolor[1]/255,vcolor[2]/255,vcolor[3]/255);
@@ -127,3 +123,4 @@ pub fn gen_draw_params() -> DrawParameters<'static> {
         ..Default::default()
     }
 }
+*/

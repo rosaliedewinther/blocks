@@ -2,11 +2,7 @@ use crate::chunk_manager::ChunkManager;
 use crate::constants::METACHUNK_GEN_RANGE;
 use crate::player::Player;
 use crate::positions::MetaChunkPos;
-use crate::renderer::glium::{create_display, gen_draw_params, gen_program, DrawInfo};
-use crate::ui::UiRenderer;
-use glium::backend::glutin::glutin::event_loop::ControlFlow;
-use glium::glutin::event::Event;
-use glium::{glutin, Surface};
+//use crate::ui::UiRenderer;
 use log::info;
 use std::collections::{BinaryHeap, LinkedList};
 use std::time::{Instant, SystemTime};
@@ -19,7 +15,8 @@ impl MainLoop {
     }
 
     pub fn run(&mut self) {
-        let event_loop = glutin::event_loop::EventLoop::new();
+        /*let event_loop = EventLoop::new();
+        let window = winit::window::Window::new(&event_loop).unwrap();
         let display = create_display(&event_loop);
         let program = gen_program(&display);
         let mut draw_info = DrawInfo {
@@ -28,7 +25,7 @@ impl MainLoop {
             program_start: SystemTime::now(),
             draw_params: gen_draw_params(),
         };
-        let mut ui_renderer = UiRenderer::init(&draw_info);
+        //let mut ui_renderer = UiRenderer::init(&draw_info);
 
         info!("generating chunk main");
         let mut chunk_manager = ChunkManager::new(10);
@@ -84,7 +81,7 @@ impl MainLoop {
                 draw_times.push_back(rerender_timer.elapsed().as_secs_f32());
                 busy_frame_time += rerender_timer.elapsed().as_secs_f64();
             }
-        });
+        });*/
     }
     pub fn on_game_tick(dt: &f32, player: &mut Player, world: &mut ChunkManager) {
         player.update(&dt);
@@ -94,7 +91,7 @@ impl MainLoop {
         }
     }
 
-    pub fn on_render(
+    /*pub fn on_render(
         _dt: &f32,
         update_buffer: &LinkedList<f32>,
         draw_buffer: &LinkedList<f32>,
@@ -151,7 +148,7 @@ impl MainLoop {
         }
 
         target.finish().unwrap();
-    }
+    }*/
     pub fn on_player_moved_chunks(player: &mut Player, world: &mut ChunkManager) {
         let current_chunk = player.position.get_meta_chunk();
         let mut to_load = BinaryHeap::new();
@@ -182,12 +179,12 @@ impl MainLoop {
             .world_data
             .chunks
             .retain(|pos, _| ChunkManager::meta_chunk_should_be_loaded(&player, pos));
-        world.vertex_buffers.retain(|pos, _| {
+        /*world.vertex_buffers.retain(|pos, _| {
             ChunkManager::meta_chunk_should_be_loaded(&player, &pos.get_meta_chunk_pos())
-        });
+        });*/
         player.generated_chunks_for = player.position.get_chunk();
     }
-    pub fn event_handler(event: Event<()>, control_flow: &mut ControlFlow) {
+    /*pub fn event_handler(event: Event<()>, control_flow: &mut ControlFlow) {
         *control_flow = match event {
             glutin::event::Event::WindowEvent { event, .. } => match event {
                 // Break from the main loop when the window is closed.
@@ -202,5 +199,5 @@ impl MainLoop {
     }
     pub fn kill_game_loop(control_flow: &mut ControlFlow) {
         *control_flow = glutin::event_loop::ControlFlow::Exit;
-    }
+    }*/
 }

@@ -1,11 +1,10 @@
 #![allow(dead_code)]
-#[macro_use]
-extern crate glium;
 
 use log::info;
 
 use crate::logger::setup_logger;
 use crate::main_loop::MainLoop;
+use crate::renderer::wgpu::start_main_loop;
 
 mod algorithms;
 mod block;
@@ -30,8 +29,9 @@ fn main() {
 
     info!("starting up");
 
-    let mut main_loop = MainLoop::new();
-    main_loop.run();
+    //let mut main_loop = MainLoop::new();
+    //main_loop.run();
+    start_main_loop();
 
-    println!("done dumping");
+    println!("done");
 }
