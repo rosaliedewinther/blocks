@@ -3,6 +3,7 @@ use crate::player::Player;
 use crate::positions::{GlobalBlockPos, ObjectPos};
 use crate::renderer::uniforms::Uniforms;
 use crate::renderer::vertex::{vertex, Vertex};
+use crate::renderer::wgpu_pipeline::WgpuPipeline;
 use futures::executor::block_on;
 use std::f32::consts::PI;
 use std::time::Instant;
@@ -21,14 +22,10 @@ struct State {
     sc_desc: wgpu::SwapChainDescriptor,
     swap_chain: wgpu::SwapChain,
     size: winit::dpi::PhysicalSize<u32>,
-    render_pipeline: wgpu::RenderPipeline,
-    vertex_buffer: wgpu::Buffer,
-    num_vertices: u32,
+
     //index_buffer: wgpu::Buffer,
     //num_indices: u32,
-    uniforms: Uniforms,
-    uniform_buffer: wgpu::Buffer,
-    uniform_bind_group: wgpu::BindGroup,
+    pipeline: WgpuPipeline,
 }
 
 impl State {
@@ -67,96 +64,10 @@ impl State {
         };
         let swap_chain = device.create_swap_chain(&surface, &sc_desc);
 
-        let mut uniforms = Uniforms::new();
+        let mut pipeline = WgpuPipeline::new(&device, &sc_desc);
 
-        let uniform_buffer = device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
-            label: Some("Uniform Buffer"),
-            contents: bytemuck::cast_slice(&[uniforms]),
-            usage: wgpu::BufferUsage::UNIFORM | wgpu::BufferUsage::COPY_DST,
-        });
-        let uniform_bind_group_layout =
-            device.create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
-                entries: &[wgpu::BindGroupLayoutEntry {
-                    binding: 0,
-                    visibility: wgpu::ShaderStage::VERTEX,
-                    ty: wgpu::BindingType::UniformBuffer {
-                        dynamic: false,
-                        min_binding_size: None,
-                    },
-                    count: None,
-                }],
-                label: Some("uniform_bind_group_layout"),
-            });
-        let uniform_bind_group = device.create_bind_group(&wgpu::BindGroupDescriptor {
-            layout: &uniform_bind_group_layout,
-            entries: &[wgpu::BindGroupEntry {
-                binding: 0,
-                resource: wgpu::BindingResource::Buffer(uniform_buffer.slice(..)),
-            }],
-            label: Some("uniform_bind_group"),
-        });
+        //pipeline.set_vertices(&queue, vertices);
 
-        let vs_module =
-            device.create_shader_module(wgpu::include_spirv!("../shaders/main.shader.vert.spv"));
-        let fs_module =
-            device.create_shader_module(wgpu::include_spirv!("../shaders/main.shader.frag.spv"));
-
-        let render_pipeline_layout =
-            device.create_pipeline_layout(&wgpu::PipelineLayoutDescriptor {
-                label: Some("Render Pipeline Layout"),
-                bind_group_layouts: &[&uniform_bind_group_layout],
-                push_constant_ranges: &[],
-            });
-        let render_pipeline = device.create_render_pipeline(&wgpu::RenderPipelineDescriptor {
-            label: Some("Render Pipeline"),
-            layout: Some(&render_pipeline_layout),
-            vertex_stage: wgpu::ProgrammableStageDescriptor {
-                module: &vs_module,
-                entry_point: "main", // 1.
-            },
-            vertex_state: wgpu::VertexStateDescriptor {
-                index_format: wgpu::IndexFormat::Uint16,
-                vertex_buffers: &[Vertex::desc()],
-            },
-            fragment_stage: Some(wgpu::ProgrammableStageDescriptor {
-                // 2.
-                module: &fs_module,
-                entry_point: "main",
-            }),
-            rasterization_state: Some(wgpu::RasterizationStateDescriptor {
-                front_face: wgpu::FrontFace::Ccw,
-                cull_mode: wgpu::CullMode::None,
-                depth_bias: 0,
-                depth_bias_slope_scale: 0.0,
-                depth_bias_clamp: 0.0,
-                clamp_depth: false,
-            }),
-            color_states: &[wgpu::ColorStateDescriptor {
-                format: sc_desc.format,
-                color_blend: wgpu::BlendDescriptor::REPLACE,
-                alpha_blend: wgpu::BlendDescriptor::REPLACE,
-                write_mask: wgpu::ColorWrite::ALL,
-            }],
-            primitive_topology: wgpu::PrimitiveTopology::TriangleList, // 1.
-            depth_stencil_state: None,                                 // 2.
-            sample_count: 1,                                           // 5.
-            sample_mask: !0,                                           // 6.
-            alpha_to_coverage_enabled: false,                          // 7.
-        });
-
-        let b = Block::new(BlockType::Stone);
-        let mut bs = BlockSides::new();
-        bs.set_all(true);
-        let mesh = b.get_mesh(&GlobalBlockPos { x: 0, y: -1, z: 0 }, &bs);
-
-        let vertices: &[Vertex] = mesh.as_slice();
-
-        let vertex_buffer = device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
-            label: Some("Vertex Buffer"),
-            contents: bytemuck::cast_slice(vertices),
-            usage: wgpu::BufferUsage::VERTEX,
-        });
-        let num_vertices = vertices.len() as u32;
         /*let indices: &[u16] = &[0, 1, 2, 3, 1, 2];
         let index_buffer = device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
             label: Some("Index Buffer"),
@@ -172,14 +83,9 @@ impl State {
             sc_desc,
             swap_chain,
             size,
-            render_pipeline,
-            vertex_buffer,
-            num_vertices,
             //index_buffer,
             //num_indices,
-            uniforms,
-            uniform_buffer,
-            uniform_bind_group,
+            pipeline,
         }
     }
 
@@ -194,13 +100,7 @@ impl State {
         false
     }
 
-    fn update(&mut self) {
-        self.queue.write_buffer(
-            &self.uniform_buffer,
-            0,
-            bytemuck::cast_slice(&[self.uniforms]),
-        );
-    }
+    fn update(&mut self) {}
 
     fn render(&mut self) -> Result<(), wgpu::SwapChainError> {
         let frame = self.swap_chain.get_current_frame()?.output;
@@ -209,30 +109,7 @@ impl State {
             .create_command_encoder(&wgpu::CommandEncoderDescriptor {
                 label: Some("Render Encoder"),
             });
-        {
-            let mut render_pass = encoder.begin_render_pass(&wgpu::RenderPassDescriptor {
-                color_attachments: &[wgpu::RenderPassColorAttachmentDescriptor {
-                    attachment: &frame.view,
-                    resolve_target: None,
-                    ops: wgpu::Operations {
-                        load: wgpu::LoadOp::Clear(wgpu::Color {
-                            r: 0.1,
-                            g: 0.2,
-                            b: 0.6,
-                            a: 1.0,
-                        }),
-                        store: true,
-                    },
-                }],
-                depth_stencil_attachment: None,
-            });
-            render_pass.set_pipeline(&self.render_pipeline); // 2.
-            render_pass.set_bind_group(0, &self.uniform_bind_group, &[]);
-            render_pass.set_vertex_buffer(0, self.vertex_buffer.slice(..));
-            //render_pass.set_index_buffer(self.index_buffer.slice(..)); // 1.
-            //render_pass.draw_indexed(0..self.num_indices, 0, 0..1); // 2.
-            render_pass.draw(0..self.num_vertices, 0..1);
-        }
+        self.pipeline.do_render_pass(&mut encoder, &frame);
 
         // submit will accept anything that implements IntoIter
         self.queue.submit(std::iter::once(encoder.finish()));
@@ -305,8 +182,12 @@ pub fn start_main_loop() {
             player.handle_input(&(0.01 as f32));
             player.update(&(0.01 as f32));
             state
+                .pipeline
                 .uniforms
                 .update_view_proj(&player, (state.size.width, state.size.height));
+            state
+                .pipeline
+                .set_uniform_buffer(&state.queue, state.pipeline.uniforms);
             state.update();
             match state.render() {
                 Ok(_) => {}
