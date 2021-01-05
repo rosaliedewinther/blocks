@@ -27,8 +27,6 @@ mod world_gen;
 fn main() {
     setup_logger().unwrap();
 
-    info!("starting up");
-
     //let mut main_loop = MainLoop::new();
     //main_loop.run();
     start_main_loop();

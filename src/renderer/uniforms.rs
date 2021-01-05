@@ -31,6 +31,5 @@ impl Uniforms {
 
         self.view = player.get_view_matrix();
         self.perspective = gen_perspective_mat((width, height));
-        println!("{:?}", self.perspective);
     }
 }

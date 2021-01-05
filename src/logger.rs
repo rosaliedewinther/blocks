@@ -1,5 +1,6 @@
 pub fn setup_logger() -> Result<(), fern::InitError> {
     fern::Dispatch::new()
+        .level(log::LevelFilter::Warn)
         .format(|out, message, record| {
             out.finish(format_args!(
                 "{}[{}][{}] {}",

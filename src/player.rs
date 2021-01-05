@@ -26,7 +26,7 @@ impl Player {
             },
             direction: Vector3::new(0f32, 0.0f32, 1.0f32),
             up: [0f32, 1.0f32, 0f32],
-            speed: 25f32,
+            speed: 1f32,
             camera_speed: 1f32,
             input: Input::new(),
             render_distance: 500f32,

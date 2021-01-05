@@ -1,11 +1,13 @@
 use crate::block::{Block, BlockSides, BlockType};
 use crate::player::Player;
-use crate::positions::GlobalBlockPos;
+use crate::positions::{GlobalBlockPos, ObjectPos};
 use crate::renderer::uniforms::Uniforms;
 use crate::renderer::vertex::{vertex, Vertex};
 use futures::executor::block_on;
 use std::f32::consts::PI;
+use std::time::Instant;
 use wgpu::util::DeviceExt;
+use wgpu::TextureFormat;
 use winit::{
     event::*,
     event_loop::{ControlFlow, EventLoop},
@@ -22,8 +24,8 @@ struct State {
     render_pipeline: wgpu::RenderPipeline,
     vertex_buffer: wgpu::Buffer,
     num_vertices: u32,
-    index_buffer: wgpu::Buffer,
-    num_indices: u32,
+    //index_buffer: wgpu::Buffer,
+    //num_indices: u32,
     uniforms: Uniforms,
     uniform_buffer: wgpu::Buffer,
     uniform_bind_group: wgpu::BindGroup,
@@ -145,17 +147,9 @@ impl State {
         let b = Block::new(BlockType::Stone);
         let mut bs = BlockSides::new();
         bs.set_all(true);
-        let mesh = b.get_mesh(&GlobalBlockPos { x: -1, y: -1, z: 0 }, &bs);
-        for i in mesh.iter() {
-            println!("{:?}", i);
-        }
+        let mesh = b.get_mesh(&GlobalBlockPos { x: 0, y: -1, z: 0 }, &bs);
 
         let vertices: &[Vertex] = mesh.as_slice();
-        /*let vertices: &[Vertex] = &[
-            vertex([0.0, 0.5, 0.0], [1, 0, 0, 1], [0.0, 0.0, 0.0]),
-            vertex([-0.5, -0.5, 0.0], [0, 1, 0, 1], [0.0, 0.0, 0.0]),
-            vertex([0.5, -0.5, 0.0], [0, 0, 1, 1], [0.0, 0.0, 0.0]),
-        ];*/
 
         let vertex_buffer = device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
             label: Some("Vertex Buffer"),
@@ -163,13 +157,13 @@ impl State {
             usage: wgpu::BufferUsage::VERTEX,
         });
         let num_vertices = vertices.len() as u32;
-        let indices: &[u16] = &[0, 1, 2, 3, 1, 2];
+        /*let indices: &[u16] = &[0, 1, 2, 3, 1, 2];
         let index_buffer = device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
             label: Some("Index Buffer"),
             contents: bytemuck::cast_slice(indices),
             usage: wgpu::BufferUsage::INDEX,
         });
-        let num_indices = indices.len() as u32;
+        let num_indices = indices.len() as u32;*/
 
         Self {
             surface,
@@ -181,8 +175,8 @@ impl State {
             render_pipeline,
             vertex_buffer,
             num_vertices,
-            index_buffer,
-            num_indices,
+            //index_buffer,
+            //num_indices,
             uniforms,
             uniform_buffer,
             uniform_bind_group,
@@ -200,7 +194,13 @@ impl State {
         false
     }
 
-    fn update(&mut self) {}
+    fn update(&mut self) {
+        self.queue.write_buffer(
+            &self.uniform_buffer,
+            0,
+            bytemuck::cast_slice(&[self.uniforms]),
+        );
+    }
 
     fn render(&mut self) -> Result<(), wgpu::SwapChainError> {
         let frame = self.swap_chain.get_current_frame()?.output;
@@ -229,8 +229,8 @@ impl State {
             render_pass.set_pipeline(&self.render_pipeline); // 2.
             render_pass.set_bind_group(0, &self.uniform_bind_group, &[]);
             render_pass.set_vertex_buffer(0, self.vertex_buffer.slice(..));
-            render_pass.set_index_buffer(self.index_buffer.slice(..)); // 1.
-                                                                       //render_pass.draw_indexed(0..self.num_indices, 0, 0..1); // 2.
+            //render_pass.set_index_buffer(self.index_buffer.slice(..)); // 1.
+            //render_pass.draw_indexed(0..self.num_indices, 0, 0..1); // 2.
             render_pass.draw(0..self.num_vertices, 0..1);
         }
 
@@ -255,7 +255,7 @@ pub fn gen_perspective_mat(size: (u32, u32)) -> [[f32; 4]; 4] {
         [f * aspect_ratio, 0.0, 0.0, 0.0],
         [0.0, f, 0.0, 0.0],
         [0.0, 0.0, (zfar + znear) / (zfar - znear), 1.0],
-        [0.0, 0.0, -(2.0 * zfar * znear) / (zfar - znear), 0.0],
+        [0.0, 0.0, -(2.0 * zfar * znear) / (zfar - znear), 1.0],
     ]
 }
 
@@ -264,6 +264,12 @@ pub fn start_main_loop() {
     let window = WindowBuilder::new().build(&event_loop).unwrap();
     let mut state = block_on(State::new(&window));
     let mut player = Player::new();
+    player.position = ObjectPos {
+        x: 0f32,
+        y: 0f32,
+        z: 0f32,
+    };
+    let mut frame_timer = Instant::now();
 
     event_loop.run(move |event, _, control_flow| match event {
         Event::WindowEvent {
@@ -294,6 +300,13 @@ pub fn start_main_loop() {
             }
         }
         Event::RedrawRequested(_) => {
+            println!("elapsed: {}s", frame_timer.elapsed().as_secs_f32());
+            frame_timer = Instant::now();
+            player.handle_input(&(0.01 as f32));
+            player.update(&(0.01 as f32));
+            state
+                .uniforms
+                .update_view_proj(&player, (state.size.width, state.size.height));
             state.update();
             match state.render() {
                 Ok(_) => {}
@@ -310,15 +323,6 @@ pub fn start_main_loop() {
             // request it.
             window.request_redraw();
         }
-        _ => {
-            player.handle_input(&(0.01 as f32));
-            player.update(&(0.01 as f32));
-            state
-                .uniforms
-                .update_view_proj(&player, (state.size.width, state.size.height));
-            //println!("pos: {:?}", player.position);
-            //println!("dir: {:?}", player.direction);
-            //println!("-----------------");
-        }
+        _ => {}
     });
 }
