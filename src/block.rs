@@ -96,33 +96,40 @@ impl Block {
         }
         return false;
     }
-    pub fn get_mesh(&self, pos: &GlobalBlockPos, sides: &BlockSides) -> Vec<Vertex> {
-        let mut mesh = Vec::with_capacity(36);
+    pub fn get_mesh(&self, pos: &GlobalBlockPos, sides: &BlockSides) -> (Vec<Vertex>, Vec<u32>) {
+        let mut vertices = Vec::with_capacity(8);
+        let mut indices = Vec::with_capacity(36);
         if self.block_type == BlockType::Air {
-            return Vec::new();
+            return (Vec::new(), Vec::new());
         }
         let posf = pos.get_block_centre();
         if sides.right {
-            self.mesh_right(&posf, &mut mesh);
+            self.mesh_right(&posf, &mut vertices, &mut indices);
         }
         if sides.left {
-            self.mesh_left(&posf, &mut mesh);
+            self.mesh_left(&posf, &mut vertices, &mut indices);
         }
         if sides.top {
-            self.mesh_top(&posf, &mut mesh);
+            self.mesh_top(&posf, &mut vertices, &mut indices);
         }
         if sides.bot {
-            self.mesh_bottom(&posf, &mut mesh);
+            self.mesh_bottom(&posf, &mut vertices, &mut indices);
         }
         if sides.back {
-            self.mesh_back(&posf, &mut mesh);
+            self.mesh_back(&posf, &mut vertices, &mut indices);
         }
         if sides.front {
-            self.mesh_front(&posf, &mut mesh);
+            self.mesh_front(&posf, &mut vertices, &mut indices);
         }
-        return mesh;
+        return (vertices, indices);
     }
-    pub fn mesh_front(&self, pos: &ObjectPos, vec: &mut Vec<Vertex>) {
+    pub fn mesh_front(&self, pos: &ObjectPos, vec: &mut Vec<Vertex>, indices: &mut Vec<u32>) {
+        indices.push((vec.len() + 0) as u32);
+        indices.push((vec.len() + 1) as u32);
+        indices.push((vec.len() + 2) as u32);
+        indices.push((vec.len() + 1) as u32);
+        indices.push((vec.len() + 3) as u32);
+        indices.push((vec.len() + 2) as u32);
         vec.push(vertex(
             [pos.x, pos.y, pos.z],
             self.get_col(),
@@ -139,22 +146,18 @@ impl Block {
             [0f32, 0f32, 1f32],
         ));
         vec.push(vertex(
-            [pos.x + 1f32, pos.y, pos.z],
-            self.get_col(),
-            [0f32, 0f32, 1f32],
-        ));
-        vec.push(vertex(
             [pos.x + 1f32, pos.y + 1f32, pos.z],
             self.get_col(),
             [0f32, 0f32, 1f32],
         ));
-        vec.push(vertex(
-            [pos.x, pos.y + 1f32, pos.z],
-            self.get_col(),
-            [0f32, 0f32, 1f32],
-        ));
     }
-    pub fn mesh_back(&self, pos: &ObjectPos, vec: &mut Vec<Vertex>) {
+    pub fn mesh_back(&self, pos: &ObjectPos, vec: &mut Vec<Vertex>, indices: &mut Vec<u32>) {
+        indices.push((vec.len() + 0) as u32);
+        indices.push((vec.len() + 1) as u32);
+        indices.push((vec.len() + 2) as u32);
+        indices.push((vec.len() + 1) as u32);
+        indices.push((vec.len() + 3) as u32);
+        indices.push((vec.len() + 2) as u32);
         vec.push(vertex(
             [pos.x, pos.y, pos.z + 1f32],
             self.get_col(),
@@ -167,16 +170,6 @@ impl Block {
         ));
         vec.push(vertex(
             [pos.x + 1f32, pos.y, pos.z + 1f32],
-            self.get_col(),
-            [0f32, 0f32, -1f32],
-        ));
-        vec.push(vertex(
-            [pos.x + 1f32, pos.y, pos.z + 1f32],
-            self.get_col(),
-            [0f32, 0f32, -1f32],
-        ));
-        vec.push(vertex(
-            [pos.x, pos.y + 1f32, pos.z + 1f32],
             self.get_col(),
             [0f32, 0f32, -1f32],
         ));
@@ -186,7 +179,13 @@ impl Block {
             [0f32, 0f32, -1f32],
         ));
     }
-    pub fn mesh_left(&self, pos: &ObjectPos, vec: &mut Vec<Vertex>) {
+    pub fn mesh_left(&self, pos: &ObjectPos, vec: &mut Vec<Vertex>, indices: &mut Vec<u32>) {
+        indices.push((vec.len() + 0) as u32);
+        indices.push((vec.len() + 1) as u32);
+        indices.push((vec.len() + 2) as u32);
+        indices.push((vec.len() + 1) as u32);
+        indices.push((vec.len() + 3) as u32);
+        indices.push((vec.len() + 2) as u32);
         vec.push(vertex(
             [pos.x, pos.y, pos.z],
             self.get_col(),
@@ -207,18 +206,14 @@ impl Block {
             self.get_col(),
             [-1f32, 0f32, 0f32],
         ));
-        vec.push(vertex(
-            [pos.x, pos.y, pos.z + 1f32],
-            self.get_col(),
-            [-1f32, 0f32, 0f32],
-        ));
-        vec.push(vertex(
-            [pos.x, pos.y + 1f32, pos.z],
-            self.get_col(),
-            [-1f32, 0f32, 0f32],
-        ));
     }
-    pub fn mesh_right(&self, pos: &ObjectPos, vec: &mut Vec<Vertex>) {
+    pub fn mesh_right(&self, pos: &ObjectPos, vec: &mut Vec<Vertex>, indices: &mut Vec<u32>) {
+        indices.push((vec.len() + 0) as u32);
+        indices.push((vec.len() + 1) as u32);
+        indices.push((vec.len() + 2) as u32);
+        indices.push((vec.len() + 1) as u32);
+        indices.push((vec.len() + 3) as u32);
+        indices.push((vec.len() + 2) as u32);
         vec.push(vertex(
             [pos.x + 1f32, pos.y, pos.z],
             self.get_col(),
@@ -239,18 +234,14 @@ impl Block {
             self.get_col(),
             [1f32, 0f32, 0f32],
         ));
-        vec.push(vertex(
-            [pos.x + 1f32, pos.y + 1f32, pos.z],
-            self.get_col(),
-            [1f32, 0f32, 0f32],
-        ));
-        vec.push(vertex(
-            [pos.x + 1f32, pos.y, pos.z + 1f32],
-            self.get_col(),
-            [1f32, 0f32, 0f32],
-        ));
     }
-    pub fn mesh_top(&self, pos: &ObjectPos, vec: &mut Vec<Vertex>) {
+    pub fn mesh_top(&self, pos: &ObjectPos, vec: &mut Vec<Vertex>, indices: &mut Vec<u32>) {
+        indices.push((vec.len() + 0) as u32);
+        indices.push((vec.len() + 1) as u32);
+        indices.push((vec.len() + 2) as u32);
+        indices.push((vec.len() + 1) as u32);
+        indices.push((vec.len() + 3) as u32);
+        indices.push((vec.len() + 2) as u32);
         vec.push(vertex(
             [pos.x, pos.y + 1f32, pos.z],
             self.get_col(),
@@ -271,18 +262,14 @@ impl Block {
             self.get_col(),
             [0f32, 1f32, 0f32],
         ));
-        vec.push(vertex(
-            [pos.x, pos.y + 1f32, pos.z + 1f32],
-            self.get_col(),
-            [0f32, 1f32, 0f32],
-        ));
-        vec.push(vertex(
-            [pos.x + 1f32, pos.y + 1f32, pos.z],
-            self.get_col(),
-            [0f32, 1f32, 0f32],
-        ));
     }
-    pub fn mesh_bottom(&self, pos: &ObjectPos, vec: &mut Vec<Vertex>) {
+    pub fn mesh_bottom(&self, pos: &ObjectPos, vec: &mut Vec<Vertex>, indices: &mut Vec<u32>) {
+        indices.push((vec.len() + 0) as u32);
+        indices.push((vec.len() + 1) as u32);
+        indices.push((vec.len() + 2) as u32);
+        indices.push((vec.len() + 1) as u32);
+        indices.push((vec.len() + 3) as u32);
+        indices.push((vec.len() + 2) as u32);
         vec.push(vertex(
             [pos.x, pos.y, pos.z],
             self.get_col(),
@@ -300,16 +287,6 @@ impl Block {
         ));
         vec.push(vertex(
             [pos.x + 1f32, pos.y, pos.z + 1f32],
-            self.get_col(),
-            [0f32, -1f32, 0f32],
-        ));
-        vec.push(vertex(
-            [pos.x + 1f32, pos.y, pos.z],
-            self.get_col(),
-            [0f32, -1f32, 0f32],
-        ));
-        vec.push(vertex(
-            [pos.x, pos.y, pos.z + 1f32],
             self.get_col(),
             [0f32, -1f32, 0f32],
         ));

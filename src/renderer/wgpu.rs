@@ -153,7 +153,6 @@ pub fn start_main_loop() {
         y: 0f32,
         z: 0f32,
     };
-    let mut frame_timer = Instant::now();
 
     event_loop.run(move |event, _, control_flow| match event {
         Event::WindowEvent {
@@ -184,8 +183,6 @@ pub fn start_main_loop() {
             }
         }
         Event::RedrawRequested(_) => {
-            println!("elapsed: {}s", frame_timer.elapsed().as_secs_f32());
-            frame_timer = Instant::now();
             player.handle_input(&(0.01 as f32));
             player.update(&(0.01 as f32));
             state

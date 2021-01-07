@@ -38,38 +38,4 @@ impl World {
         }
         return true;
     }
-
-    pub fn sides_to_render(&self, global_pos: &GlobalBlockPos) -> BlockSides {
-        let mut sides = BlockSides::new();
-        if self.should_render_against_block(&global_pos.get_diff(1, 0, 0)) {
-            sides.right = true;
-        }
-        if self.should_render_against_block(&global_pos.get_diff(-1, 0, 0)) {
-            sides.left = true;
-        }
-        if self.should_render_against_block(&global_pos.get_diff(0, 1, 0)) {
-            sides.top = true;
-        }
-        if self.should_render_against_block(&global_pos.get_diff(0, -1, 0)) {
-            sides.bot = true;
-        }
-        if self.should_render_against_block(&global_pos.get_diff(0, 0, 1)) {
-            sides.back = true;
-        }
-        if self.should_render_against_block(&global_pos.get_diff(0, 0, -1)) {
-            sides.front = true;
-        }
-        return sides;
-    }
-    pub fn should_render_against_block(&self, pos: &GlobalBlockPos) -> bool {
-        let real_chunk_pos = pos.get_meta_chunk_pos();
-        if !self.chunks.contains_key(&real_chunk_pos) {
-            return false;
-        }
-        let block = self.get_block(&pos);
-        match block {
-            Some(b) => b.should_render_against(),
-            None => true,
-        }
-    }
 }

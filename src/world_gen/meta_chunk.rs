@@ -1,16 +1,23 @@
 use crate::algorithms::bfs_world::bfs_world_air;
-use crate::block::{Block, BlockType};
+use crate::block::{Block, BlockSides, BlockType};
 use crate::constants::{CHUNKSIZE, METACHUNKSIZE, VERTICALCHUNKS};
 use crate::io::file_reader::read_meta_chunk_from_file;
 use crate::io::file_writer::write_to_file;
-use crate::positions::{ChunkPos, GlobalBlockPos, LocalChunkPos, MetaChunkPos};
+use crate::player::Player;
+use crate::positions::{ChunkPos, GlobalBlockPos, LocalBlockPos, LocalChunkPos, MetaChunkPos};
+use crate::renderer::vertex::Vertex;
 use crate::structures::square::place_square;
 use crate::structures::tree::place_tree;
+use crate::utils::{to_sign_of, wrap};
 use crate::world_gen::basic::{floodfill_water, generate_empty_chunk, generate_landmass};
 use crate::world_gen::chunk::Chunk;
 use rand::distributions::{Distribution, Uniform};
+use rayon::iter::ParallelIterator;
+use rayon::iter::{IntoParallelIterator, IntoParallelRefIterator};
 use serde::{Deserialize, Serialize};
 use std::borrow::BorrowMut;
+use std::sync::{Arc, Mutex};
+use std::time::Instant;
 
 #[derive(Serialize, Deserialize)]
 pub struct MetaChunk {
@@ -170,5 +177,108 @@ impl MetaChunk {
     }
     pub fn get_chunk(&self, pos: &LocalChunkPos) -> Option<&Chunk> {
         return Some(&self.chunks[pos.x as usize][pos.y as usize][pos.z as usize]);
+    }
+    pub fn get_chunk_pos(&self, pos: &LocalChunkPos) -> ChunkPos {
+        let x = self.pos.x * METACHUNKSIZE as i32
+            + wrap(to_sign_of(self.pos.x, pos.x), METACHUNKSIZE as i32);
+        let y = pos.y;
+        let z = self.pos.z * METACHUNKSIZE as i32
+            + wrap(to_sign_of(self.pos.z, pos.z), METACHUNKSIZE as i32);
+        ChunkPos { x, y, z }
+    }
+    pub fn generate_vertex_buffers(&self) -> (Vec<Vertex>, Vec<u32>) {
+        let mut vertices = Arc::new(Mutex::new(Vec::with_capacity(100000)));
+        let mut indices = Arc::new(Mutex::new(Vec::with_capacity(100000)));
+        let now = Instant::now();
+        (0..METACHUNKSIZE as i32).into_par_iter().for_each(|x| {
+            (0..VERTICALCHUNKS as i32).into_par_iter().for_each(|y| {
+                (0..METACHUNKSIZE as i32).into_par_iter().for_each(|z| {
+                    let local_chunk_pos = LocalChunkPos { x, y, z };
+                    let chunk = self.get_chunk(&local_chunk_pos).unwrap();
+                    let chunk_pos = self.get_chunk_pos(&local_chunk_pos);
+                    let (mut new_vertices, mut new_indices) =
+                        self.get_chunk_vertices(chunk, &chunk_pos);
+                    {
+                        new_indices = new_indices
+                            .iter()
+                            .map(|i| i + (&vertices.lock().unwrap()).len() as u32)
+                            .collect();
+                        vertices.lock().unwrap().append(&mut new_vertices);
+                        indices.lock().unwrap().append(&mut new_indices);
+                    }
+                });
+            });
+        });
+        println!("vertex gen took: {}", now.elapsed().as_secs_f32());
+        return (
+            Arc::try_unwrap(vertices).unwrap().into_inner().unwrap(),
+            Arc::try_unwrap(indices).unwrap().into_inner().unwrap(),
+        );
+    }
+    pub fn get_chunk_vertices(
+        &self,
+        chunk: &Chunk,
+        chunk_pos: &ChunkPos,
+    ) -> (Vec<Vertex>, Vec<u32>) {
+        let mut vertices: Vec<Vertex> = Vec::with_capacity(20000);
+        let mut indices: Vec<u32> = Vec::with_capacity(20000);
+        for x in 0..CHUNKSIZE as i32 {
+            for y in 0..CHUNKSIZE as i32 {
+                for z in 0..CHUNKSIZE as i32 {
+                    let global_pos = GlobalBlockPos {
+                        x: x + (chunk_pos.x * CHUNKSIZE as i32),
+                        y: y + (chunk_pos.y * CHUNKSIZE as i32),
+                        z: z + (chunk_pos.z * CHUNKSIZE as i32),
+                    };
+
+                    let block = chunk.get_block(&LocalBlockPos { x, y, z });
+                    if block.is_some() && block.unwrap().block_type == BlockType::Air {
+                        continue;
+                    }
+                    let sides = self.sides_to_render(&global_pos);
+
+                    let block: &Block = &chunk.blocks[x as usize][y as usize][z as usize];
+                    let (mut temp_vertices, mut temp_indices) = block.get_mesh(&global_pos, &sides);
+                    temp_indices = temp_indices
+                        .iter()
+                        .map(|i| i + (&temp_vertices).len() as u32)
+                        .collect();
+                    {
+                        vertices.append(&mut temp_vertices);
+                        indices.append(&mut temp_indices);
+                    }
+                }
+            }
+        }
+        return (vertices, indices);
+    }
+    pub fn sides_to_render(&self, global_pos: &GlobalBlockPos) -> BlockSides {
+        let mut sides = BlockSides::new();
+        if self.should_render_against_block(&global_pos.get_diff(1, 0, 0)) {
+            sides.right = true;
+        }
+        if self.should_render_against_block(&global_pos.get_diff(-1, 0, 0)) {
+            sides.left = true;
+        }
+        if self.should_render_against_block(&global_pos.get_diff(0, 1, 0)) {
+            sides.top = true;
+        }
+        if self.should_render_against_block(&global_pos.get_diff(0, -1, 0)) {
+            sides.bot = true;
+        }
+        if self.should_render_against_block(&global_pos.get_diff(0, 0, 1)) {
+            sides.back = true;
+        }
+        if self.should_render_against_block(&global_pos.get_diff(0, 0, -1)) {
+            sides.front = true;
+        }
+        return sides;
+    }
+    pub fn should_render_against_block(&self, pos: &GlobalBlockPos) -> bool {
+        let block = self.get_block(&pos);
+        match block {
+            Some(b) => b.should_render_against(),
+            None => true,
+        }
     }
 }

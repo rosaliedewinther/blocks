@@ -1,8 +1,9 @@
 use crate::block::{Block, BlockSides, BlockType};
-use crate::positions::GlobalBlockPos;
+use crate::positions::{GlobalBlockPos, MetaChunkPos};
 use crate::renderer::depth_texture::DepthTexture;
 use crate::renderer::uniforms::Uniforms;
 use crate::renderer::vertex::Vertex;
+use crate::world_gen::meta_chunk::MetaChunk;
 use wgpu::util::DeviceExt;
 use wgpu::{CommandEncoder, Device, Queue, RenderPass, SwapChainDescriptor, SwapChainTexture};
 
@@ -13,6 +14,8 @@ pub struct WgpuPipeline {
     pub uniform_bind_group: wgpu::BindGroup,
     pub num_vertices: u32,
     pub render_pipeline: wgpu::RenderPipeline,
+    pub index_buffer: wgpu::Buffer,
+    pub num_indices: u32,
 }
 
 impl WgpuPipeline {
@@ -65,7 +68,7 @@ impl WgpuPipeline {
                 entry_point: "main", // 1.
             },
             vertex_state: wgpu::VertexStateDescriptor {
-                index_format: wgpu::IndexFormat::Uint16,
+                index_format: wgpu::IndexFormat::Uint32,
                 vertex_buffers: &[Vertex::desc()],
             },
             fragment_stage: Some(wgpu::ProgrammableStageDescriptor {
@@ -75,7 +78,7 @@ impl WgpuPipeline {
             }),
             rasterization_state: Some(wgpu::RasterizationStateDescriptor {
                 front_face: wgpu::FrontFace::Ccw,
-                cull_mode: wgpu::CullMode::None,
+                cull_mode: wgpu::CullMode::Back,
                 depth_bias: 0,
                 depth_bias_slope_scale: 0.0,
                 depth_bias_clamp: 0.0,
@@ -101,14 +104,25 @@ impl WgpuPipeline {
 
         let empty: &[u8; 0] = &[];
 
-        let b = Block::new(BlockType::Stone);
+        /*let b = Block::new(BlockType::Stone);
         let mut bs = BlockSides::new();
         bs.set_all(true);
-        let mesh = b.get_mesh(&GlobalBlockPos { x: 0, y: -1, z: 0 }, &bs);
+        let (vert, ind) = b.get_mesh(&GlobalBlockPos { x: 0, y: 0, z: 0 }, &bs);
+        let (vert2, ind2) = b.get_mesh(&GlobalBlockPos { x: -2, y: 0, z: 0 }, &bs);
+        let moved = ind2.iter().map(|i| i + (&vert).len() as u32).collect();
+        let complete = [vert, vert2].concat();
+        let completei = [ind, moved].concat();*/
 
-        let vertices: &[Vertex] = mesh.as_slice();
+        let chunk = MetaChunk::load_or_gen(MetaChunkPos { x: 0, z: 0 }, 1, false);
 
-        println!("{:?}", mesh);
+        let (vertices, indices) = chunk.generate_vertex_buffers();
+
+        let vertices: &[Vertex] = vertices.as_slice();
+        let indices: &[u32] = indices.as_slice();
+
+        println!("ind: {:?}", indices);
+        println!("vert size: {:#?}", vertices.len());
+        println!("ind size {:#?}", indices.len());
 
         let vertex_buffer = device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
             label: Some("Vertex Buffer"),
@@ -116,6 +130,12 @@ impl WgpuPipeline {
             usage: wgpu::BufferUsage::VERTEX,
         });
 
+        let index_buffer = device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
+            label: Some("Index Buffer"),
+            contents: bytemuck::cast_slice(indices),
+            usage: wgpu::BufferUsage::INDEX,
+        });
+        let num_indices = indices.len() as u32;
         let num_vertices = vertices.len() as u32;
         return WgpuPipeline {
             uniforms,
@@ -124,6 +144,8 @@ impl WgpuPipeline {
             vertex_buffer,
             num_vertices,
             render_pipeline,
+            index_buffer,
+            num_indices,
         };
     }
     pub fn set_vertices(&mut self, queue: &Queue, vertices: &[Vertex]) {
@@ -162,9 +184,9 @@ impl WgpuPipeline {
         render_pass.set_pipeline(&self.render_pipeline); // 2.
         render_pass.set_bind_group(0, &self.uniform_bind_group, &[]);
         render_pass.set_vertex_buffer(0, self.vertex_buffer.slice(..));
-        //render_pass.set_index_buffer(self.index_buffer.slice(..)); // 1.
-        //render_pass.draw_indexed(0..self.num_indices, 0, 0..1); // 2.
-        render_pass.draw(0..self.num_vertices, 0..1);
+        render_pass.set_index_buffer(self.index_buffer.slice(..)); // 1.
+        render_pass.draw_indexed(0..self.num_indices, 0, 0..1); // 2.
+                                                                //render_pass.draw(0..self.num_vertices, 0..1);
     }
     pub fn set_uniform_buffer(&self, queue: &Queue, uniforms: Uniforms) {
         queue.write_buffer(&self.uniform_buffer, 0, bytemuck::cast_slice(&[uniforms]));

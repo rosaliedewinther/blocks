@@ -158,7 +158,7 @@ impl ChunkManager {
         }
     }
 
-    pub fn get_chunk_vertices(&self, chunk: &Chunk, chunk_pos: &ChunkPos) -> Vec<Vertex> {
+    /*pub fn get_chunk_vertices(&self, chunk: &Chunk, chunk_pos: &ChunkPos) -> Vec<Vertex> {
         let mut temp_vertex_buffer: Vec<Vertex> = Vec::with_capacity(20000);
         for x in 0..CHUNKSIZE as i32 {
             for y in 0..CHUNKSIZE as i32 {
@@ -184,7 +184,7 @@ impl ChunkManager {
             }
         }
         return temp_vertex_buffer;
-    }
+    }*/
 
     /*pub fn render_chunks(&self, draw_info: &mut DrawInfo, frame: &mut Frame, player: &Player) {
         let draw_info_ptr = Arc::new(Mutex::new(draw_info));
