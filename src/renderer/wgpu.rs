@@ -1,10 +1,12 @@
 use crate::block::{Block, BlockSides, BlockType};
 use crate::player::Player;
 use crate::positions::{GlobalBlockPos, ObjectPos};
+use crate::renderer::depth_texture::DepthTexture;
 use crate::renderer::uniforms::Uniforms;
 use crate::renderer::vertex::{vertex, Vertex};
 use crate::renderer::wgpu_pipeline::WgpuPipeline;
 use futures::executor::block_on;
+use imgui_wgpu::Texture;
 use std::f32::consts::PI;
 use std::time::Instant;
 use wgpu::util::DeviceExt;
@@ -26,6 +28,7 @@ struct State {
     //index_buffer: wgpu::Buffer,
     //num_indices: u32,
     pipeline: WgpuPipeline,
+    depth_texture: DepthTexture,
 }
 
 impl State {
@@ -75,6 +78,7 @@ impl State {
             usage: wgpu::BufferUsage::INDEX,
         });
         let num_indices = indices.len() as u32;*/
+        let depth_texture = DepthTexture::create_depth_texture(&device, &sc_desc, "depth_texture");
 
         Self {
             surface,
@@ -86,6 +90,7 @@ impl State {
             //index_buffer,
             //num_indices,
             pipeline,
+            depth_texture,
         }
     }
 
@@ -109,7 +114,9 @@ impl State {
             .create_command_encoder(&wgpu::CommandEncoderDescriptor {
                 label: Some("Render Encoder"),
             });
-        self.pipeline.do_render_pass(&mut encoder, &frame);
+
+        self.pipeline
+            .do_render_pass(&mut encoder, &frame, &self.depth_texture);
 
         // submit will accept anything that implements IntoIter
         self.queue.submit(std::iter::once(encoder.finish()));

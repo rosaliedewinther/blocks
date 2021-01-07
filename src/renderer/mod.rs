@@ -1,3 +1,4 @@
+pub mod depth_texture;
 pub mod glium;
 pub mod uniforms;
 pub mod vertex;

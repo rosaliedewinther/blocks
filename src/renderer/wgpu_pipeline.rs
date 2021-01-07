@@ -1,5 +1,6 @@
 use crate::block::{Block, BlockSides, BlockType};
 use crate::positions::GlobalBlockPos;
+use crate::renderer::depth_texture::DepthTexture;
 use crate::renderer::uniforms::Uniforms;
 use crate::renderer::vertex::Vertex;
 use wgpu::util::DeviceExt;
@@ -87,7 +88,12 @@ impl WgpuPipeline {
                 write_mask: wgpu::ColorWrite::ALL,
             }],
             primitive_topology: wgpu::PrimitiveTopology::TriangleList, // 1.
-            depth_stencil_state: None,                                 // 2.
+            depth_stencil_state: Some(wgpu::DepthStencilStateDescriptor {
+                format: DepthTexture::DEPTH_FORMAT,
+                depth_write_enabled: true,
+                depth_compare: wgpu::CompareFunction::Less, // 1.
+                stencil: wgpu::StencilStateDescriptor::default(), // 2.
+            }), // 2.
             sample_count: 1,                                           // 5.
             sample_mask: !0,                                           // 6.
             alpha_to_coverage_enabled: false,                          // 7.
@@ -101,6 +107,8 @@ impl WgpuPipeline {
         let mesh = b.get_mesh(&GlobalBlockPos { x: 0, y: -1, z: 0 }, &bs);
 
         let vertices: &[Vertex] = mesh.as_slice();
+
+        println!("{:?}", mesh);
 
         let vertex_buffer = device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
             label: Some("Vertex Buffer"),
@@ -122,7 +130,12 @@ impl WgpuPipeline {
         queue.write_buffer(&self.vertex_buffer, 0, bytemuck::cast_slice(vertices));
         self.num_vertices = vertices.len() as u32;
     }
-    pub fn do_render_pass(&self, encoder: &mut CommandEncoder, frame: &SwapChainTexture) {
+    pub fn do_render_pass(
+        &self,
+        encoder: &mut CommandEncoder,
+        frame: &SwapChainTexture,
+        depth_texture: &DepthTexture,
+    ) {
         let mut render_pass = encoder.begin_render_pass(&wgpu::RenderPassDescriptor {
             color_attachments: &[wgpu::RenderPassColorAttachmentDescriptor {
                 attachment: &frame.view,
@@ -137,7 +150,14 @@ impl WgpuPipeline {
                     store: true,
                 },
             }],
-            depth_stencil_attachment: None,
+            depth_stencil_attachment: Some(wgpu::RenderPassDepthStencilAttachmentDescriptor {
+                attachment: &depth_texture.view,
+                depth_ops: Some(wgpu::Operations {
+                    load: wgpu::LoadOp::Clear(1.0),
+                    store: true,
+                }),
+                stencil_ops: None,
+            }),
         });
         render_pass.set_pipeline(&self.render_pipeline); // 2.
         render_pass.set_bind_group(0, &self.uniform_bind_group, &[]);
