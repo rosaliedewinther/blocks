@@ -19,7 +19,7 @@ pub struct WgpuPipeline {
 }
 
 impl WgpuPipeline {
-    pub fn new(device: &Device, sc_desc: &SwapChainDescriptor) -> WgpuPipeline {
+    pub fn new(device: &Device, sc_desc: &SwapChainDescriptor, pos: i32) -> WgpuPipeline {
         let mut uniforms = Uniforms::new();
 
         let uniform_buffer = device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
@@ -102,18 +102,7 @@ impl WgpuPipeline {
             alpha_to_coverage_enabled: false,                          // 7.
         });
 
-        let empty: &[u8; 0] = &[];
-
-        /*let b = Block::new(BlockType::Stone);
-        let mut bs = BlockSides::new();
-        bs.set_all(true);
-        let (vert, ind) = b.get_mesh(&GlobalBlockPos { x: 0, y: 0, z: 0 }, &bs);
-        let (vert2, ind2) = b.get_mesh(&GlobalBlockPos { x: -2, y: 0, z: 0 }, &bs);
-        let moved = ind2.iter().map(|i| i + (&vert).len() as u32).collect();
-        let complete = [vert, vert2].concat();
-        let completei = [ind, moved].concat();*/
-
-        let chunk = MetaChunk::load_or_gen(MetaChunkPos { x: 0, z: 0 }, 1, false);
+        let chunk = MetaChunk::load_or_gen(MetaChunkPos { x: pos, z: 0 }, 1, false);
 
         let (vertices, indices) = chunk.generate_vertex_buffers();
 
@@ -152,35 +141,7 @@ impl WgpuPipeline {
         queue.write_buffer(&self.vertex_buffer, 0, bytemuck::cast_slice(vertices));
         self.num_vertices = vertices.len() as u32;
     }
-    pub fn do_render_pass(
-        &self,
-        encoder: &mut CommandEncoder,
-        frame: &SwapChainTexture,
-        depth_texture: &DepthTexture,
-    ) {
-        let mut render_pass = encoder.begin_render_pass(&wgpu::RenderPassDescriptor {
-            color_attachments: &[wgpu::RenderPassColorAttachmentDescriptor {
-                attachment: &frame.view,
-                resolve_target: None,
-                ops: wgpu::Operations {
-                    load: wgpu::LoadOp::Clear(wgpu::Color {
-                        r: 0.1,
-                        g: 0.2,
-                        b: 0.6,
-                        a: 1.0,
-                    }),
-                    store: true,
-                },
-            }],
-            depth_stencil_attachment: Some(wgpu::RenderPassDepthStencilAttachmentDescriptor {
-                attachment: &depth_texture.view,
-                depth_ops: Some(wgpu::Operations {
-                    load: wgpu::LoadOp::Clear(1.0),
-                    store: true,
-                }),
-                stencil_ops: None,
-            }),
-        });
+    pub fn do_render_pass(&self, render_pass: &mut RenderPass) {
         render_pass.set_pipeline(&self.render_pipeline); // 2.
         render_pass.set_bind_group(0, &self.uniform_bind_group, &[]);
         render_pass.set_vertex_buffer(0, self.vertex_buffer.slice(..));

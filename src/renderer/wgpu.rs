@@ -28,6 +28,7 @@ struct State {
     //index_buffer: wgpu::Buffer,
     //num_indices: u32,
     pipeline: WgpuPipeline,
+    pipeline2: WgpuPipeline,
     depth_texture: DepthTexture,
 }
 
@@ -67,7 +68,8 @@ impl State {
         };
         let swap_chain = device.create_swap_chain(&surface, &sc_desc);
 
-        let mut pipeline = WgpuPipeline::new(&device, &sc_desc);
+        let mut pipeline = WgpuPipeline::new(&device, &sc_desc, 1);
+        let mut pipeline2 = WgpuPipeline::new(&device, &sc_desc, 0);
 
         //pipeline.set_vertices(&queue, vertices);
 
@@ -90,6 +92,7 @@ impl State {
             //index_buffer,
             //num_indices,
             pipeline,
+            pipeline2,
             depth_texture,
         }
     }
@@ -115,8 +118,32 @@ impl State {
                 label: Some("Render Encoder"),
             });
 
-        self.pipeline
-            .do_render_pass(&mut encoder, &frame, &self.depth_texture);
+        let mut render_pass = encoder.begin_render_pass(&wgpu::RenderPassDescriptor {
+            color_attachments: &[wgpu::RenderPassColorAttachmentDescriptor {
+                attachment: &frame.view,
+                resolve_target: None,
+                ops: wgpu::Operations {
+                    load: wgpu::LoadOp::Clear(wgpu::Color {
+                        r: 0.1,
+                        g: 0.2,
+                        b: 0.6,
+                        a: 1.0,
+                    }),
+                    store: true,
+                },
+            }],
+            depth_stencil_attachment: Some(wgpu::RenderPassDepthStencilAttachmentDescriptor {
+                attachment: &self.depth_texture.view,
+                depth_ops: Some(wgpu::Operations {
+                    load: wgpu::LoadOp::Clear(1.0),
+                    store: true,
+                }),
+                stencil_ops: None,
+            }),
+        });
+
+        self.pipeline.do_render_pass(&mut render_pass);
+        self.pipeline2.do_render_pass(&mut render_pass);
 
         // submit will accept anything that implements IntoIter
         self.queue.submit(std::iter::once(encoder.finish()));
