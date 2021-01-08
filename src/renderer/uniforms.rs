@@ -6,6 +6,7 @@ use crate::renderer::wgpu::gen_perspective_mat;
 pub struct Uniforms {
     view: [[f32; 4]; 4],
     perspective: [[f32; 4]; 4],
+    viewer_pos: [f32; 3],
 }
 
 impl Uniforms {
@@ -23,6 +24,7 @@ impl Uniforms {
                 [0.0, 0.0, 0.0, 0.0],
                 [0.0, 0.0, 0.0, 0.0],
             ],
+            viewer_pos: [0.0, 0.0, 0.0],
         }
     }
 
@@ -31,5 +33,6 @@ impl Uniforms {
 
         self.view = player.get_view_matrix();
         self.perspective = gen_perspective_mat((width, height));
+        self.viewer_pos = [player.position.x, player.position.y, player.position.z]
     }
 }

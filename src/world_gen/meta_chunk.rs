@@ -89,7 +89,7 @@ impl MetaChunk {
 
         let mut rng = rand::thread_rng();
         let location_range = Uniform::from(0..(METACHUNKSIZE * CHUNKSIZE));
-        for _ in 0..1000 {
+        for _ in 0..100 {
             let structure_x = pos.x * METACHUNKSIZE as i32 + location_range.sample(&mut rng) as i32;
             let structure_z = pos.z * METACHUNKSIZE as i32 + location_range.sample(&mut rng) as i32;
             let structure_y = chunk.first_above_land_y(structure_x, structure_z);
@@ -241,7 +241,7 @@ impl MetaChunk {
                     let (mut temp_vertices, mut temp_indices) = block.get_mesh(&global_pos, &sides);
                     temp_indices = temp_indices
                         .iter()
-                        .map(|i| i + (&temp_vertices).len() as u32)
+                        .map(|i| i + (&vertices).len() as u32)
                         .collect();
                     {
                         vertices.append(&mut temp_vertices);
