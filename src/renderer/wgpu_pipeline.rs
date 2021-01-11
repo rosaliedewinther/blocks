@@ -141,13 +141,12 @@ impl WgpuPipeline {
         queue.write_buffer(&self.vertex_buffer, 0, bytemuck::cast_slice(vertices));
         self.num_vertices = vertices.len() as u32;
     }
-    pub fn do_render_pass(&self, render_pass: &mut RenderPass) {
-        render_pass.set_pipeline(&self.render_pipeline); // 2.
+    pub fn do_render_pass<'a>(&'a self, render_pass: &mut RenderPass<'a>) {
+        render_pass.set_pipeline(&self.render_pipeline);
         render_pass.set_bind_group(0, &self.uniform_bind_group, &[]);
         render_pass.set_vertex_buffer(0, self.vertex_buffer.slice(..));
-        render_pass.set_index_buffer(self.index_buffer.slice(..)); // 1.
-        render_pass.draw_indexed(0..self.num_indices, 0, 0..1); // 2.
-                                                                //render_pass.draw(0..self.num_vertices, 0..1);
+        render_pass.set_index_buffer(self.index_buffer.slice(..));
+        render_pass.draw_indexed(0..self.num_indices, 0, 0..1);
     }
     pub fn set_uniform_buffer(&self, queue: &Queue, uniforms: Uniforms) {
         queue.write_buffer(&self.uniform_buffer, 0, bytemuck::cast_slice(&[uniforms]));

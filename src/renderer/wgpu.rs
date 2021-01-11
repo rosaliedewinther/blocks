@@ -69,7 +69,7 @@ impl State {
         let swap_chain = device.create_swap_chain(&surface, &sc_desc);
 
         let mut pipeline = WgpuPipeline::new(&device, &sc_desc, 1);
-        let mut pipeline2 = WgpuPipeline::new(&device, &sc_desc, 0);
+        let mut pipeline2 = WgpuPipeline::new(&device, &sc_desc, 1);
 
         //pipeline.set_vertices(&queue, vertices);
 
@@ -117,34 +117,40 @@ impl State {
             .create_command_encoder(&wgpu::CommandEncoderDescriptor {
                 label: Some("Render Encoder"),
             });
-
-        let mut render_pass = encoder.begin_render_pass(&wgpu::RenderPassDescriptor {
-            color_attachments: &[wgpu::RenderPassColorAttachmentDescriptor {
-                attachment: &frame.view,
-                resolve_target: None,
-                ops: wgpu::Operations {
-                    load: wgpu::LoadOp::Clear(wgpu::Color {
-                        r: 0.1,
-                        g: 0.2,
-                        b: 0.6,
-                        a: 1.0,
+        {
+            let mut render_pass = encoder.begin_render_pass(&wgpu::RenderPassDescriptor {
+                color_attachments: &[wgpu::RenderPassColorAttachmentDescriptor {
+                    attachment: &frame.view,
+                    resolve_target: None,
+                    ops: wgpu::Operations {
+                        load: wgpu::LoadOp::Clear(wgpu::Color {
+                            r: 0.1,
+                            g: 0.2,
+                            b: 0.6,
+                            a: 1.0,
+                        }),
+                        store: true,
+                    },
+                }],
+                depth_stencil_attachment: Some(wgpu::RenderPassDepthStencilAttachmentDescriptor {
+                    attachment: &self.depth_texture.view,
+                    depth_ops: Some(wgpu::Operations {
+                        load: wgpu::LoadOp::Clear(1.0),
+                        store: true,
                     }),
-                    store: true,
-                },
-            }],
-            depth_stencil_attachment: Some(wgpu::RenderPassDepthStencilAttachmentDescriptor {
-                attachment: &self.depth_texture.view,
-                depth_ops: Some(wgpu::Operations {
-                    load: wgpu::LoadOp::Clear(1.0),
-                    store: true,
+                    stencil_ops: None,
                 }),
-                stencil_ops: None,
-            }),
-        });
+            });
 
-        self.pipeline.do_render_pass(&mut render_pass);
-        self.pipeline2.do_render_pass(&mut render_pass);
+            self.pipeline.do_render_pass(&mut render_pass);
+            self.pipeline2.do_render_pass(&mut render_pass);
 
+            /*render_pass.set_pipeline(&self.pipeline.render_pipeline);
+            render_pass.set_bind_group(0, &self.pipeline.uniform_bind_group, &[]);
+            render_pass.set_vertex_buffer(0, self.pipeline.vertex_buffer.slice(..));
+            render_pass.set_index_buffer(self.pipeline.index_buffer.slice(..));
+            render_pass.draw_indexed(0..self.pipeline.num_indices, 0, 0..1);*/
+        }
         // submit will accept anything that implements IntoIter
         self.queue.submit(std::iter::once(encoder.finish()));
 

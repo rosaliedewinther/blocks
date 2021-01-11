@@ -1,10 +1,9 @@
 #![allow(dead_code)]
 
-use log::info;
-
 use crate::logger::setup_logger;
 use crate::main_loop::MainLoop;
 use crate::renderer::wgpu::start_main_loop;
+use log::Level::Debug;
 
 mod algorithms;
 mod block;
@@ -30,6 +29,4 @@ fn main() {
     //let mut main_loop = MainLoop::new();
     //main_loop.run();
     start_main_loop();
-
-    println!("done");
 }
