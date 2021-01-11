@@ -187,25 +187,13 @@ impl MetaChunk {
         ChunkPos { x, y, z }
     }
     pub fn generate_vertex_buffers(&self) -> (Vec<Vertex>, Vec<u32>) {
-        let mut vertices = Arc::new(Mutex::new(Vec::with_capacity(100000)));
-        let mut indices = Arc::new(Mutex::new(Vec::with_capacity(100000)));
+        let vertices = Arc::new(Mutex::new(Vec::with_capacity(100000)));
+        let indices = Arc::new(Mutex::new(Vec::with_capacity(100000)));
         let now = Instant::now();
         (0..METACHUNKSIZE as i32).into_par_iter().for_each(|x| {
             (0..VERTICALCHUNKS as i32).into_par_iter().for_each(|y| {
                 (0..METACHUNKSIZE as i32).into_par_iter().for_each(|z| {
                     let local_chunk_pos = LocalChunkPos { x, y, z };
-                    let chunk = self.get_chunk(&local_chunk_pos).unwrap();
-                    let chunk_pos = self.get_chunk_pos(&local_chunk_pos);
-                    let (mut new_vertices, mut new_indices) =
-                        self.get_chunk_vertices(chunk, &chunk_pos);
-                    {
-                        new_indices = new_indices
-                            .iter()
-                            .map(|i| i + (&vertices.lock().unwrap()).len() as u32)
-                            .collect();
-                        vertices.lock().unwrap().append(&mut new_vertices);
-                        indices.lock().unwrap().append(&mut new_indices);
-                    }
                 });
             });
         });

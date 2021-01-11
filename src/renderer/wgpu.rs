@@ -68,7 +68,7 @@ impl State {
         };
         let swap_chain = device.create_swap_chain(&surface, &sc_desc);
 
-        let mut pipeline = WgpuPipeline::new(&device, &sc_desc, 1);
+        let mut pipeline = WgpuPipeline::new(&device, &sc_desc, 0);
         let mut pipeline2 = WgpuPipeline::new(&device, &sc_desc, 1);
 
         //pipeline.set_vertices(&queue, vertices);
@@ -142,14 +142,17 @@ impl State {
                 }),
             });
 
-            self.pipeline.do_render_pass(&mut render_pass);
-            self.pipeline2.do_render_pass(&mut render_pass);
+            //self.pipeline.do_render_pass(&mut render_pass);
+            //self.pipeline2.do_render_pass(&mut render_pass);
 
-            /*render_pass.set_pipeline(&self.pipeline.render_pipeline);
+            render_pass.set_pipeline(&self.pipeline.render_pipeline);
             render_pass.set_bind_group(0, &self.pipeline.uniform_bind_group, &[]);
             render_pass.set_vertex_buffer(0, self.pipeline.vertex_buffer.slice(..));
             render_pass.set_index_buffer(self.pipeline.index_buffer.slice(..));
-            render_pass.draw_indexed(0..self.pipeline.num_indices, 0, 0..1);*/
+            render_pass.draw_indexed(0..self.pipeline.num_indices, 0, 0..1);
+            render_pass.set_vertex_buffer(0, self.pipeline2.vertex_buffer.slice(..));
+            render_pass.set_index_buffer(self.pipeline2.index_buffer.slice(..));
+            render_pass.draw_indexed(0..self.pipeline2.num_indices, 0, 0..1);
         }
         // submit will accept anything that implements IntoIter
         self.queue.submit(std::iter::once(encoder.finish()));

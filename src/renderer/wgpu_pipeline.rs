@@ -20,7 +20,7 @@ pub struct WgpuPipeline {
 
 impl WgpuPipeline {
     pub fn new(device: &Device, sc_desc: &SwapChainDescriptor, pos: i32) -> WgpuPipeline {
-        let mut uniforms = Uniforms::new();
+        let uniforms = Uniforms::new();
 
         let uniform_buffer = device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
             label: Some("Uniform Buffer"),
@@ -109,7 +109,6 @@ impl WgpuPipeline {
         let vertices: &[Vertex] = vertices.as_slice();
         let indices: &[u32] = indices.as_slice();
 
-        println!("ind: {:?}", indices);
         println!("vert size: {:#?}", vertices.len());
         println!("ind size {:#?}", indices.len());
 

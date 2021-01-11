@@ -227,7 +227,7 @@ impl ChunkManager {
             && pos.z >= player_chunk_pos.z - METACHUNK_UNLOAD_RADIUS as i32
     }
     pub fn count_vertices(&self) -> i64 {
-        let mut counter = 0i64;
+        let counter = 0i64;
         /*for (_, buffer) in &self.vertex_buffers {
             if buffer.is_none() {
                 continue;
@@ -237,7 +237,7 @@ impl ChunkManager {
         return counter;
     }
     pub fn count_vertex_buffers(&self) -> i64 {
-        let mut counter = 0i64;
+        let counter = 0i64;
         /*for (_, buffer) in &self.vertex_buffers {
             if buffer.is_none() {
                 continue;
@@ -250,7 +250,7 @@ impl ChunkManager {
         return self.world_data.chunks.len() as i64;
     }
     pub fn count_vertex_buffers_in_range(&self, player: &Player) -> i64 {
-        let mut counter = 0i64;
+        let counter = 0i64;
         /*for (pos, buffer) in &self.vertex_buffers {
             if buffer.is_none()
                 || player.position.get_chunk().get_distance(pos) > player.render_distance

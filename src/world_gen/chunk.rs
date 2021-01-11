@@ -43,7 +43,7 @@ impl Chunk {
             || pos.z < 0
             || pos.z >= (CHUNKSIZE) as i32
         {
-            println!("couldn't get block at: {:?}", &pos);
+            //println!("couldn't get block at: {:?}", &pos);
             return None;
         }
         return Some(&self.blocks[pos.x as usize][pos.y as usize][pos.z as usize]);
