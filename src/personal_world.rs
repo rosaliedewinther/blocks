@@ -32,6 +32,12 @@ impl PersonalWorld {
         let chunks = &self.world.chunks;
         for (pos, chunk) in chunks {
             println!("started generating vertices for: {:?}", &pos);
+            if self
+                .chunk_render_data
+                .contains_key(&pos.get_center_pos().get_chunk())
+            {
+                continue;
+            }
             let data = chunk.generate_vertex_buffers(&renderer.wgpu.device);
             self.chunk_render_data.extend(data.into_iter());
             println!("done generating vertices for: {:?}", &pos);
@@ -88,6 +94,9 @@ impl PersonalWorld {
             {
                 if PersonalWorld::meta_chunk_should_be_loaded(&self.player, &MetaChunkPos { x, z })
                     && !self.loading_chunks.contains(&MetaChunkPos { x, z })
+                    && !self
+                        .chunk_render_data
+                        .contains_key(&MetaChunkPos { x, z }.get_center_pos().get_chunk())
                 {
                     let chunk_pos = MetaChunkPos { x, z };
                     to_load.push((

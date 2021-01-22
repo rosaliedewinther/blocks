@@ -36,6 +36,8 @@ impl MainLoop {
         let mut renderer = Renderer::new(&window);
         let mut personal_world = PersonalWorld::new();
 
+        let mut world_tick_timer = Instant::now();
+
         event_loop.run(move |event, _, control_flow| match event {
             Event::WindowEvent {
                 ref event,
@@ -68,8 +70,6 @@ impl MainLoop {
             }
             Event::RedrawRequested(_) => {
                 personal_world.player.handle_input(&(0.01 as f32));
-                personal_world.player.update(&(0.01 as f32));
-                MainLoop::on_game_tick(0.01 as f32, &mut personal_world, &renderer);
                 let main_pipeline = renderer.pipelines.get_mut("main").unwrap();
                 main_pipeline.uniforms.update_view_proj(
                     &personal_world.player,
@@ -94,7 +94,12 @@ impl MainLoop {
                 // request it.
                 window.request_redraw();
             }
-            _ => {}
+            _ => {
+                if world_tick_timer.elapsed().as_secs_f32() * 20f32 > 1f32 {
+                    MainLoop::on_game_tick(0.01 as f32, &mut personal_world, &renderer);
+                    world_tick_timer = Instant::now();
+                }
+            }
         });
 
         /*let event_loop = EventLoop::new();
