@@ -9,17 +9,13 @@ use wgpu::{CommandEncoder, Device, Queue, RenderPass, SwapChainDescriptor, SwapC
 
 pub struct WgpuPipeline {
     pub uniform_buffer: wgpu::Buffer,
-    pub vertex_buffer: wgpu::Buffer,
     pub uniforms: Uniforms,
     pub uniform_bind_group: wgpu::BindGroup,
-    pub num_vertices: u32,
     pub render_pipeline: wgpu::RenderPipeline,
-    pub index_buffer: wgpu::Buffer,
-    pub num_indices: u32,
 }
 
 impl WgpuPipeline {
-    pub fn new(device: &Device, sc_desc: &SwapChainDescriptor, pos: i32) -> WgpuPipeline {
+    pub fn new(device: &Device, sc_desc: &SwapChainDescriptor) -> WgpuPipeline {
         let uniforms = Uniforms::new();
 
         let uniform_buffer = device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
@@ -102,50 +98,16 @@ impl WgpuPipeline {
             alpha_to_coverage_enabled: false,                          // 7.
         });
 
-        let chunk = MetaChunk::load_or_gen(MetaChunkPos { x: pos, z: 0 }, 1, false);
-
-        let (vertices, indices) = chunk.generate_vertex_buffers();
-
-        let vertices: &[Vertex] = vertices.as_slice();
-        let indices: &[u32] = indices.as_slice();
-
-        println!("vert size: {:#?}", vertices.len());
-        println!("ind size {:#?}", indices.len());
-
-        let vertex_buffer = device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
-            label: Some("Vertex Buffer"),
-            contents: bytemuck::cast_slice(vertices),
-            usage: wgpu::BufferUsage::VERTEX,
-        });
-
-        let index_buffer = device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
-            label: Some("Index Buffer"),
-            contents: bytemuck::cast_slice(indices),
-            usage: wgpu::BufferUsage::INDEX,
-        });
-        let num_indices = indices.len() as u32;
-        let num_vertices = vertices.len() as u32;
         return WgpuPipeline {
             uniforms,
             uniform_bind_group,
             uniform_buffer,
-            vertex_buffer,
-            num_vertices,
             render_pipeline,
-            index_buffer,
-            num_indices,
         };
     }
-    pub fn set_vertices(&mut self, queue: &Queue, vertices: &[Vertex]) {
-        queue.write_buffer(&self.vertex_buffer, 0, bytemuck::cast_slice(vertices));
-        self.num_vertices = vertices.len() as u32;
-    }
-    pub fn do_render_pass<'a>(&'a self, render_pass: &mut RenderPass<'a>) {
+    pub fn setup_render_pass<'a>(&'a self, render_pass: &mut RenderPass<'a>) {
         render_pass.set_pipeline(&self.render_pipeline);
         render_pass.set_bind_group(0, &self.uniform_bind_group, &[]);
-        render_pass.set_vertex_buffer(0, self.vertex_buffer.slice(..));
-        render_pass.set_index_buffer(self.index_buffer.slice(..));
-        render_pass.draw_indexed(0..self.num_indices, 0, 0..1);
     }
     pub fn set_uniform_buffer(&self, queue: &Queue, uniforms: Uniforms) {
         queue.write_buffer(&self.uniform_buffer, 0, bytemuck::cast_slice(&[uniforms]));

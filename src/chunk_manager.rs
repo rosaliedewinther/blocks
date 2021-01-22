@@ -58,7 +58,7 @@ impl ChunkManager {
         }*/
     }
     pub fn update(&mut self, _dt: &f32) {
-        self.load_generated_chunks();
+        //self.load_generated_chunks();
         /*let player = self.world_data.players.get("deJasper36").unwrap();
         if player.generated_chunks_for != player.position.get_chunk() {
             let to_load = self.on_player_moved_chunks(player);
@@ -147,16 +147,6 @@ impl ChunkManager {
         };*/
         return false;
     }
-    pub fn load_generated_chunks(&mut self) {
-        let message = self.chunk_gen_thread.get();
-        match message {
-            Ok((chunk, pos)) => {
-                self.world_data.loading_chunks.remove(&pos);
-                self.world_data.chunks.insert(pos, chunk);
-            }
-            Err(_) => return,
-        }
-    }
 
     /*pub fn get_chunk_vertices(&self, chunk: &Chunk, chunk_pos: &ChunkPos) -> Vec<Vertex> {
         let mut temp_vertex_buffer: Vec<Vertex> = Vec::with_capacity(20000);
@@ -219,13 +209,7 @@ impl ChunkManager {
             });
         }
     }*/
-    pub fn meta_chunk_should_be_loaded(player: &Player, pos: &MetaChunkPos) -> bool {
-        let player_chunk_pos = player.position.get_meta_chunk();
-        pos.x <= player_chunk_pos.x + METACHUNK_UNLOAD_RADIUS as i32
-            && pos.x >= player_chunk_pos.x - METACHUNK_UNLOAD_RADIUS as i32
-            && pos.z <= player_chunk_pos.z + METACHUNK_UNLOAD_RADIUS as i32
-            && pos.z >= player_chunk_pos.z - METACHUNK_UNLOAD_RADIUS as i32
-    }
+
     pub fn count_vertices(&self) -> i64 {
         let counter = 0i64;
         /*for (_, buffer) in &self.vertex_buffers {

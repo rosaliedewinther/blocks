@@ -17,24 +17,19 @@ use winit::{
     window::{Window, WindowBuilder},
 };
 
-struct State {
-    surface: wgpu::Surface,
-    device: wgpu::Device,
-    queue: wgpu::Queue,
-    sc_desc: wgpu::SwapChainDescriptor,
-    swap_chain: wgpu::SwapChain,
-    size: winit::dpi::PhysicalSize<u32>,
-
-    //index_buffer: wgpu::Buffer,
-    //num_indices: u32,
-    pipeline: WgpuPipeline,
-    pipeline2: WgpuPipeline,
-    depth_texture: DepthTexture,
+pub struct WgpuState {
+    pub surface: wgpu::Surface,
+    pub device: wgpu::Device,
+    pub queue: wgpu::Queue,
+    pub sc_desc: wgpu::SwapChainDescriptor,
+    pub swap_chain: wgpu::SwapChain,
+    pub size: winit::dpi::PhysicalSize<u32>,
+    pub depth_texture: DepthTexture,
 }
 
-impl State {
+impl WgpuState {
     // Creating some of the wgpu types requires async code
-    async fn new(window: &Window) -> Self {
+    pub async fn new(window: &Window) -> Self {
         let size = window.inner_size();
 
         // The instance is a handle to our GPU
@@ -67,19 +62,6 @@ impl State {
             present_mode: wgpu::PresentMode::Fifo,
         };
         let swap_chain = device.create_swap_chain(&surface, &sc_desc);
-
-        let mut pipeline = WgpuPipeline::new(&device, &sc_desc, 0);
-        let mut pipeline2 = WgpuPipeline::new(&device, &sc_desc, 1);
-
-        //pipeline.set_vertices(&queue, vertices);
-
-        /*let indices: &[u16] = &[0, 1, 2, 3, 1, 2];
-        let index_buffer = device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
-            label: Some("Index Buffer"),
-            contents: bytemuck::cast_slice(indices),
-            usage: wgpu::BufferUsage::INDEX,
-        });
-        let num_indices = indices.len() as u32;*/
         let depth_texture = DepthTexture::create_depth_texture(&device, &sc_desc, "depth_texture");
 
         Self {
@@ -89,10 +71,6 @@ impl State {
             sc_desc,
             swap_chain,
             size,
-            //index_buffer,
-            //num_indices,
-            pipeline,
-            pipeline2,
             depth_texture,
         }
     }
@@ -141,18 +119,6 @@ impl State {
                     stencil_ops: None,
                 }),
             });
-
-            //self.pipeline.do_render_pass(&mut render_pass);
-            //self.pipeline2.do_render_pass(&mut render_pass);
-
-            render_pass.set_pipeline(&self.pipeline.render_pipeline);
-            render_pass.set_bind_group(0, &self.pipeline.uniform_bind_group, &[]);
-            render_pass.set_vertex_buffer(0, self.pipeline.vertex_buffer.slice(..));
-            render_pass.set_index_buffer(self.pipeline.index_buffer.slice(..));
-            render_pass.draw_indexed(0..self.pipeline.num_indices, 0, 0..1);
-            render_pass.set_vertex_buffer(0, self.pipeline2.vertex_buffer.slice(..));
-            render_pass.set_index_buffer(self.pipeline2.index_buffer.slice(..));
-            render_pass.draw_indexed(0..self.pipeline2.num_indices, 0, 0..1);
         }
         // submit will accept anything that implements IntoIter
         self.queue.submit(std::iter::once(encoder.finish()));
@@ -179,71 +145,4 @@ pub fn gen_perspective_mat(size: (u32, u32)) -> [[f32; 4]; 4] {
     ]
 }
 
-pub fn start_main_loop() {
-    let event_loop = EventLoop::new();
-    let window = WindowBuilder::new().build(&event_loop).unwrap();
-    let mut state = block_on(State::new(&window));
-    let mut player = Player::new();
-    player.position = ObjectPos {
-        x: 0f32,
-        y: 0f32,
-        z: 0f32,
-    };
-
-    event_loop.run(move |event, _, control_flow| match event {
-        Event::WindowEvent {
-            ref event,
-            window_id,
-        } if window_id == window.id() => {
-            if !state.input(event) {
-                match event {
-                    WindowEvent::CloseRequested => *control_flow = ControlFlow::Exit,
-                    WindowEvent::KeyboardInput { input, .. } => match input {
-                        KeyboardInput {
-                            state: ElementState::Pressed,
-                            virtual_keycode: Some(VirtualKeyCode::Escape),
-                            ..
-                        } => *control_flow = ControlFlow::Exit,
-                        _ => {}
-                    },
-                    WindowEvent::Resized(physical_size) => {
-                        state.resize(*physical_size);
-                    }
-                    WindowEvent::ScaleFactorChanged { new_inner_size, .. } => {
-                        // new_inner_size is &&mut so we have to dereference it twice
-                        state.resize(**new_inner_size);
-                    }
-
-                    _ => {}
-                }
-            }
-        }
-        Event::RedrawRequested(_) => {
-            player.handle_input(&(0.01 as f32));
-            player.update(&(0.01 as f32));
-            state
-                .pipeline
-                .uniforms
-                .update_view_proj(&player, (state.size.width, state.size.height));
-            state
-                .pipeline
-                .set_uniform_buffer(&state.queue, state.pipeline.uniforms);
-            state.update();
-            match state.render() {
-                Ok(_) => {}
-                // Recreate the swap_chain if lost
-                Err(wgpu::SwapChainError::Lost) => state.resize(state.size),
-                // The system is out of memory, we should probably quit
-                Err(wgpu::SwapChainError::OutOfMemory) => *control_flow = ControlFlow::Exit,
-                // All other errors (Outdated, Timeout) should be resolved by the next frame
-                Err(e) => eprintln!("{:?}", e),
-            }
-        }
-        Event::MainEventsCleared => {
-            // RedrawRequested will only trigger once, unless we manually
-            // request it.
-            window.request_redraw();
-        }
-        _ => {}
-    });
-}
+pub fn start_main_loop() {}

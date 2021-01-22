@@ -5,6 +5,7 @@ use crate::io::file_reader::read_meta_chunk_from_file;
 use crate::io::file_writer::write_to_file;
 use crate::player::Player;
 use crate::positions::{ChunkPos, GlobalBlockPos, LocalBlockPos, LocalChunkPos, MetaChunkPos};
+use crate::renderer::chunk_render_data::ChunkRenderData;
 use crate::renderer::vertex::Vertex;
 use crate::structures::square::place_square;
 use crate::structures::tree::place_tree;
@@ -16,8 +17,10 @@ use rayon::iter::ParallelIterator;
 use rayon::iter::{IntoParallelIterator, IntoParallelRefIterator};
 use serde::{Deserialize, Serialize};
 use std::borrow::BorrowMut;
+use std::collections::HashMap;
 use std::sync::{Arc, Mutex};
 use std::time::Instant;
+use wgpu::Device;
 
 #[derive(Serialize, Deserialize)]
 pub struct MetaChunk {
@@ -186,22 +189,27 @@ impl MetaChunk {
             + wrap(to_sign_of(self.pos.z, pos.z), METACHUNKSIZE as i32);
         ChunkPos { x, y, z }
     }
-    pub fn generate_vertex_buffers(&self) -> (Vec<Vertex>, Vec<u32>) {
-        let vertices = Arc::new(Mutex::new(Vec::with_capacity(100000)));
-        let indices = Arc::new(Mutex::new(Vec::with_capacity(100000)));
-        let now = Instant::now();
+    pub fn generate_vertex_buffers(&self, device: &Device) -> HashMap<ChunkPos, ChunkRenderData> {
+        let mut render_data = Arc::new(Mutex::new(HashMap::new()));
+
         (0..METACHUNKSIZE as i32).into_par_iter().for_each(|x| {
             (0..VERTICALCHUNKS as i32).into_par_iter().for_each(|y| {
                 (0..METACHUNKSIZE as i32).into_par_iter().for_each(|z| {
                     let local_chunk_pos = LocalChunkPos { x, y, z };
+                    let chunk_render_data = ChunkRenderData::new(self, &local_chunk_pos, device);
+
+                    render_data
+                        .lock()
+                        .unwrap()
+                        .insert(local_chunk_pos.get_chunk_pos(&self.pos), chunk_render_data);
                 });
             });
         });
-        println!("vertex gen took: {}", now.elapsed().as_secs_f32());
-        return (
-            Arc::try_unwrap(vertices).unwrap().into_inner().unwrap(),
-            Arc::try_unwrap(indices).unwrap().into_inner().unwrap(),
-        );
+        //HashMap::new()
+        return Arc::try_unwrap(render_data)
+            .unwrap_or_default()
+            .into_inner()
+            .unwrap();
     }
     pub fn get_chunk_vertices(
         &self,
