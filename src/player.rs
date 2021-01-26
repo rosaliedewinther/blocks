@@ -2,6 +2,7 @@ use crate::input::Input;
 use crate::positions::{ChunkPos, ObjectPos};
 use crate::utils::{get_rotation_matrix_y, get_rotation_matrix_z};
 use device_query::Keycode;
+use enigo::MouseControllable;
 use nalgebra::{Matrix3, Vector3};
 use std::f32::consts::PI;
 
@@ -26,7 +27,7 @@ impl Player {
             },
             direction: Vector3::new(0f32, 0.0f32, 1.0f32),
             up: [0f32, 1.0f32, 0f32],
-            speed: 50f32,
+            speed: 200f32,
             camera_speed: 1f32,
             input: Input::new(),
             render_distance: 500f32,

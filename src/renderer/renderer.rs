@@ -1,4 +1,6 @@
 use crate::personal_world::PersonalWorld;
+use crate::positions::ChunkPos;
+use crate::renderer::chunk_render_data::ChunkRenderData;
 use crate::renderer::wgpu::WgpuState;
 use crate::renderer::wgpu_pipeline::WgpuPipeline;
 use futures::executor::block_on;
@@ -22,7 +24,10 @@ impl Renderer {
         );
         Renderer { pipelines, wgpu }
     }
-    pub fn do_render_pass(&mut self, personal_world: &PersonalWorld) -> Result<(), SwapChainError> {
+    pub fn do_render_pass(
+        &mut self,
+        render_data: &HashMap<ChunkPos, ChunkRenderData>,
+    ) -> Result<(), SwapChainError> {
         let frame = self.wgpu.swap_chain.get_current_frame()?.output;
         let mut encoder =
             self.wgpu
@@ -58,12 +63,9 @@ impl Renderer {
             let mut pipeline = self.pipelines.get_mut("main").unwrap();
             pipeline.setup_render_pass(&mut render_pass);
 
-            personal_world
-                .chunk_render_data
-                .iter()
-                .for_each(|(_, data)| {
-                    data.do_render_pass(&mut render_pass);
-                });
+            render_data.iter().for_each(|(_, data)| {
+                data.do_render_pass(&mut render_pass);
+            });
         }
         // submit will accept anything that implements IntoIter
         self.wgpu.queue.submit(std::iter::once(encoder.finish()));

@@ -8,7 +8,10 @@ use crate::world::World;
 use crate::world_gen::chunk_gen_thread::ChunkGenThread;
 use std::collections::{BTreeMap, BinaryHeap, HashMap, HashSet};
 use std::sync::Mutex;
+use std::time::Instant;
 use wgpu::Device;
+use winit::event_loop::ControlFlow;
+use winit::window::Window;
 
 pub struct PersonalWorld {
     pub world: World,
@@ -16,19 +19,23 @@ pub struct PersonalWorld {
     pub player: Player,
     pub chunk_gen_thread: ChunkGenThread,
     pub loading_chunks: HashSet<MetaChunkPos>,
+    pub renderer: Renderer,
+    pub reload_vertex_load_order: bool,
 }
 
 impl PersonalWorld {
-    pub fn new() -> PersonalWorld {
+    pub fn new(window: &Window) -> PersonalWorld {
         PersonalWorld {
+            renderer: Renderer::new(&window),
             world: World::new(1),
             chunk_render_data: HashMap::new(),
             player: Player::new(),
             chunk_gen_thread: ChunkGenThread::new(),
             loading_chunks: HashSet::new(),
+            reload_vertex_load_order: false,
         }
     }
-    pub fn update(&mut self, renderer: &Renderer) {
+    pub fn update(&mut self) {
         let chunks = &self.world.chunks;
         for (pos, chunk) in chunks {
             println!("started generating vertices for: {:?}", &pos);
@@ -38,9 +45,21 @@ impl PersonalWorld {
             {
                 continue;
             }
-            let data = chunk.generate_vertex_buffers(&renderer.wgpu.device);
+            let data = chunk.generate_vertex_buffers(&self.renderer.wgpu.device);
             self.chunk_render_data.extend(data.into_iter());
             println!("done generating vertices for: {:?}", &pos);
+        }
+    }
+    pub fn on_game_tick(&mut self, dt: f32) {
+        self.player.update(&dt);
+        self.load_generated_chunks();
+        if self.player.generated_chunks_for != self.player.position.get_chunk()
+            || self.reload_vertex_load_order
+        {
+            self.on_player_moved_chunks();
+            self.update();
+            self.player.generated_chunks_for = self.player.position.get_chunk();
+            self.reload_vertex_load_order = false;
         }
     }
     pub fn vertex_buffers_to_generate(&self) -> BTreeMap<i32, ChunkPos> {
@@ -114,7 +133,6 @@ impl PersonalWorld {
         self.world
             .chunks
             .retain(|pos, _| PersonalWorld::meta_chunk_should_be_loaded(&player, pos));
-        self.player.generated_chunks_for = self.player.position.get_chunk();
     }
     pub fn load_generated_chunks(&mut self) {
         let message = self.chunk_gen_thread.get();
@@ -122,8 +140,35 @@ impl PersonalWorld {
             Ok((chunk, pos)) => {
                 self.loading_chunks.remove(&pos);
                 self.world.chunks.insert(pos, chunk);
+                self.reload_vertex_load_order = true;
             }
             Err(_) => return,
         }
+    }
+    pub fn render(&mut self, control_flow: &mut ControlFlow) {
+        let mut render_timer = Instant::now();
+        let main_pipeline = self.renderer.pipelines.get_mut("main").unwrap();
+        main_pipeline.uniforms.update_view_proj(
+            &self.player,
+            (
+                self.renderer.wgpu.size.width,
+                self.renderer.wgpu.size.height,
+            ),
+        );
+        let render_data = &self.chunk_render_data;
+        main_pipeline.set_uniform_buffer(&self.renderer.wgpu.queue, main_pipeline.uniforms);
+        self.renderer.do_render_pass(render_data);
+        match self.renderer.do_render_pass(render_data) {
+            Ok(_) => {}
+            // Recreate the swap_chain if lost
+            Err(wgpu::SwapChainError::Lost) => {
+                MainLoop::resize(self.renderer.wgpu.size, &mut self.renderer.wgpu)
+            }
+            // The system is out of memory, we should probably quit
+            Err(wgpu::SwapChainError::OutOfMemory) => *control_flow = ControlFlow::Exit,
+            // All other errors (Outdated, Timeout) should be resolved by the next frame
+            Err(e) => eprintln!("{:?}", e),
+        }
+        println!("time: {}", render_timer.elapsed().as_secs_f32());
     }
 }

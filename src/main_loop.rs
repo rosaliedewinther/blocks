@@ -33,9 +33,7 @@ impl MainLoop {
     pub fn run(self) {
         let event_loop = EventLoop::new();
         let window = WindowBuilder::new().build(&event_loop).unwrap();
-        let mut renderer = Renderer::new(&window);
-        let mut personal_world = PersonalWorld::new();
-
+        let mut personal_world = PersonalWorld::new(&window);
         let mut world_tick_timer = Instant::now();
 
         event_loop.run(move |event, _, control_flow| match event {
@@ -57,11 +55,11 @@ impl MainLoop {
                             _ => {}
                         },
                         WindowEvent::Resized(physical_size) => {
-                            MainLoop::resize(*physical_size, &mut renderer.wgpu);
+                            MainLoop::resize(*physical_size, &mut personal_world.renderer.wgpu);
                         }
                         WindowEvent::ScaleFactorChanged { new_inner_size, .. } => {
                             // new_inner_size is &&mut so we have to dereference it twice
-                            MainLoop::resize(**new_inner_size, &mut renderer.wgpu);
+                            MainLoop::resize(**new_inner_size, &mut personal_world.renderer.wgpu);
                         }
 
                         _ => {}
@@ -70,24 +68,7 @@ impl MainLoop {
             }
             Event::RedrawRequested(_) => {
                 personal_world.player.handle_input(&(0.01 as f32));
-                let main_pipeline = renderer.pipelines.get_mut("main").unwrap();
-                main_pipeline.uniforms.update_view_proj(
-                    &personal_world.player,
-                    (renderer.wgpu.size.width, renderer.wgpu.size.height),
-                );
-                main_pipeline.set_uniform_buffer(&renderer.wgpu.queue, main_pipeline.uniforms);
-                renderer.do_render_pass(&personal_world);
-                match renderer.do_render_pass(&personal_world) {
-                    Ok(_) => {}
-                    // Recreate the swap_chain if lost
-                    Err(wgpu::SwapChainError::Lost) => {
-                        MainLoop::resize(renderer.wgpu.size, &mut renderer.wgpu)
-                    }
-                    // The system is out of memory, we should probably quit
-                    Err(wgpu::SwapChainError::OutOfMemory) => *control_flow = ControlFlow::Exit,
-                    // All other errors (Outdated, Timeout) should be resolved by the next frame
-                    Err(e) => eprintln!("{:?}", e),
-                }
+                personal_world.render(control_flow);
             }
             Event::MainEventsCleared => {
                 // RedrawRequested will only trigger once, unless we manually
@@ -96,7 +77,8 @@ impl MainLoop {
             }
             _ => {
                 if world_tick_timer.elapsed().as_secs_f32() * 20f32 > 1f32 {
-                    MainLoop::on_game_tick(0.01 as f32, &mut personal_world, &renderer);
+                    personal_world.on_game_tick(0.1);
+                    //MainLoop::on_game_tick(0.01 as f32, &mut personal_world, &renderer);
                     world_tick_timer = Instant::now();
                 }
             }
@@ -170,20 +152,11 @@ impl MainLoop {
             }
         });*/
     }
-    fn resize(new_size: winit::dpi::PhysicalSize<u32>, wgpu: &mut WgpuState) {
+    pub(crate) fn resize(new_size: winit::dpi::PhysicalSize<u32>, wgpu: &mut WgpuState) {
         wgpu.size = new_size;
         wgpu.sc_desc.width = new_size.width;
         wgpu.sc_desc.height = new_size.height;
         wgpu.swap_chain = wgpu.device.create_swap_chain(&wgpu.surface, &wgpu.sc_desc);
-    }
-
-    pub fn on_game_tick(dt: f32, world: &mut PersonalWorld, renderer: &Renderer) {
-        world.player.update(&dt);
-        world.load_generated_chunks();
-        if world.player.generated_chunks_for != world.player.position.get_chunk() {
-            world.on_player_moved_chunks();
-            world.update(renderer);
-        }
     }
 
     /*pub fn on_render(
