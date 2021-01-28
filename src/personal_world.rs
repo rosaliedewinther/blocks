@@ -82,6 +82,9 @@ impl PersonalWorld {
         if distance > self.player.render_distance {
             return false;
         }
+        if self.chunk_render_data.contains_key(&pos) {
+            return false;
+        }
         return true;
     }
     pub fn meta_chunk_should_be_loaded(player: &Player, pos: &MetaChunkPos) -> bool {
