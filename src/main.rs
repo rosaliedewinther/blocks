@@ -1,11 +1,10 @@
 #![allow(dead_code)]
-#[macro_use]
-extern crate glium;
-
-use log::info;
 
 use crate::logger::setup_logger;
 use crate::main_loop::MainLoop;
+use crate::personal_world::PersonalWorld;
+use crate::renderer::wgpu::start_main_loop;
+use log::Level::Debug;
 
 mod algorithms;
 mod block;
@@ -15,6 +14,7 @@ mod input;
 mod io;
 mod logger;
 mod main_loop;
+mod personal_world;
 mod player;
 mod positions;
 mod renderer;
@@ -28,10 +28,10 @@ mod world_gen;
 fn main() {
     setup_logger().unwrap();
 
-    info!("starting up");
-
     let mut main_loop = MainLoop::new();
     main_loop.run();
 
-    println!("done dumping");
+    //let mut main_loop = MainLoop::new();
+    //main_loop.run();
+    //start_main_loop();
 }

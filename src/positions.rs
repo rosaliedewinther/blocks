@@ -45,6 +45,16 @@ pub struct LocalChunkPos {
     pub z: i32,
 }
 
+impl LocalChunkPos {
+    pub fn get_chunk_pos(&self, pos: &MetaChunkPos) -> ChunkPos {
+        ChunkPos {
+            x: pos.x * METACHUNKSIZE as i32 + self.x,
+            y: self.y,
+            z: pos.z * METACHUNKSIZE as i32 + self.z,
+        }
+    }
+}
+
 impl Eq for ChunkPos {}
 
 impl GlobalBlockPos {

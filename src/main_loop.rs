@@ -1,35 +1,91 @@
 use crate::chunk_manager::ChunkManager;
 use crate::constants::METACHUNK_GEN_RANGE;
 use crate::player::Player;
-use crate::positions::MetaChunkPos;
-use crate::renderer::glium::{create_display, gen_draw_params, gen_program, DrawInfo};
-use crate::ui::UiRenderer;
-use glium::backend::glutin::glutin::event_loop::ControlFlow;
-use glium::glutin::event::Event;
-use glium::{glutin, Surface};
+use crate::positions::{MetaChunkPos, ObjectPos};
+//use crate::ui::UiRenderer;
+use crate::personal_world::PersonalWorld;
+use crate::renderer::renderer::Renderer;
+use crate::renderer::wgpu::WgpuState;
+use futures::executor::block_on;
 use log::info;
 use std::collections::{BinaryHeap, LinkedList};
 use std::time::{Instant, SystemTime};
+use winit::event::{ElementState, Event, KeyboardInput, VirtualKeyCode, WindowEvent};
+use winit::event_loop::{ControlFlow, EventLoop};
+use winit::window::{Window, WindowBuilder};
 
 pub struct MainLoop {
-    //pub event_loop: EventLoop<()>,
-//pub draw_info: DrawInfo<'a>,
-//pub ui_renderer: UiRenderer
-}
+    /*event_loop: EventLoop<()>,
+window: Window,
+renderer: Renderer,
+personal_world: PersonalWorld,*/}
 
 impl MainLoop {
     pub fn new() -> MainLoop {
-        /*let event_loop = glutin::event_loop::EventLoop::new();
-        let display = create_display(&event_loop);
-        let program = gen_program(&display);
-        let mut draw_info = DrawInfo{display: display, program: program, program_start: SystemTime::now(), draw_params: gen_draw_params()};
-        let mut ui_renderer = UiRenderer::init(&draw_info);
-        MainLoop{event_loop, draw_info, ui_renderer}*/
-        return MainLoop {};
+        return MainLoop {
+            /*event_loop,
+            window,
+            renderer,
+            personal_world,*/
+        };
     }
 
-    pub fn run(&mut self) {
-        let event_loop = glutin::event_loop::EventLoop::new();
+    pub fn run(self) {
+        let event_loop = EventLoop::new();
+        let window = WindowBuilder::new().build(&event_loop).unwrap();
+        let mut personal_world = PersonalWorld::new(&window);
+        let mut world_tick_timer = Instant::now();
+
+        event_loop.run(move |event, _, control_flow| match event {
+            Event::WindowEvent {
+                ref event,
+                window_id,
+            } if window_id == window.id() => {
+                if true
+                /*check for input*/
+                {
+                    match event {
+                        WindowEvent::CloseRequested => *control_flow = ControlFlow::Exit,
+                        WindowEvent::KeyboardInput { input, .. } => match input {
+                            KeyboardInput {
+                                state: ElementState::Pressed,
+                                virtual_keycode: Some(VirtualKeyCode::Escape),
+                                ..
+                            } => *control_flow = ControlFlow::Exit,
+                            _ => {}
+                        },
+                        WindowEvent::Resized(physical_size) => {
+                            MainLoop::resize(*physical_size, &mut personal_world.renderer.wgpu);
+                        }
+                        WindowEvent::ScaleFactorChanged { new_inner_size, .. } => {
+                            // new_inner_size is &&mut so we have to dereference it twice
+                            MainLoop::resize(**new_inner_size, &mut personal_world.renderer.wgpu);
+                        }
+
+                        _ => {}
+                    }
+                }
+            }
+            Event::RedrawRequested(_) => {
+                personal_world.player.handle_input(&(0.01 as f32));
+                personal_world.render(control_flow);
+            }
+            Event::MainEventsCleared => {
+                // RedrawRequested will only trigger once, unless we manually
+                // request it.
+                window.request_redraw();
+            }
+            _ => {
+                if world_tick_timer.elapsed().as_secs_f32() * 20f32 > 1f32 {
+                    personal_world.on_game_tick(0.1);
+                    //MainLoop::on_game_tick(0.01 as f32, &mut personal_world, &renderer);
+                    world_tick_timer = Instant::now();
+                }
+            }
+        });
+
+        /*let event_loop = EventLoop::new();
+        let window = winit::window::Window::new(&event_loop).unwrap();
         let display = create_display(&event_loop);
         let program = gen_program(&display);
         let mut draw_info = DrawInfo {
@@ -38,7 +94,7 @@ impl MainLoop {
             program_start: SystemTime::now(),
             draw_params: gen_draw_params(),
         };
-        let mut ui_renderer = UiRenderer::init(&draw_info);
+        //let mut ui_renderer = UiRenderer::init(&draw_info);
 
         info!("generating chunk main");
         let mut chunk_manager = ChunkManager::new(10);
@@ -94,17 +150,16 @@ impl MainLoop {
                 draw_times.push_back(rerender_timer.elapsed().as_secs_f32());
                 busy_frame_time += rerender_timer.elapsed().as_secs_f64();
             }
-        });
+        });*/
     }
-    pub fn on_game_tick(dt: &f32, player: &mut Player, world: &mut ChunkManager) {
-        player.update(&dt);
-        world.load_generated_chunks();
-        if player.generated_chunks_for != player.position.get_chunk() {
-            MainLoop::on_player_moved_chunks(player, world);
-        }
+    pub(crate) fn resize(new_size: winit::dpi::PhysicalSize<u32>, wgpu: &mut WgpuState) {
+        wgpu.size = new_size;
+        wgpu.sc_desc.width = new_size.width;
+        wgpu.sc_desc.height = new_size.height;
+        wgpu.swap_chain = wgpu.device.create_swap_chain(&wgpu.surface, &wgpu.sc_desc);
     }
 
-    pub fn on_render(
+    /*pub fn on_render(
         _dt: &f32,
         update_buffer: &LinkedList<f32>,
         draw_buffer: &LinkedList<f32>,
@@ -161,43 +216,9 @@ impl MainLoop {
         }
 
         target.finish().unwrap();
-    }
-    pub fn on_player_moved_chunks(player: &mut Player, world: &mut ChunkManager) {
-        let current_chunk = player.position.get_meta_chunk();
-        let mut to_load = BinaryHeap::new();
-        for x in current_chunk.x - METACHUNK_GEN_RANGE as i32 - 1
-            ..current_chunk.x + METACHUNK_GEN_RANGE as i32 + 1
-        {
-            for z in current_chunk.z - METACHUNK_GEN_RANGE as i32 - 1
-                ..current_chunk.z + METACHUNK_GEN_RANGE as i32 + 1
-            {
-                if ChunkManager::meta_chunk_should_be_loaded(&player, &MetaChunkPos { x, z })
-                    && !world
-                        .world_data
-                        .chunk_exists_or_generating(&MetaChunkPos { x, z })
-                {
-                    let chunk_pos = MetaChunkPos { x, z };
-                    to_load.push((
-                        (chunk_pos.get_distance_to_object(&player.position) * 10f32) as i64 * -1,
-                        chunk_pos,
-                    ));
-                }
-            }
-        }
-        while !to_load.is_empty() {
-            world.load_chunk(to_load.pop().unwrap().1);
-        }
+    }*/
 
-        world
-            .world_data
-            .chunks
-            .retain(|pos, _| ChunkManager::meta_chunk_should_be_loaded(&player, pos));
-        world.vertex_buffers.retain(|pos, _| {
-            ChunkManager::meta_chunk_should_be_loaded(&player, &pos.get_meta_chunk_pos())
-        });
-        player.generated_chunks_for = player.position.get_chunk();
-    }
-    pub fn event_handler(event: Event<()>, control_flow: &mut ControlFlow) {
+    /*pub fn event_handler(event: Event<()>, control_flow: &mut ControlFlow) {
         *control_flow = match event {
             glutin::event::Event::WindowEvent { event, .. } => match event {
                 // Break from the main loop when the window is closed.
@@ -212,5 +233,5 @@ impl MainLoop {
     }
     pub fn kill_game_loop(control_flow: &mut ControlFlow) {
         *control_flow = glutin::event_loop::ControlFlow::Exit;
-    }
+    }*/
 }

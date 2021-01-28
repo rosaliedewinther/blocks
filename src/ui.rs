@@ -1,10 +1,6 @@
-use crate::renderer::glium::DrawInfo;
-use glium::Frame;
 use imgui::im_str;
-use imgui_glium_renderer::imgui::{Condition, Window};
-use imgui_glium_renderer::{imgui, RendererError};
 use imgui_winit_support::{HiDpiMode, WinitPlatform};
-
+/*
 pub struct UiRenderer {
     pub context: imgui::Context,
     pub renderer: imgui_glium_renderer::Renderer,
@@ -51,3 +47,4 @@ impl UiRenderer {
         self.renderer.render(target, ui.render())
     }
 }
+*/

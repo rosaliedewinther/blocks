@@ -1,7 +1,9 @@
 use crate::block::Block;
 use crate::constants::CHUNKSIZE;
 use crate::positions::{ChunkPos, LocalBlockPos};
-use crate::world_gen::basic::{floodfill_water, generate_empty_chunk, generate_landmass};
+use crate::world_gen::basic::{
+    floodfill_water, generate_empty_chunk, generate_landmass, ChunkGenerator,
+};
 use log::warn;
 use serde::{Deserialize, Serialize};
 
@@ -12,10 +14,8 @@ pub struct Chunk {
 
 impl Chunk {
     pub fn generate(pos: &ChunkPos, seed: u32) -> Chunk {
-        let mut chunk = generate_empty_chunk();
-        generate_landmass(pos, seed, &mut chunk);
-        floodfill_water(&mut chunk, pos);
-        return chunk;
+        let chunk_generator = ChunkGenerator::new();
+        return chunk_generator.full_generation_pass(pos);
     }
 
     pub fn update(&mut self, _dt: f32) -> bool {
@@ -43,7 +43,7 @@ impl Chunk {
             || pos.z < 0
             || pos.z >= (CHUNKSIZE) as i32
         {
-            println!("couldn't get block at: {:?}", &pos);
+            //println!("couldn't get block at: {:?}", &pos);
             return None;
         }
         return Some(&self.blocks[pos.x as usize][pos.y as usize][pos.z as usize]);

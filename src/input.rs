@@ -1,5 +1,5 @@
 use device_query::{DeviceState, Keycode};
-use enigo::Enigo;
+use enigo::{Enigo, MouseControllable};
 
 pub struct Input {
     pub sensitivity_modifier: f32,
@@ -26,7 +26,7 @@ impl Input {
     }
     pub fn update(&mut self) {
         let coords = self.device_state.query_pointer().coords;
-        //self.enigo.mouse_move_to(500, 200);
+        self.enigo.mouse_move_to(400, 400);
         self.mouse_change.0 =
             (coords.0 as f32 - self.prev_mouse_cords.0) * self.sensitivity_modifier;
         self.mouse_change.1 =
