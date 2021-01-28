@@ -10,7 +10,9 @@ use crate::renderer::vertex::Vertex;
 use crate::structures::square::place_square;
 use crate::structures::tree::place_tree;
 use crate::utils::{to_sign_of, wrap};
-use crate::world_gen::basic::{floodfill_water, generate_empty_chunk, generate_landmass};
+use crate::world_gen::basic::{
+    floodfill_water, generate_empty_chunk, generate_landmass, ChunkGenerator,
+};
 use crate::world_gen::chunk::Chunk;
 use rand::distributions::{Distribution, Uniform};
 use rayon::iter::ParallelIterator;
@@ -37,28 +39,20 @@ impl MetaChunk {
                 return loaded.unwrap();
             }
         }
+        let chunk_generator = ChunkGenerator::new();
 
         let mut chunks: Vec<Vec<Vec<Chunk>>> = Vec::with_capacity(METACHUNKSIZE);
         for x in 0..METACHUNKSIZE {
             chunks.push(Vec::new());
             for y in 0..VERTICALCHUNKS {
                 chunks[x].push(Vec::new());
-                for _ in 0..METACHUNKSIZE {
-                    chunks[x][y].push(generate_empty_chunk());
-                }
-            }
-        }
-
-        for (x, cx) in chunks.iter_mut().enumerate() {
-            for (y, cy) in cx.iter_mut().enumerate() {
-                for (z, cz) in cy.iter_mut().enumerate() {
+                for z in 0..METACHUNKSIZE {
                     let pos = &ChunkPos {
                         x: x as i32,
                         y: y as i32,
                         z: z as i32,
                     };
-                    generate_landmass(pos, seed, cz);
-                    floodfill_water(cz, pos);
+                    chunks[x][y].push(chunk_generator.full_generation_pass(pos));
                 }
             }
         }
@@ -71,7 +65,7 @@ impl MetaChunk {
         let global_center_pos = GlobalBlockPos {
             x: structure_x,
             y: structure_y,
-            z: structure_y,
+            z: structure_z,
         };
         bfs_world_air(
             &global_center_pos,
@@ -102,6 +96,19 @@ impl MetaChunk {
                 z: structure_z,
             };
             place_tree(&global_center_pos, &mut chunk);
+        }
+
+        let structure_x = pos.x * METACHUNKSIZE as i32 * CHUNKSIZE as i32 + pos.x;
+        let structure_z = pos.z * METACHUNKSIZE as i32 * CHUNKSIZE as i32 + pos.z;
+        for y in chunk.first_above_land_y(structure_x, structure_z)
+            ..chunk.first_above_land_y(structure_x, structure_z) + 10
+        {
+            let global_center_pos = GlobalBlockPos {
+                x: structure_x,
+                y: y,
+                z: structure_z,
+            };
+            chunk.set_block(&global_center_pos, Block::new(BlockType::Sand));
         }
 
         return chunk;

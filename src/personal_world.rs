@@ -146,7 +146,6 @@ impl PersonalWorld {
         }
     }
     pub fn render(&mut self, control_flow: &mut ControlFlow) {
-        let mut render_timer = Instant::now();
         let main_pipeline = self.renderer.pipelines.get_mut("main").unwrap();
         main_pipeline.uniforms.update_view_proj(
             &self.player,
@@ -169,6 +168,5 @@ impl PersonalWorld {
             // All other errors (Outdated, Timeout) should be resolved by the next frame
             Err(e) => eprintln!("{:?}", e),
         }
-        println!("time: {}", render_timer.elapsed().as_secs_f32());
     }
 }

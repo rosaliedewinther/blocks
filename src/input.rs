@@ -1,5 +1,5 @@
 use device_query::{DeviceState, Keycode};
-use enigo::Enigo;
+use enigo::{Enigo, MouseControllable};
 
 pub struct Input {
     pub sensitivity_modifier: f32,
