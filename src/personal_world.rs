@@ -38,13 +38,13 @@ impl PersonalWorld {
     pub fn update(&mut self) {
         let chunks = &self.world.chunks;
         for (pos, chunk) in chunks {
-            println!("started generating vertices for: {:?}", &pos);
             if self
                 .chunk_render_data
                 .contains_key(&pos.get_center_pos().get_chunk())
             {
                 continue;
             }
+            println!("started generating vertices for: {:?}", &pos);
             let data = chunk.generate_vertex_buffers(&self.renderer.wgpu.device);
             self.chunk_render_data.extend(data.into_iter());
             println!("done generating vertices for: {:?}", &pos);

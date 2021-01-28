@@ -17,7 +17,10 @@ impl ChunkGenerator {
         functions.push(generate_landmass as fn(&ChunkGenerator, &ChunkPos, &mut Chunk));
         functions.push(floodfill_water as fn(&ChunkGenerator, &ChunkPos, &mut Chunk));
         ChunkGenerator {
-            noise: Fbm::new().set_seed(1).set_octaves(1),
+            noise: Fbm::new()
+                .set_seed(1)
+                .set_octaves(3)
+                .set_persistence(0.6f64),
             seed: 1,
             functions,
         }

@@ -47,12 +47,12 @@ impl MetaChunk {
             for y in 0..VERTICALCHUNKS {
                 chunks[x].push(Vec::new());
                 for z in 0..METACHUNKSIZE {
-                    let pos = &ChunkPos {
-                        x: x as i32,
+                    let local_pos = &ChunkPos {
+                        x: x as i32 + pos.x * METACHUNKSIZE as i32,
                         y: y as i32,
-                        z: z as i32,
+                        z: z as i32 + pos.z * METACHUNKSIZE as i32,
                     };
-                    chunks[x][y].push(chunk_generator.full_generation_pass(pos));
+                    chunks[x][y].push(chunk_generator.full_generation_pass(local_pos));
                 }
             }
         }
@@ -86,7 +86,7 @@ impl MetaChunk {
 
         let mut rng = rand::thread_rng();
         let location_range = Uniform::from(0..(METACHUNKSIZE * CHUNKSIZE));
-        for _ in 0..100 {
+        for _ in 0..5 {
             let structure_x = pos.x * METACHUNKSIZE as i32 + location_range.sample(&mut rng) as i32;
             let structure_z = pos.z * METACHUNKSIZE as i32 + location_range.sample(&mut rng) as i32;
             let structure_y = chunk.first_above_land_y(structure_x, structure_z);
