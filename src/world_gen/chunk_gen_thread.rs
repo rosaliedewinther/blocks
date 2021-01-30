@@ -4,6 +4,7 @@ use std::sync::mpsc;
 use std::sync::mpsc::{Receiver, SendError, Sender, TryRecvError};
 use std::thread;
 use std::thread::JoinHandle;
+use std::time::Instant;
 
 pub struct ChunkGenThread {
     pub chunk_generator_requester: Sender<(MetaChunkPos, u32)>,
@@ -19,12 +20,19 @@ impl ChunkGenThread {
             let message: Result<(MetaChunkPos, u32), TryRecvError> = gen_chunk_receiver.try_recv();
             match message {
                 Ok((pos, seed)) => {
+                    let timer = Instant::now();
                     println!("started generation for {:?}", pos);
                     let result = gen_chunk_request_done
                         .send((MetaChunk::load_or_gen(pos, seed, false), pos));
                     match result {
                         Err(e) => println!("error while sending generated chunk: {}", e),
-                        Ok(_) => (),
+                        Ok(_) => {
+                            (println!(
+                                "done generation for: {:?} in {} sec",
+                                pos,
+                                timer.elapsed().as_secs_f32()
+                            ))
+                        }
                     }
                 }
                 Err(e) => {

@@ -14,6 +14,10 @@ pub fn place_tree(pos: &GlobalBlockPos, world: &mut MetaChunk) {
         if y >= 2 {
             for x in -(height - y - 1)..height - y {
                 for z in -(height - y - 1)..height - y {
+                    let width = height_range.sample(&mut rng);
+                    if width < 6 {
+                        continue;
+                    }
                     let currect_block = world.get_block(&pos.get_diff(x, y, z));
                     if currect_block.is_some()
                         && currect_block.unwrap().block_type == BlockType::Air

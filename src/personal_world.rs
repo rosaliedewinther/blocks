@@ -21,6 +21,7 @@ pub struct PersonalWorld {
     pub loading_chunks: HashSet<MetaChunkPos>,
     pub renderer: Renderer,
     pub reload_vertex_load_order: bool,
+    pub to_generate: BinaryHeap<(i32, ChunkPos)>,
 }
 
 impl PersonalWorld {
@@ -33,10 +34,12 @@ impl PersonalWorld {
             chunk_gen_thread: ChunkGenThread::new(),
             loading_chunks: HashSet::new(),
             reload_vertex_load_order: false,
+            to_generate: BinaryHeap::new(),
         }
     }
     pub fn update(&mut self) {
         self.world.update();
+        self.check_vertices_to_generate();
     }
     pub fn on_game_tick(&mut self, dt: f32) {
         self.player.update(&dt);
@@ -50,8 +53,8 @@ impl PersonalWorld {
             self.reload_vertex_load_order = false;
         }
     }
-    pub fn vertex_buffers_to_generate(&self) -> BTreeMap<i32, ChunkPos> {
-        let to_render = Mutex::new(BTreeMap::new());
+    pub fn vertex_buffers_to_generate(&self) -> BinaryHeap<(i32, ChunkPos)> {
+        let to_render = Mutex::new(BinaryHeap::new());
         for (_, meta_chunk) in &self.world.chunks {
             meta_chunk.for_each(|_, pos| {
                 if self.should_generate_vertex_buffers(pos.clone()) {
@@ -59,7 +62,7 @@ impl PersonalWorld {
                     to_render
                         .lock()
                         .unwrap()
-                        .insert((distance * 10000f32) as i32, pos.clone());
+                        .push(((-distance * 10000f32) as i32, pos.clone()));
                 }
             });
         }
@@ -94,6 +97,14 @@ impl PersonalWorld {
         }
     }
     pub fn on_player_moved_chunks(&mut self) {
+        self.check_chunks_to_generate();
+        self.to_generate = self.vertex_buffers_to_generate();
+        let player = &self.player;
+        self.world
+            .chunks
+            .retain(|pos, _| PersonalWorld::meta_chunk_should_be_loaded(&player, pos));
+    }
+    pub fn check_chunks_to_generate(&mut self) {
         let current_chunk = self.player.position.get_meta_chunk();
         let mut to_load = BinaryHeap::new();
         for x in current_chunk.x - METACHUNK_GEN_RANGE as i32 - 1
@@ -120,23 +131,35 @@ impl PersonalWorld {
         while !to_load.is_empty() {
             self.load_chunk(to_load.pop().unwrap().1);
         }
-        let player = &self.player;
-        self.world
-            .chunks
-            .retain(|pos, _| PersonalWorld::meta_chunk_should_be_loaded(&player, pos));
-
-        let chunks = &self.world.chunks;
-        for (pos, chunk) in chunks {
-            if self
-                .chunk_render_data
-                .contains_key(&pos.get_center_pos().get_chunk())
-            {
-                continue;
-            }
+    }
+    pub fn check_vertices_to_generate(&mut self) {
+        let lag_timer = Instant::now();
+        while !self.to_generate.is_empty() {
+            let (_, pos) = self.to_generate.pop().unwrap();
+            //let c = self.world.get_chunk(pos.clone());
+            let timer = Instant::now();
             println!("started generating vertices for: {:?}", &pos);
-            let data = chunk.generate_vertex_buffers(&self.renderer.wgpu.device);
-            self.chunk_render_data.extend(data.into_iter());
-            println!("done generating vertices for: {:?}", &pos);
+            //let data = chunk.generate_vertex_buffers(&self.renderer.wgpu.device);
+            let data = ChunkRenderData::new(
+                self.world.chunks.get(&pos.get_meta_chunk_pos()).unwrap(),
+                &pos.get_local_chunk_pos(),
+                &self.renderer.wgpu.device,
+            );
+            self.chunk_render_data.insert(pos.clone(), data);
+            println!(
+                "done generating vertices for: {:?} in: {} sec",
+                &pos,
+                timer.elapsed().as_secs_f32()
+            );
+            /*match c {
+                Some(chunk) => {
+
+                }
+                None => (),
+            }*/
+            if lag_timer.elapsed().as_secs_f32() > 0.01 {
+                return;
+            }
         }
     }
     pub fn load_generated_chunks(&mut self) {

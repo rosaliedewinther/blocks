@@ -25,7 +25,7 @@ pub struct ObjectPos {
     pub z: f32,
 }
 //position of global chunk
-#[derive(Hash, PartialEq, Debug, Clone)]
+#[derive(Hash, PartialEq, Debug, Clone, PartialOrd, Ord)]
 pub struct ChunkPos {
     pub x: i32,
     pub y: i32,

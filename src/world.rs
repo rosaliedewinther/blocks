@@ -1,6 +1,7 @@
 use crate::block::{Block, BlockSides};
 use crate::player::Player;
-use crate::positions::{GlobalBlockPos, MetaChunkPos};
+use crate::positions::{ChunkPos, GlobalBlockPos, MetaChunkPos};
+use crate::world_gen::chunk::Chunk;
 use crate::world_gen::chunk_loader::ChunkLoader;
 use crate::world_gen::meta_chunk::MetaChunk;
 use std::collections::{HashMap, HashSet};
@@ -37,6 +38,13 @@ impl World {
     pub fn get_block(&self, pos: &GlobalBlockPos) -> Option<&Block> {
         return match self.chunks.get(&pos.get_meta_chunk_pos()) {
             Some(c) => c.get_block(pos),
+            None => None,
+        };
+    }
+    pub fn get_chunk(&self, pos: ChunkPos) -> Option<&Chunk> {
+        let c = self.chunks.get(&pos.get_meta_chunk_pos());
+        return match c {
+            Some(chunk) => chunk.get_chunk(&pos.get_local_chunk_pos()),
             None => None,
         };
     }
