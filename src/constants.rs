@@ -1,4 +1,4 @@
-pub const VERTICALCHUNKS: usize = 4;
+pub const VERTICALCHUNKS: usize = 16;
 pub const CHUNKSIZE: usize = 16;
 pub const WIDTH: usize = 1280;
 pub const HEIGHT: usize = 720;

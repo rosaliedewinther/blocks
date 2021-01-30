@@ -69,7 +69,7 @@ pub fn generate_landmass(chunk_generator: &ChunkGenerator, pos: &ChunkPos, chunk
                 {
                     if global_y
                         < CHUNKSIZE as f64 * VERTICALCHUNKS as f64
-                            - CHUNKSIZE as f64 * (VERTICALCHUNKS as f64 - 3f64)
+                            - CHUNKSIZE as f64 * (VERTICALCHUNKS as f64 / 2.0)
                     {
                         chunk.blocks[x as usize][y as usize][z as usize] =
                             block::Block::new(BlockType::Grass);

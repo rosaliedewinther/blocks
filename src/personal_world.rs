@@ -36,28 +36,16 @@ impl PersonalWorld {
         }
     }
     pub fn update(&mut self) {
-        let chunks = &self.world.chunks;
-        for (pos, chunk) in chunks {
-            if self
-                .chunk_render_data
-                .contains_key(&pos.get_center_pos().get_chunk())
-            {
-                continue;
-            }
-            println!("started generating vertices for: {:?}", &pos);
-            let data = chunk.generate_vertex_buffers(&self.renderer.wgpu.device);
-            self.chunk_render_data.extend(data.into_iter());
-            println!("done generating vertices for: {:?}", &pos);
-        }
+        self.world.update();
     }
     pub fn on_game_tick(&mut self, dt: f32) {
         self.player.update(&dt);
         self.load_generated_chunks();
+        self.update();
         if self.player.generated_chunks_for != self.player.position.get_chunk()
             || self.reload_vertex_load_order
         {
             self.on_player_moved_chunks();
-            self.update();
             self.player.generated_chunks_for = self.player.position.get_chunk();
             self.reload_vertex_load_order = false;
         }
@@ -136,6 +124,20 @@ impl PersonalWorld {
         self.world
             .chunks
             .retain(|pos, _| PersonalWorld::meta_chunk_should_be_loaded(&player, pos));
+
+        let chunks = &self.world.chunks;
+        for (pos, chunk) in chunks {
+            if self
+                .chunk_render_data
+                .contains_key(&pos.get_center_pos().get_chunk())
+            {
+                continue;
+            }
+            println!("started generating vertices for: {:?}", &pos);
+            let data = chunk.generate_vertex_buffers(&self.renderer.wgpu.device);
+            self.chunk_render_data.extend(data.into_iter());
+            println!("done generating vertices for: {:?}", &pos);
+        }
     }
     pub fn load_generated_chunks(&mut self) {
         let message = self.chunk_gen_thread.get();
@@ -156,6 +158,7 @@ impl PersonalWorld {
                 self.renderer.wgpu.size.width,
                 self.renderer.wgpu.size.height,
             ),
+            self.world.time,
         );
         let render_data = &self.chunk_render_data;
         main_pipeline.set_uniform_buffer(&self.renderer.wgpu.queue, main_pipeline.uniforms);

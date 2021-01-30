@@ -4,6 +4,7 @@ use crate::positions::{GlobalBlockPos, MetaChunkPos};
 use crate::world_gen::chunk_loader::ChunkLoader;
 use crate::world_gen::meta_chunk::MetaChunk;
 use std::collections::{HashMap, HashSet};
+use std::time::Instant;
 
 pub struct World {
     pub chunks: HashMap<MetaChunkPos, MetaChunk>,
@@ -11,6 +12,8 @@ pub struct World {
     pub world_seed: u32,
     pub chunk_loader: ChunkLoader,
     pub players: HashMap<String, Player>,
+    pub time: f64,
+    start_time: Instant,
 }
 
 impl World {
@@ -21,7 +24,12 @@ impl World {
             world_seed: seed,
             chunk_loader: ChunkLoader::new(),
             players: HashMap::new(),
+            time: 0.0,
+            start_time: Instant::now(),
         }
+    }
+    pub fn update(&mut self) {
+        self.time = self.start_time.elapsed().as_secs_f64();
     }
     pub fn add_player(&mut self, name: String, player: Player) {
         self.players.insert(name, player);
