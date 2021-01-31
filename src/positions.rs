@@ -1,4 +1,5 @@
 use crate::constants::{CHUNKSIZE, METACHUNKSIZE, VERTICALCHUNKS};
+use crate::player::Player;
 use crate::utils::{wrap, wrapf};
 use core::ops;
 use num_traits::Pow;
@@ -108,6 +109,10 @@ impl ChunkPos {
             z: self.z + z_diff,
         }
     }
+    pub fn in_fov(&self, player: &Player) -> bool {
+        true
+    }
+
     pub fn get_distance(&self, pos: &ChunkPos) -> f32 {
         ((((self.x - pos.x) as f32).pow(2)
             + ((self.y - pos.y) as f32).pow(2)

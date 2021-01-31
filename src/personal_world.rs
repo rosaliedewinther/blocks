@@ -6,8 +6,10 @@ use crate::renderer::chunk_render_data::ChunkRenderData;
 use crate::renderer::renderer::Renderer;
 use crate::world::World;
 use crate::world_gen::chunk_gen_thread::ChunkGenThread;
+use rayon::iter::ParallelIterator;
+use rayon::iter::{IntoParallelIterator, IntoParallelRefIterator};
 use std::collections::{BTreeMap, BinaryHeap, HashMap, HashSet};
-use std::sync::Mutex;
+use std::sync::{Arc, Mutex};
 use std::time::Instant;
 use wgpu::Device;
 use winit::event_loop::ControlFlow;
@@ -134,33 +136,30 @@ impl PersonalWorld {
     }
     pub fn check_vertices_to_generate(&mut self) {
         let lag_timer = Instant::now();
-        while !self.to_generate.is_empty() {
-            let (_, pos) = self.to_generate.pop().unwrap();
-            //let c = self.world.get_chunk(pos.clone());
+        let world_chunks = &self.world.chunks;
+        let chunk_render_data = Arc::new(Mutex::new(&mut self.chunk_render_data));
+        let renderer = &self.renderer;
+        let to_generate = self.to_generate.clone();
+        let mut temp = to_generate.into_par_iter().filter(|(_, pos)| {
+            if lag_timer.elapsed().as_secs_f32() > 0.01 {
+                return true;
+            }
             let timer = Instant::now();
             println!("started generating vertices for: {:?}", &pos);
-            //let data = chunk.generate_vertex_buffers(&self.renderer.wgpu.device);
             let data = ChunkRenderData::new(
-                self.world.chunks.get(&pos.get_meta_chunk_pos()).unwrap(),
+                world_chunks.get(&pos.get_meta_chunk_pos()).unwrap(),
                 &pos.get_local_chunk_pos(),
-                &self.renderer.wgpu.device,
+                &renderer.wgpu.device,
             );
-            self.chunk_render_data.insert(pos.clone(), data);
+            chunk_render_data.lock().unwrap().insert(pos.clone(), data);
             println!(
                 "done generating vertices for: {:?} in: {} sec",
                 &pos,
                 timer.elapsed().as_secs_f32()
             );
-            /*match c {
-                Some(chunk) => {
-
-                }
-                None => (),
-            }*/
-            if lag_timer.elapsed().as_secs_f32() > 0.01 {
-                return;
-            }
-        }
+            return false;
+        });
+        self.to_generate = temp.collect();
     }
     pub fn load_generated_chunks(&mut self) {
         let message = self.chunk_gen_thread.get();

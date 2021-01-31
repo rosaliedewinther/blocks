@@ -63,7 +63,7 @@ impl Renderer {
             let mut pipeline = self.pipelines.get_mut("main").unwrap();
             pipeline.setup_render_pass(&mut render_pass);
 
-            render_data.iter().for_each(|(_, data)| {
+            render_data.iter().for_each(|(pos, data)| {
                 data.do_render_pass(&mut render_pass);
             });
         }

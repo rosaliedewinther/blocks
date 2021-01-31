@@ -86,7 +86,7 @@ impl MetaChunk {
 
         let mut rng = rand::thread_rng();
         let location_range = Uniform::from(0..(METACHUNKSIZE * CHUNKSIZE));
-        for _ in 0..5 {
+        for _ in 0..100 {
             let structure_x = pos.x * METACHUNKSIZE as i32 + location_range.sample(&mut rng) as i32;
             let structure_z = pos.z * METACHUNKSIZE as i32 + location_range.sample(&mut rng) as i32;
             let structure_y = chunk.first_above_land_y(structure_x, structure_z);
@@ -95,7 +95,14 @@ impl MetaChunk {
                 y: structure_y,
                 z: structure_z,
             };
-            place_tree(&global_center_pos, &mut chunk);
+            if chunk
+                .get_block(&global_center_pos.get_diff(0, -1, 0))
+                .unwrap()
+                .block_type
+                == BlockType::Grass
+            {
+                place_tree(&global_center_pos, &mut chunk);
+            }
         }
 
         let structure_x = pos.x * METACHUNKSIZE as i32 * CHUNKSIZE as i32 + pos.x;
