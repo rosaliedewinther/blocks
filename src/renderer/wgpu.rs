@@ -6,7 +6,6 @@ use crate::renderer::uniforms::Uniforms;
 use crate::renderer::vertex::{vertex, Vertex};
 use crate::renderer::wgpu_pipeline::WgpuPipeline;
 use futures::executor::block_on;
-use imgui_wgpu::Texture;
 use std::f32::consts::PI;
 use std::time::Instant;
 use wgpu::util::DeviceExt;

@@ -6,8 +6,11 @@ use crate::renderer::chunk_render_data::ChunkRenderData;
 use crate::renderer::renderer::Renderer;
 use crate::world::World;
 use crate::world_gen::chunk_gen_thread::ChunkGenThread;
+use crate::world_gen::meta_chunk::MetaChunk;
 use rayon::iter::ParallelIterator;
 use rayon::iter::{IntoParallelIterator, IntoParallelRefIterator};
+use rayon::prelude::ParallelSliceMut;
+use std::cmp::{max, min, Ordering};
 use std::collections::{BTreeMap, BinaryHeap, HashMap, HashSet};
 use std::sync::{Arc, Mutex};
 use std::time::Instant;
@@ -23,7 +26,7 @@ pub struct PersonalWorld {
     pub loading_chunks: HashSet<MetaChunkPos>,
     pub renderer: Renderer,
     pub reload_vertex_load_order: bool,
-    pub to_generate: BinaryHeap<(i32, ChunkPos)>,
+    pub to_generate: Vec<(f32, ChunkPos)>,
 }
 
 impl PersonalWorld {
@@ -36,7 +39,7 @@ impl PersonalWorld {
             chunk_gen_thread: ChunkGenThread::new(),
             loading_chunks: HashSet::new(),
             reload_vertex_load_order: false,
-            to_generate: BinaryHeap::new(),
+            to_generate: Vec::new(),
         }
     }
     pub fn update(&mut self) {
@@ -55,8 +58,8 @@ impl PersonalWorld {
             self.reload_vertex_load_order = false;
         }
     }
-    pub fn vertex_buffers_to_generate(&self) -> BinaryHeap<(i32, ChunkPos)> {
-        let to_render = Mutex::new(BinaryHeap::new());
+    pub fn vertex_buffers_to_generate(&self) -> Vec<(f32, ChunkPos)> {
+        let to_render = Mutex::new(Vec::new());
         for (_, meta_chunk) in &self.world.chunks {
             meta_chunk.for_each(|_, pos| {
                 if self.should_generate_vertex_buffers(pos.clone()) {
@@ -64,11 +67,20 @@ impl PersonalWorld {
                     to_render
                         .lock()
                         .unwrap()
-                        .push(((-distance * 10000f32) as i32, pos.clone()));
+                        .push((-distance * 10000f32, pos.clone()));
                 }
             });
         }
-        return to_render.into_inner().unwrap();
+        let mut result = to_render.into_inner().unwrap();
+        result.par_sort_by(|val1, val2| {
+            if val1 > val2 {
+                return Ordering::Less;
+            } else if val2 > val1 {
+                return Ordering::Greater;
+            }
+            return Ordering::Equal;
+        });
+        return result;
     }
     pub fn should_generate_vertex_buffers(&self, pos: ChunkPos) -> bool {
         let distance = pos.get_distance(&self.player.position.get_chunk());
@@ -123,8 +135,7 @@ impl PersonalWorld {
                 {
                     let chunk_pos = MetaChunkPos { x, z };
                     to_load.push((
-                        (chunk_pos.get_distance_to_object(&self.player.position) * 10f32) as i64
-                            * -1,
+                        (chunk_pos.get_distance_to_object(&self.player.position) * 10f32) as i64,
                         chunk_pos,
                     ));
                 }
@@ -135,31 +146,52 @@ impl PersonalWorld {
         }
     }
     pub fn check_vertices_to_generate(&mut self) {
+        if self.to_generate.is_empty() {
+            return;
+        }
         let lag_timer = Instant::now();
         let world_chunks = &self.world.chunks;
         let chunk_render_data = Arc::new(Mutex::new(&mut self.chunk_render_data));
+
         let renderer = &self.renderer;
-        let to_generate = self.to_generate.clone();
-        let mut temp = to_generate.into_par_iter().filter(|(_, pos)| {
-            if lag_timer.elapsed().as_secs_f32() > 0.01 {
-                return true;
-            }
-            let timer = Instant::now();
-            println!("started generating vertices for: {:?}", &pos);
-            let data = ChunkRenderData::new(
-                world_chunks.get(&pos.get_meta_chunk_pos()).unwrap(),
-                &pos.get_local_chunk_pos(),
-                &renderer.wgpu.device,
-            );
-            chunk_render_data.lock().unwrap().insert(pos.clone(), data);
-            println!(
-                "done generating vertices for: {:?} in: {} sec",
-                &pos,
-                timer.elapsed().as_secs_f32()
-            );
-            return false;
-        });
-        self.to_generate = temp.collect();
+        let starting_size = self.to_generate.len();
+        let to_generate = Arc::new(Mutex::new(&mut self.to_generate));
+        println!("started generating vertices");
+        while lag_timer.elapsed().as_secs_f32() < 0.001 && !to_generate.lock().unwrap().is_empty() {
+            let len = to_generate.lock().unwrap().len();
+            rayon::scope(|s| {
+                if len > 0 {
+                    s.spawn(|_| {
+                        let (_, pos) = &to_generate.lock().unwrap()[0];
+                        PersonalWorld::threaded_vertex_generation(
+                            world_chunks,
+                            renderer,
+                            &chunk_render_data,
+                            pos,
+                        );
+                    });
+                }
+            });
+            to_generate.lock().unwrap().drain(0..min(len, 1));
+        }
+        println!(
+            "done generating: {} vertices in: {} sec",
+            starting_size - self.to_generate.len(),
+            lag_timer.elapsed().as_secs_f32()
+        );
+    }
+    fn threaded_vertex_generation(
+        world_chunks: &HashMap<MetaChunkPos, MetaChunk>,
+        renderer: &Renderer,
+        chunk_render_data: &Arc<Mutex<&mut HashMap<ChunkPos, ChunkRenderData>>>,
+        pos: &ChunkPos,
+    ) {
+        let data = ChunkRenderData::new(
+            world_chunks.get(&pos.get_meta_chunk_pos()).unwrap(),
+            &pos.get_local_chunk_pos(),
+            &renderer.wgpu.device,
+        );
+        chunk_render_data.lock().unwrap().insert(pos.clone(), data);
     }
     pub fn load_generated_chunks(&mut self) {
         let message = self.chunk_gen_thread.get();

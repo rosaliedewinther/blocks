@@ -264,30 +264,39 @@ impl MetaChunk {
     }
     pub fn sides_to_render(&self, global_pos: &GlobalBlockPos) -> BlockSides {
         let mut sides = BlockSides::new();
-        if self.should_render_against_block(&global_pos.get_diff(1, 0, 0)) {
+        let mut reference_block = Block::new(BlockType::Air);
+        let b = self.get_block(global_pos);
+        if b.is_some() {
+            reference_block = *b.unwrap();
+        }
+        if self.should_render_against_block(&global_pos.get_diff(1, 0, 0), &reference_block) {
             sides.right = true;
         }
-        if self.should_render_against_block(&global_pos.get_diff(-1, 0, 0)) {
+        if self.should_render_against_block(&global_pos.get_diff(-1, 0, 0), &reference_block) {
             sides.left = true;
         }
-        if self.should_render_against_block(&global_pos.get_diff(0, 1, 0)) {
+        if self.should_render_against_block(&global_pos.get_diff(0, 1, 0), &reference_block) {
             sides.top = true;
         }
-        if self.should_render_against_block(&global_pos.get_diff(0, -1, 0)) {
+        if self.should_render_against_block(&global_pos.get_diff(0, -1, 0), &reference_block) {
             sides.bot = true;
         }
-        if self.should_render_against_block(&global_pos.get_diff(0, 0, 1)) {
+        if self.should_render_against_block(&global_pos.get_diff(0, 0, 1), &reference_block) {
             sides.back = true;
         }
-        if self.should_render_against_block(&global_pos.get_diff(0, 0, -1)) {
+        if self.should_render_against_block(&global_pos.get_diff(0, 0, -1), &reference_block) {
             sides.front = true;
         }
         return sides;
     }
-    pub fn should_render_against_block(&self, pos: &GlobalBlockPos) -> bool {
+    pub fn should_render_against_block(
+        &self,
+        pos: &GlobalBlockPos,
+        reference_block: &Block,
+    ) -> bool {
         let block = self.get_block(&pos);
         match block {
-            Some(b) => b.should_render_against(),
+            Some(b) => b.should_render_against(reference_block),
             None => true,
         }
     }

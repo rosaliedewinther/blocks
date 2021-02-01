@@ -90,7 +90,10 @@ impl Block {
         return Block::new(rand::random());
     }
 
-    pub fn should_render_against(&self) -> bool {
+    pub fn should_render_against(&self, block: &Block) -> bool {
+        if self.block_type == block.block_type {
+            return false;
+        }
         if self.get_col()[3] != 255 {
             return true;
         }

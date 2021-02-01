@@ -1,5 +1,3 @@
-use imgui::im_str;
-use imgui_winit_support::{HiDpiMode, WinitPlatform};
 /*
 pub struct UiRenderer {
     pub context: imgui::Context,
