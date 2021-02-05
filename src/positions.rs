@@ -1,4 +1,4 @@
-use crate::constants::{CHUNKSIZE, METACHUNKSIZE, VERTICALCHUNKS};
+use crate::constants::{CHUNKSIZE, METACHUNKSIZE};
 use crate::player::Player;
 use crate::utils::{wrap, wrapf};
 use core::ops;
@@ -62,7 +62,7 @@ impl GlobalBlockPos {
     pub fn get_local_chunk(&self) -> LocalChunkPos {
         LocalChunkPos {
             x: wrapf(self.x as f32 / (CHUNKSIZE as f32), METACHUNKSIZE as f32).floor() as i32,
-            y: wrapf(self.y as f32 / (CHUNKSIZE as f32), VERTICALCHUNKS as f32).floor() as i32,
+            y: wrapf(self.y as f32 / (CHUNKSIZE as f32), METACHUNKSIZE as f32).floor() as i32,
             z: wrapf(self.z as f32 / (CHUNKSIZE as f32), METACHUNKSIZE as f32).floor() as i32,
         }
     }

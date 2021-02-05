@@ -1,6 +1,6 @@
 use crate::block;
 use crate::block::{Block, BlockType};
-use crate::constants::{CHUNKSIZE, VERTICALCHUNKS};
+use crate::constants::{CHUNKSIZE, METACHUNKSIZE};
 use crate::positions::ChunkPos;
 use crate::world_gen::chunk::Chunk;
 use noise::{Fbm, MultiFractal, NoiseFn, Perlin, Seedable};
@@ -78,10 +78,10 @@ pub fn plant_grass(chunk_generator: &ChunkGenerator, pos: &ChunkPos, chunk: &mut
 
 fn get_xz_heigth(x: i32, z: i32, chunk_generator: &ChunkGenerator, pos: &ChunkPos) -> i32 {
     let perlin_input = [
-        (x + (pos.x * CHUNKSIZE as i32)) as f64 / (VERTICALCHUNKS * CHUNKSIZE) as f64,
-        (z + (pos.z * CHUNKSIZE as i32)) as f64 / (VERTICALCHUNKS * CHUNKSIZE) as f64,
+        (x + (pos.x * CHUNKSIZE as i32)) as f64 / (METACHUNKSIZE * CHUNKSIZE) as f64,
+        (z + (pos.z * CHUNKSIZE as i32)) as f64 / (METACHUNKSIZE * CHUNKSIZE) as f64,
     ];
-    ((chunk_generator.noise.get(perlin_input) + 1.0) * VERTICALCHUNKS as f64 * CHUNKSIZE as f64
+    ((chunk_generator.noise.get(perlin_input) + 1.0) * METACHUNKSIZE as f64 * CHUNKSIZE as f64
         / 2.0) as i32
 }
 
@@ -89,7 +89,7 @@ pub fn floodfill_water(chunk_generator: &ChunkGenerator, pos: &ChunkPos, chunk: 
     for x in 0..CHUNKSIZE as i32 {
         for z in 0..CHUNKSIZE as i32 {
             for y in 0..CHUNKSIZE as i32 {
-                let water_level = CHUNKSIZE * VERTICALCHUNKS / 3;
+                let water_level = CHUNKSIZE * METACHUNKSIZE / 3;
                 let global_y = (y as i32 + (pos.y * CHUNKSIZE as i32)) as f64;
                 if global_y < water_level as f64
                     && chunk.blocks[x as usize][y as usize][z as usize].block_type == BlockType::Air

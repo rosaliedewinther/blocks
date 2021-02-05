@@ -1,4 +1,3 @@
-pub const VERTICALCHUNKS: usize = 8;
 pub const CHUNKSIZE: usize = 32;
 pub const WIDTH: usize = 1280;
 pub const HEIGHT: usize = 720;

@@ -1,6 +1,6 @@
 use crate::algorithms::bfs_world::bfs_world_air;
 use crate::block::{Block, BlockSides, BlockType};
-use crate::constants::{CHUNKSIZE, METACHUNKSIZE, VERTICALCHUNKS};
+use crate::constants::{CHUNKSIZE, METACHUNKSIZE};
 use crate::io::file_reader::read_meta_chunk_from_file;
 use crate::io::file_writer::write_to_file;
 use crate::player::Player;
@@ -44,7 +44,7 @@ impl MetaChunk {
         let mut chunks: Vec<Vec<Vec<Chunk>>> = Vec::with_capacity(METACHUNKSIZE);
         for x in 0..METACHUNKSIZE {
             chunks.push(Vec::new());
-            for y in 0..VERTICALCHUNKS {
+            for y in 0..METACHUNKSIZE {
                 chunks[x].push(Vec::new());
                 for z in 0..METACHUNKSIZE {
                     let local_pos = &ChunkPos {
@@ -121,7 +121,7 @@ impl MetaChunk {
         return chunk;
     }
     pub fn first_above_land_y(&self, x: i32, z: i32) -> i32 {
-        let mut y = VERTICALCHUNKS as i32 * CHUNKSIZE as i32 - 1;
+        let mut y = METACHUNKSIZE as i32 * CHUNKSIZE as i32 - 1;
         while let Some(b) = self.get_block(&GlobalBlockPos { x, y, z }) {
             if b.block_type == BlockType::Grass
                 || b.block_type == BlockType::Water
@@ -163,7 +163,7 @@ impl MetaChunk {
     }
     pub fn for_each_mut(&mut self, f: impl Fn(&mut Chunk, ChunkPos)) {
         for x in 0..METACHUNKSIZE as i32 {
-            for y in 0..VERTICALCHUNKS as i32 {
+            for y in 0..METACHUNKSIZE as i32 {
                 for z in 0..METACHUNKSIZE as i32 {
                     let pos = ChunkPos {
                         x: self.pos.x * METACHUNKSIZE as i32 + x,
@@ -177,7 +177,7 @@ impl MetaChunk {
     }
     pub fn for_each(&self, f: impl Fn(&Chunk, ChunkPos)) {
         for x in 0..METACHUNKSIZE as i32 {
-            for y in 0..VERTICALCHUNKS as i32 {
+            for y in 0..METACHUNKSIZE as i32 {
                 for z in 0..METACHUNKSIZE as i32 {
                     let pos = ChunkPos {
                         x: self.pos.x * METACHUNKSIZE as i32 + x,
@@ -207,7 +207,7 @@ impl MetaChunk {
         let mut render_data = Arc::new(Mutex::new(HashMap::new()));
 
         (0..METACHUNKSIZE as i32).into_par_iter().for_each(|x| {
-            (0..VERTICALCHUNKS as i32).into_par_iter().for_each(|y| {
+            (0..METACHUNKSIZE as i32).into_par_iter().for_each(|y| {
                 (0..METACHUNKSIZE as i32).into_par_iter().for_each(|z| {
                     let local_chunk_pos = LocalChunkPos { x, y, z };
                     let chunk_render_data = ChunkRenderData::new(self, &local_chunk_pos, device);
