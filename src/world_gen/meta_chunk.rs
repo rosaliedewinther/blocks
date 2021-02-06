@@ -59,8 +59,8 @@ impl MetaChunk {
 
         let mut chunk = MetaChunk { pos, chunks, seed };
 
-        let structure_x = pos.x * METACHUNKSIZE as i32 + 20;
-        let structure_z = pos.z * METACHUNKSIZE as i32 + 20;
+        let structure_x = pos.x * METACHUNKSIZE as i32 * CHUNKSIZE as i32 + 20;
+        let structure_z = pos.z * METACHUNKSIZE as i32 * CHUNKSIZE as i32 + 20;
         let structure_y = chunk.first_above_land_y(structure_x, structure_z);
         let global_center_pos = GlobalBlockPos {
             x: structure_x,
@@ -74,9 +74,10 @@ impl MetaChunk {
             Block::new(BlockType::Sand),
         );
 
-        let structure_x = pos.x * METACHUNKSIZE as i32 + 3;
-        let structure_z = pos.z * METACHUNKSIZE as i32 + 60;
+        let structure_x = pos.x * METACHUNKSIZE as i32 * CHUNKSIZE as i32 + 3;
+        let structure_z = pos.z * METACHUNKSIZE as i32 * CHUNKSIZE as i32 + 60;
         let structure_y = chunk.first_above_land_y(structure_x, structure_z);
+        println!("{}", structure_y);
         let global_center_pos = GlobalBlockPos {
             x: structure_x,
             y: structure_y,
@@ -86,22 +87,24 @@ impl MetaChunk {
 
         let mut rng = rand::thread_rng();
         let location_range = Uniform::from(0..(METACHUNKSIZE * CHUNKSIZE));
-        for _ in 0..100 {
-            let structure_x = pos.x * METACHUNKSIZE as i32 + location_range.sample(&mut rng) as i32;
-            let structure_z = pos.z * METACHUNKSIZE as i32 + location_range.sample(&mut rng) as i32;
+        for _ in 0..1000 {
+            let structure_x = pos.x * METACHUNKSIZE as i32 * CHUNKSIZE as i32
+                + location_range.sample(&mut rng) as i32;
+            let structure_z = pos.z * METACHUNKSIZE as i32 * CHUNKSIZE as i32
+                + location_range.sample(&mut rng) as i32;
             let structure_y = chunk.first_above_land_y(structure_x, structure_z);
-            let global_center_pos = GlobalBlockPos {
+            let tree_pos = GlobalBlockPos {
                 x: structure_x,
                 y: structure_y,
                 z: structure_z,
             };
             if chunk
-                .get_block(&global_center_pos.get_diff(0, -1, 0))
+                .get_block(&tree_pos.get_diff(0, -1, 0))
                 .unwrap()
                 .block_type
                 == BlockType::Grass
             {
-                place_tree(&global_center_pos, &mut chunk);
+                place_tree(&tree_pos, &mut chunk);
             }
         }
 
@@ -112,7 +115,7 @@ impl MetaChunk {
         {
             let global_center_pos = GlobalBlockPos {
                 x: structure_x,
-                y: y,
+                y,
                 z: structure_z,
             };
             chunk.set_block(&global_center_pos, Block::new(BlockType::Sand));
@@ -154,6 +157,13 @@ impl MetaChunk {
         }
     }
     pub fn get_block(&self, pos: &GlobalBlockPos) -> Option<&Block> {
+        if !(pos.x >= self.pos.x * METACHUNKSIZE as i32 * CHUNKSIZE as i32
+            && pos.x < (self.pos.x + 1) * METACHUNKSIZE as i32 * CHUNKSIZE as i32
+            && pos.z >= self.pos.z * METACHUNKSIZE as i32 * CHUNKSIZE as i32
+            && pos.z < (self.pos.z + 1) * METACHUNKSIZE as i32 * CHUNKSIZE as i32)
+        {
+            return None;
+        }
         let chunk_pos = pos.get_local_chunk();
         let chunk = self.get_chunk(&chunk_pos);
         match chunk {
@@ -202,102 +212,5 @@ impl MetaChunk {
         let z = self.pos.z * METACHUNKSIZE as i32
             + wrap(to_sign_of(self.pos.z, pos.z), METACHUNKSIZE as i32);
         ChunkPos { x, y, z }
-    }
-    pub fn generate_vertex_buffers(&self, device: &Device) -> HashMap<ChunkPos, ChunkRenderData> {
-        let mut render_data = Arc::new(Mutex::new(HashMap::new()));
-
-        (0..METACHUNKSIZE as i32).into_par_iter().for_each(|x| {
-            (0..METACHUNKSIZE as i32).into_par_iter().for_each(|y| {
-                (0..METACHUNKSIZE as i32).into_par_iter().for_each(|z| {
-                    let local_chunk_pos = LocalChunkPos { x, y, z };
-                    let chunk_render_data = ChunkRenderData::new(self, &local_chunk_pos, device);
-
-                    render_data
-                        .lock()
-                        .unwrap()
-                        .insert(local_chunk_pos.get_chunk_pos(&self.pos), chunk_render_data);
-                });
-            });
-        });
-        //HashMap::new()
-        return Arc::try_unwrap(render_data)
-            .unwrap_or_default()
-            .into_inner()
-            .unwrap();
-    }
-    pub fn get_chunk_vertices(
-        &self,
-        chunk: &Chunk,
-        chunk_pos: &ChunkPos,
-    ) -> (Vec<Vertex>, Vec<u32>) {
-        let mut vertices: Vec<Vertex> = Vec::with_capacity(20000);
-        let mut indices: Vec<u32> = Vec::with_capacity(20000);
-        for x in 0..CHUNKSIZE as i32 {
-            for y in 0..CHUNKSIZE as i32 {
-                for z in 0..CHUNKSIZE as i32 {
-                    let global_pos = GlobalBlockPos {
-                        x: x + (chunk_pos.x * CHUNKSIZE as i32),
-                        y: y + (chunk_pos.y * CHUNKSIZE as i32),
-                        z: z + (chunk_pos.z * CHUNKSIZE as i32),
-                    };
-
-                    let block = chunk.get_block(&LocalBlockPos { x, y, z });
-                    if block.is_some() && block.unwrap().block_type == BlockType::Air {
-                        continue;
-                    }
-                    let sides = self.sides_to_render(&global_pos);
-
-                    let block: &Block = &chunk.blocks[x as usize][y as usize][z as usize];
-                    let (mut temp_vertices, mut temp_indices) = block.get_mesh(&global_pos, &sides);
-                    temp_indices = temp_indices
-                        .iter()
-                        .map(|i| i + (&vertices).len() as u32)
-                        .collect();
-                    {
-                        vertices.append(&mut temp_vertices);
-                        indices.append(&mut temp_indices);
-                    }
-                }
-            }
-        }
-        return (vertices, indices);
-    }
-    pub fn sides_to_render(&self, global_pos: &GlobalBlockPos) -> BlockSides {
-        let mut sides = BlockSides::new();
-        let mut reference_block = Block::new(BlockType::Air);
-        let b = self.get_block(global_pos);
-        if b.is_some() {
-            reference_block = *b.unwrap();
-        }
-        if self.should_render_against_block(&global_pos.get_diff(1, 0, 0), &reference_block) {
-            sides.right = true;
-        }
-        if self.should_render_against_block(&global_pos.get_diff(-1, 0, 0), &reference_block) {
-            sides.left = true;
-        }
-        if self.should_render_against_block(&global_pos.get_diff(0, 1, 0), &reference_block) {
-            sides.top = true;
-        }
-        if self.should_render_against_block(&global_pos.get_diff(0, -1, 0), &reference_block) {
-            sides.bot = true;
-        }
-        if self.should_render_against_block(&global_pos.get_diff(0, 0, 1), &reference_block) {
-            sides.back = true;
-        }
-        if self.should_render_against_block(&global_pos.get_diff(0, 0, -1), &reference_block) {
-            sides.front = true;
-        }
-        return sides;
-    }
-    pub fn should_render_against_block(
-        &self,
-        pos: &GlobalBlockPos,
-        reference_block: &Block,
-    ) -> bool {
-        let block = self.get_block(&pos);
-        match block {
-            Some(b) => b.should_render_against(reference_block),
-            None => true,
-        }
     }
 }

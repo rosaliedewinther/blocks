@@ -87,6 +87,15 @@ impl PersonalWorld {
         if distance > self.player.render_distance {
             return false;
         }
+        if self.world.get_chunk(&pos.get_diff(0, 0, 1)).is_none()
+            || self.world.get_chunk(&pos.get_diff(0, 0, -1)).is_none()
+            || self.world.get_chunk(&pos.get_diff(0, 1, 0)).is_none()
+            || self.world.get_chunk(&pos.get_diff(0, -1, 0)).is_none()
+            || self.world.get_chunk(&pos.get_diff(1, 0, 0)).is_none()
+            || self.world.get_chunk(&pos.get_diff(-1, 0, 0)).is_none()
+        {
+            return false;
+        }
         if self.chunk_render_data.contains_key(&pos) {
             return false;
         }
@@ -150,7 +159,7 @@ impl PersonalWorld {
             return;
         }
         let lag_timer = Instant::now();
-        let world_chunks = &self.world.chunks;
+        let world = &self.world;
         let chunk_render_data = Arc::new(Mutex::new(&mut self.chunk_render_data));
 
         let renderer = &self.renderer;
@@ -164,7 +173,7 @@ impl PersonalWorld {
                     s.spawn(|_| {
                         let (_, pos) = &to_generate.lock().unwrap()[0];
                         PersonalWorld::threaded_vertex_generation(
-                            world_chunks,
+                            world,
                             renderer,
                             &chunk_render_data,
                             pos,
@@ -181,16 +190,12 @@ impl PersonalWorld {
         );
     }
     fn threaded_vertex_generation(
-        world_chunks: &HashMap<MetaChunkPos, MetaChunk>,
+        world: &World,
         renderer: &Renderer,
         chunk_render_data: &Arc<Mutex<&mut HashMap<ChunkPos, ChunkRenderData>>>,
         pos: &ChunkPos,
     ) {
-        let data = ChunkRenderData::new(
-            world_chunks.get(&pos.get_meta_chunk_pos()).unwrap(),
-            &pos.get_local_chunk_pos(),
-            &renderer.wgpu.device,
-        );
+        let data = ChunkRenderData::new(world, &pos, &renderer.wgpu.device);
         chunk_render_data.lock().unwrap().insert(pos.clone(), data);
     }
     pub fn load_generated_chunks(&mut self) {

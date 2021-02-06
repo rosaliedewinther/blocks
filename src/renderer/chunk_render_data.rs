@@ -1,7 +1,9 @@
-use crate::positions::LocalChunkPos;
+use crate::positions::{ChunkPos, LocalChunkPos};
 use crate::renderer::vertex::Vertex;
+use crate::world::World;
 use crate::world_gen::chunk::Chunk;
 use crate::world_gen::meta_chunk::MetaChunk;
+use crate::world_gen::vertex_generation::get_chunk_vertices;
 use wgpu::util::DeviceExt;
 use wgpu::{Device, RenderPass};
 
@@ -13,14 +15,8 @@ pub struct ChunkRenderData {
 }
 
 impl ChunkRenderData {
-    pub fn new(
-        meta_chunk: &MetaChunk,
-        chunk_pos: &LocalChunkPos,
-        device: &Device,
-    ) -> ChunkRenderData {
-        let chunk = meta_chunk.get_chunk(&chunk_pos).unwrap();
-        let chunk_pos = meta_chunk.get_chunk_pos(&chunk_pos);
-        let (mut vertices, indices) = meta_chunk.get_chunk_vertices(chunk, &chunk_pos);
+    pub fn new(world: &World, chunk_pos: &ChunkPos, device: &Device) -> ChunkRenderData {
+        let (mut vertices, indices) = get_chunk_vertices(world, &chunk_pos);
         let vertices: &[Vertex] = vertices.as_slice();
         let indices: &[u32] = indices.as_slice();
 

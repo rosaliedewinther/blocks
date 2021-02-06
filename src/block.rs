@@ -94,10 +94,10 @@ impl Block {
         if self.block_type == block.block_type {
             return false;
         }
-        if self.get_col()[3] != 255 {
-            return true;
+        if self.get_col()[3] == 255 {
+            return false;
         }
-        return false;
+        return true;
     }
     pub fn get_mesh(&self, pos: &GlobalBlockPos, sides: &BlockSides) -> (Vec<Vertex>, Vec<u32>) {
         let mut vertices = Vec::with_capacity(8);

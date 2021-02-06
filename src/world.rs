@@ -41,7 +41,7 @@ impl World {
             None => None,
         };
     }
-    pub fn get_chunk(&self, pos: ChunkPos) -> Option<&Chunk> {
+    pub fn get_chunk(&self, pos: &ChunkPos) -> Option<&Chunk> {
         let c = self.chunks.get(&pos.get_meta_chunk_pos());
         return match c {
             Some(chunk) => chunk.get_chunk(&pos.get_local_chunk_pos()),
