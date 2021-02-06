@@ -3,7 +3,7 @@ use crate::block::{Block, BlockType};
 use crate::constants::{CHUNKSIZE, METACHUNKSIZE};
 use crate::positions::ChunkPos;
 use crate::world_gen::chunk::Chunk;
-use noise::{Fbm, MultiFractal, NoiseFn, Perlin, Seedable};
+use noise::{Fbm, MultiFractal, NoiseFn, Seedable};
 
 pub struct ChunkGenerator {
     pub noise: Fbm,
@@ -85,7 +85,7 @@ fn get_xz_heigth(x: i32, z: i32, chunk_generator: &ChunkGenerator, pos: &ChunkPo
         / 2.0) as i32
 }
 
-pub fn floodfill_water(chunk_generator: &ChunkGenerator, pos: &ChunkPos, chunk: &mut Chunk) {
+pub fn floodfill_water(_: &ChunkGenerator, pos: &ChunkPos, chunk: &mut Chunk) {
     for x in 0..CHUNKSIZE as i32 {
         for z in 0..CHUNKSIZE as i32 {
             for y in 0..CHUNKSIZE as i32 {

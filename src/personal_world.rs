@@ -6,15 +6,11 @@ use crate::renderer::chunk_render_data::ChunkRenderData;
 use crate::renderer::renderer::Renderer;
 use crate::world::World;
 use crate::world_gen::chunk_gen_thread::ChunkGenThread;
-use crate::world_gen::meta_chunk::MetaChunk;
-use rayon::iter::ParallelIterator;
-use rayon::iter::{IntoParallelIterator, IntoParallelRefIterator};
 use rayon::prelude::ParallelSliceMut;
-use std::cmp::{max, min, Ordering};
-use std::collections::{BTreeMap, BinaryHeap, HashMap, HashSet};
+use std::cmp::{min, Ordering};
+use std::collections::{BinaryHeap, HashMap, HashSet};
 use std::sync::{Arc, Mutex};
 use std::time::Instant;
-use wgpu::Device;
 use winit::event_loop::ControlFlow;
 use winit::window::Window;
 
@@ -221,7 +217,7 @@ impl PersonalWorld {
         );
         let render_data = &self.chunk_render_data;
         main_pipeline.set_uniform_buffer(&self.renderer.wgpu.queue, main_pipeline.uniforms);
-        self.renderer.do_render_pass(render_data);
+        self.renderer.do_render_pass(render_data).unwrap();
         match self.renderer.do_render_pass(render_data) {
             Ok(_) => {}
             // Recreate the swap_chain if lost

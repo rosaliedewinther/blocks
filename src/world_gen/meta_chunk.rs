@@ -1,28 +1,17 @@
 use crate::algorithms::bfs_world::bfs_world_air;
-use crate::block::{Block, BlockSides, BlockType};
+use crate::block::{Block, BlockType};
 use crate::constants::{CHUNKSIZE, METACHUNKSIZE};
 use crate::io::file_reader::read_meta_chunk_from_file;
 use crate::io::file_writer::write_to_file;
-use crate::player::Player;
-use crate::positions::{ChunkPos, GlobalBlockPos, LocalBlockPos, LocalChunkPos, MetaChunkPos};
-use crate::renderer::chunk_render_data::ChunkRenderData;
-use crate::renderer::vertex::Vertex;
+use crate::positions::{ChunkPos, GlobalBlockPos, LocalChunkPos, MetaChunkPos};
 use crate::structures::square::place_square;
 use crate::structures::tree::place_tree;
 use crate::utils::{to_sign_of, wrap};
-use crate::world_gen::basic::{
-    floodfill_water, generate_empty_chunk, generate_landmass, ChunkGenerator,
-};
+use crate::world_gen::basic::ChunkGenerator;
 use crate::world_gen::chunk::Chunk;
 use rand::distributions::{Distribution, Uniform};
-use rayon::iter::ParallelIterator;
-use rayon::iter::{IntoParallelIterator, IntoParallelRefIterator};
 use serde::{Deserialize, Serialize};
 use std::borrow::BorrowMut;
-use std::collections::HashMap;
-use std::sync::{Arc, Mutex};
-use std::time::Instant;
-use wgpu::Device;
 
 #[derive(Serialize, Deserialize)]
 pub struct MetaChunk {

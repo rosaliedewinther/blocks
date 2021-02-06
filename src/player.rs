@@ -2,7 +2,6 @@ use crate::input::Input;
 use crate::positions::{ChunkPos, ObjectPos};
 use crate::utils::{get_rotation_matrix_y, get_rotation_matrix_z};
 use device_query::Keycode;
-use enigo::MouseControllable;
 use nalgebra::{Matrix3, Vector3};
 use std::f32::consts::PI;
 

@@ -2,13 +2,9 @@
 
 use crate::logger::setup_logger;
 use crate::main_loop::MainLoop;
-use crate::personal_world::PersonalWorld;
-use crate::renderer::wgpu::start_main_loop;
-use log::Level::Debug;
 
 mod algorithms;
 mod block;
-mod chunk_manager;
 mod constants;
 mod input;
 mod io;

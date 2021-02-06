@@ -27,11 +27,11 @@ impl ChunkGenThread {
                     match result {
                         Err(e) => println!("error while sending generated chunk: {}", e),
                         Ok(_) => {
-                            (println!(
+                            println!(
                                 "done generation for: {:?} in {} sec",
                                 pos,
                                 timer.elapsed().as_secs_f32()
-                            ))
+                            )
                         }
                     }
                 }

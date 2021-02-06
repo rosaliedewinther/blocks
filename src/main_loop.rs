@@ -1,18 +1,9 @@
-use crate::chunk_manager::ChunkManager;
-use crate::constants::METACHUNK_GEN_RANGE;
-use crate::player::Player;
-use crate::positions::{MetaChunkPos, ObjectPos};
-//use crate::ui::UiRenderer;
 use crate::personal_world::PersonalWorld;
-use crate::renderer::renderer::Renderer;
 use crate::renderer::wgpu::WgpuState;
-use futures::executor::block_on;
-use log::info;
-use std::collections::{BinaryHeap, LinkedList};
-use std::time::{Instant, SystemTime};
+use std::time::Instant;
 use winit::event::{ElementState, Event, KeyboardInput, VirtualKeyCode, WindowEvent};
 use winit::event_loop::{ControlFlow, EventLoop};
-use winit::window::{Window, WindowBuilder};
+use winit::window::WindowBuilder;
 
 pub struct MainLoop {
     /*event_loop: EventLoop<()>,

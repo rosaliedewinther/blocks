@@ -3,7 +3,6 @@ use crate::constants::CHUNKSIZE;
 use crate::positions::{ChunkPos, GlobalBlockPos, LocalBlockPos};
 use crate::renderer::vertex::Vertex;
 use crate::world::World;
-use crate::world_gen::chunk::Chunk;
 
 pub fn get_chunk_vertices(world: &World, chunk_pos: &ChunkPos) -> (Vec<Vertex>, Vec<u32>) {
     let mut vertices: Vec<Vertex> = Vec::with_capacity(20000);

@@ -1,12 +1,10 @@
-use crate::personal_world::PersonalWorld;
 use crate::positions::ChunkPos;
 use crate::renderer::chunk_render_data::ChunkRenderData;
 use crate::renderer::wgpu::WgpuState;
 use crate::renderer::wgpu_pipeline::WgpuPipeline;
 use futures::executor::block_on;
-use futures::StreamExt;
 use std::collections::HashMap;
-use wgpu::{SwapChainError, SwapChainFrame};
+use wgpu::SwapChainError;
 use winit::window::Window;
 
 pub struct Renderer {
@@ -60,10 +58,10 @@ impl Renderer {
                 }),
             });
 
-            let mut pipeline = self.pipelines.get_mut("main").unwrap();
+            let pipeline = self.pipelines.get_mut("main").unwrap();
             pipeline.setup_render_pass(&mut render_pass);
 
-            render_data.iter().for_each(|(pos, data)| {
+            render_data.iter().for_each(|(_, data)| {
                 data.do_render_pass(&mut render_pass);
             });
         }

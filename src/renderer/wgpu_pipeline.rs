@@ -1,11 +1,8 @@
-use crate::block::{Block, BlockSides, BlockType};
-use crate::positions::{GlobalBlockPos, MetaChunkPos};
 use crate::renderer::depth_texture::DepthTexture;
 use crate::renderer::uniforms::Uniforms;
 use crate::renderer::vertex::Vertex;
-use crate::world_gen::meta_chunk::MetaChunk;
 use wgpu::util::DeviceExt;
-use wgpu::{CommandEncoder, Device, Queue, RenderPass, SwapChainDescriptor, SwapChainTexture};
+use wgpu::{Device, Queue, RenderPass, SwapChainDescriptor};
 
 pub struct WgpuPipeline {
     pub uniform_buffer: wgpu::Buffer,

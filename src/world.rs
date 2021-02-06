@@ -1,4 +1,4 @@
-use crate::block::{Block, BlockSides};
+use crate::block::Block;
 use crate::player::Player;
 use crate::positions::{ChunkPos, GlobalBlockPos, MetaChunkPos};
 use crate::world_gen::chunk::Chunk;

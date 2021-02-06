@@ -1,20 +1,6 @@
-use crate::block::{Block, BlockSides, BlockType};
-use crate::player::Player;
-use crate::positions::{GlobalBlockPos, ObjectPos};
 use crate::renderer::depth_texture::DepthTexture;
-use crate::renderer::uniforms::Uniforms;
-use crate::renderer::vertex::{vertex, Vertex};
-use crate::renderer::wgpu_pipeline::WgpuPipeline;
-use futures::executor::block_on;
 use std::f32::consts::PI;
-use std::time::Instant;
-use wgpu::util::DeviceExt;
-use wgpu::TextureFormat;
-use winit::{
-    event::*,
-    event_loop::{ControlFlow, EventLoop},
-    window::{Window, WindowBuilder},
-};
+use winit::{event::*, window::Window};
 
 pub struct WgpuState {
     pub surface: wgpu::Surface,
@@ -95,7 +81,7 @@ impl WgpuState {
                 label: Some("Render Encoder"),
             });
         {
-            let mut render_pass = encoder.begin_render_pass(&wgpu::RenderPassDescriptor {
+            let _ = encoder.begin_render_pass(&wgpu::RenderPassDescriptor {
                 color_attachments: &[wgpu::RenderPassColorAttachmentDescriptor {
                     attachment: &frame.view,
                     resolve_target: None,
