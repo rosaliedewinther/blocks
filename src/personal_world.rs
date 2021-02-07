@@ -118,7 +118,7 @@ impl PersonalWorld {
         let chunk_request_result = self.chunk_gen_thread.request(pos, self.world.world_seed);
         match chunk_request_result {
             Ok(_) => (),
-            Err(e) => println!("error while trying to load a chunk: {}", e),
+            Err(e) => println!("error while trying to load A chunk: {}", e),
         }
     }
     pub fn on_player_moved_chunks(&mut self) {

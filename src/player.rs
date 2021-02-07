@@ -1,4 +1,3 @@
-use crate::input::Input;
 use crate::positions::{ChunkPos, ObjectPos};
 use crate::utils::{get_rotation_matrix_y, get_rotation_matrix_z};
 use device_query::Keycode;
@@ -9,7 +8,6 @@ pub struct Player {
     pub position: ObjectPos,
     pub direction: Vector3<f32>,
     pub up: [f32; 3],
-    pub input: Input,
     pub speed: f32,
     pub camera_speed: f32,
     pub render_distance: f32,
@@ -28,7 +26,6 @@ impl Player {
             up: [0f32, 1.0f32, 0f32],
             speed: 200f32,
             camera_speed: 1f32,
-            input: Input::new(),
             render_distance: 5000f32,
             generated_chunks_for: ChunkPos {
                 x: i32::max_value(),
@@ -39,7 +36,7 @@ impl Player {
     }
 
     pub fn handle_input(&mut self, dt: &f32) {
-        self.input.update();
+        /*self.input.update();
         self.change_position(Keycode::A, 1.5f32 * PI, *dt * self.speed);
         self.change_position(Keycode::D, 0.5f32 * PI, *dt * self.speed);
         self.change_position(Keycode::W, 0f32 * PI, *dt * self.speed);
@@ -64,17 +61,18 @@ impl Player {
             self.change_direction_horizontal(&get_rotation_matrix_y(xdiff));
         } else {
             self.change_direction_horizontal(&get_rotation_matrix_y(xdiff));
-        }
+        }*/
     }
 
     pub fn change_position(&mut self, key: Keycode, rotation_degree: f32, change: f32) {
+        /*
         if self.input.key_pressed(key) {
             let move_vec = get_rotation_matrix_y(rotation_degree) * &self.direction;
             let to_extend =
                 1f32 / (move_vec[0].powf(2f32).abs() + move_vec[2].powf(2f32).abs()).sqrt();
             self.position.x += change * move_vec.x * to_extend;
             self.position.z += change * move_vec.z * to_extend;
-        }
+        }*/
     }
     pub fn change_direction_horizontal(&mut self, mat: &Matrix3<f32>) {
         self.direction = mat * &self.direction;

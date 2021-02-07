@@ -87,7 +87,6 @@ impl UiRenderer {
             input.query_pointer().coords.0 as f32,
             input.query_pointer().coords.1 as f32,
         ];
-        println!("{:?}", input.query_pointer().button_pressed);
 
         self.context.io_mut().mouse_down = [
             input.query_pointer().button_pressed[1],
@@ -127,7 +126,6 @@ impl UiRenderer {
         self.platform.prepare_render(&ui, &window);
         self.renderer
             .render(ui.render(), queue, device, render_pass);
-        println!("drawing ui");
     }
 }
 

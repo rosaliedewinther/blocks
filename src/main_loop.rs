@@ -1,8 +1,9 @@
+use crate::input::input::Input;
 use crate::personal_world::PersonalWorld;
 use crate::renderer::wgpu::WgpuState;
 use crate::ui::UiRenderer;
 use std::time::Instant;
-use winit::event::{ElementState, Event, KeyboardInput, VirtualKeyCode, WindowEvent};
+use winit::event::{Event, WindowEvent};
 use winit::event_loop::{ControlFlow, EventLoop};
 use winit::window::WindowBuilder;
 
@@ -28,6 +29,7 @@ impl MainLoop {
             .with_maximized(true)
             .build(&event_loop)
             .unwrap();
+        let mut window_input = Input::new();
         let mut personal_world = PersonalWorld::new(&window);
         let mut world_tick_timer = Instant::now();
 
@@ -40,15 +42,31 @@ impl MainLoop {
                 /*check for input*/
                 {
                     match event {
+                        WindowEvent::CursorMoved { position, .. } => {
+                            println!("CursorMoved");
+                            window_input.update_cursor_moved(position);
+                        }
+                        WindowEvent::CursorEntered { .. } => {
+                            println!("CursorEntered");
+                            window_input.update_cursor_entered();
+                        }
+                        WindowEvent::CursorLeft { .. } => {
+                            println!("CursorLeft");
+                            window_input.update_cursor_left();
+                        }
+                        WindowEvent::MouseInput { state, button, .. } => {
+                            println!("MouseInput");
+                            window_input.update_mouse_input(state, button);
+                        }
+                        WindowEvent::MouseWheel { delta, .. } => {
+                            println!("MouseWheel");
+                            window_input.update_mouse_wheel(delta);
+                        }
+                        WindowEvent::KeyboardInput { input, .. } => {
+                            println!("KeyboardInput");
+                            window_input.update_keyboard_input(input, control_flow);
+                        }
                         WindowEvent::CloseRequested => *control_flow = ControlFlow::Exit,
-                        WindowEvent::KeyboardInput { input, .. } => match input {
-                            KeyboardInput {
-                                state: ElementState::Pressed,
-                                virtual_keycode: Some(VirtualKeyCode::Escape),
-                                ..
-                            } => *control_flow = ControlFlow::Exit,
-                            _ => {}
-                        },
                         WindowEvent::Resized(physical_size) => {
                             personal_world.ui = UiRenderer::new(&window, &personal_world.renderer);
                             MainLoop::resize(*physical_size, &mut personal_world.renderer.wgpu);

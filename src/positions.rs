@@ -11,7 +11,7 @@ pub struct GlobalBlockPos {
     pub y: i32,
     pub z: i32,
 }
-//block pos within a chunk
+//block pos within A chunk
 #[derive(Hash, PartialEq, Eq, Debug, Clone)]
 pub struct LocalBlockPos {
     pub x: i32,
@@ -38,7 +38,7 @@ pub struct MetaChunkPos {
     pub x: i32,
     pub z: i32,
 }
-//chunk pos within a metachunk
+//chunk pos within A metachunk
 #[derive(Debug, PartialEq, Eq)]
 pub struct LocalChunkPos {
     pub x: i32,

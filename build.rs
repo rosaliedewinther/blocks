@@ -56,7 +56,7 @@ fn main() -> Result<()> {
     let mut compiler = shaderc::Compiler::new().context("Unable to create shader compiler")?;
 
     // This can't be parallelized. The [shaderc::Compiler] is not
-    // thread safe. Also, it creates a lot of resources. You could
+    // thread safe. Also, it creates A lot of resources. You could
     // spawn multiple processes to handle this, but it would probably
     // be better just to only compile shaders that have been changed
     // recently.
