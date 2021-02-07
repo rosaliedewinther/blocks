@@ -220,9 +220,9 @@ dependencies = [
 
 [[package]]
 name = "cocoa"
-version = "0.24.0"
+version = "0.23.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "6f63902e9223530efb4e26ccd0cf55ec30d592d3b42e21a28defc42a9586e832"
+checksum = "c54201c07dcf3a5ca33fececb8042aed767ee4bfd5a0235a8ceabcda956044b2"
 dependencies = [
  "bitflags",
  "block",
@@ -938,6 +938,49 @@ dependencies = [
 ]
 
 [[package]]
+name = "imgui"
+version = "0.6.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "92a0077d3bb882960467aed0bc6eaf5d4033cb9b61bfdbb99c32d1288380032f"
+dependencies = [
+ "bitflags",
+ "imgui-sys",
+ "parking_lot",
+]
+
+[[package]]
+name = "imgui-sys"
+version = "0.6.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "0522b693da8a64322afbb32c63c04f39d9b9435cc75199d630207eee48886fc1"
+dependencies = [
+ "cc",
+]
+
+[[package]]
+name = "imgui-wgpu"
+version = "0.12.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "8017f74f8880049c1c3fc055868486a610178ab93ad18eadaf5b0bb52f738365"
+dependencies = [
+ "bytemuck",
+ "imgui",
+ "log",
+ "smallvec",
+ "wgpu",
+]
+
+[[package]]
+name = "imgui-winit-support"
+version = "0.6.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "5e0fc247afc385ed9cd26860cdb7fae988d5c7e2ad1d70c70aef728ce9b78e85"
+dependencies = [
+ "imgui",
+ "winit",
+]
+
+[[package]]
 name = "inflate"
 version = "0.3.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -948,9 +991,9 @@ dependencies = [
 
 [[package]]
 name = "inplace_it"
-version = "0.3.2"
+version = "0.3.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "dd01a2a73f2f399df96b22dc88ea687ef4d76226284e7531ae3c7ee1dc5cb534"
+checksum = "90953f308a79fe6d62a4643e51f848fbfddcd05975a38e69fdf4ab86a7baf7ca"
 
 [[package]]
 name = "input-event-codes"
@@ -2064,6 +2107,9 @@ dependencies = [
  "fs_extra",
  "futures",
  "glob",
+ "imgui",
+ "imgui-wgpu",
+ "imgui-winit-support",
  "log",
  "nalgebra",
  "noise",
@@ -2353,9 +2399,9 @@ checksum = "712e227841d057c1ee1cd2fb22fa7e5a5461ae8e48fa2ca79ec42cfc1931183f"
 
 [[package]]
 name = "winit"
-version = "0.24.0"
+version = "0.23.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "da4eda6fce0eb84bd0a33e3c8794eb902e1033d0a1d5a31bc4f19b1b4bbff597"
+checksum = "b5bc559da567d8aa671bbcd08304d49e982c7bf2cb91e10288b9188931c1b772"
 dependencies = [
  "bitflags",
  "cocoa",

@@ -4,6 +4,7 @@ use crate::player::Player;
 use crate::positions::{ChunkPos, MetaChunkPos};
 use crate::renderer::chunk_render_data::ChunkRenderData;
 use crate::renderer::renderer::Renderer;
+use crate::ui::UiRenderer;
 use crate::world::World;
 use crate::world_gen::chunk_gen_thread::ChunkGenThread;
 use rayon::prelude::ParallelSliceMut;
@@ -11,6 +12,7 @@ use std::cmp::{min, Ordering};
 use std::collections::{BinaryHeap, HashMap, HashSet};
 use std::sync::{Arc, Mutex};
 use std::time::Instant;
+use winit::event::Event;
 use winit::event_loop::ControlFlow;
 use winit::window::Window;
 
@@ -23,12 +25,15 @@ pub struct PersonalWorld {
     pub renderer: Renderer,
     pub reload_vertex_load_order: bool,
     pub to_generate: Vec<(f32, ChunkPos)>,
+    pub ui: UiRenderer,
 }
 
 impl PersonalWorld {
     pub fn new(window: &Window) -> PersonalWorld {
+        let renderer = Renderer::new(&window);
+        let ui_renderer = UiRenderer::new(window, &renderer);
         PersonalWorld {
-            renderer: Renderer::new(&window),
+            renderer,
             world: World::new(1),
             chunk_render_data: HashMap::new(),
             player: Player::new(),
@@ -36,6 +41,7 @@ impl PersonalWorld {
             loading_chunks: HashSet::new(),
             reload_vertex_load_order: false,
             to_generate: Vec::new(),
+            ui: ui_renderer,
         }
     }
     pub fn update(&mut self) {
@@ -205,7 +211,7 @@ impl PersonalWorld {
             Err(_) => return,
         }
     }
-    pub fn render(&mut self, control_flow: &mut ControlFlow) {
+    pub fn render(&mut self, control_flow: &mut ControlFlow, window: &Window, event: &Event<()>) {
         let main_pipeline = self.renderer.pipelines.get_mut("main").unwrap();
         main_pipeline.uniforms.update_view_proj(
             &self.player,
@@ -217,8 +223,11 @@ impl PersonalWorld {
         );
         let render_data = &self.chunk_render_data;
         main_pipeline.set_uniform_buffer(&self.renderer.wgpu.queue, main_pipeline.uniforms);
-        self.renderer.do_render_pass(render_data).unwrap();
-        match self.renderer.do_render_pass(render_data) {
+        //self.renderer.do_render_pass(render_data, &self.ui).unwrap();
+        match self
+            .renderer
+            .do_render_pass(render_data, &mut self.ui, window, event)
+        {
             Ok(_) => {}
             // Recreate the swap_chain if lost
             Err(wgpu::SwapChainError::Lost) => {

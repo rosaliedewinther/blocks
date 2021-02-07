@@ -1,5 +1,6 @@
 use crate::renderer::depth_texture::DepthTexture;
 use std::f32::consts::PI;
+use winit::dpi::PhysicalSize;
 use winit::{event::*, window::Window};
 
 pub struct WgpuState {
@@ -23,7 +24,7 @@ impl WgpuState {
         let surface = unsafe { instance.create_surface(window) };
         let adapter = instance
             .request_adapter(&wgpu::RequestAdapterOptions {
-                power_preference: wgpu::PowerPreference::Default,
+                power_preference: wgpu::PowerPreference::HighPerformance,
                 compatible_surface: Some(&surface),
             })
             .await
@@ -39,13 +40,8 @@ impl WgpuState {
             )
             .await
             .unwrap();
-        let sc_desc = wgpu::SwapChainDescriptor {
-            usage: wgpu::TextureUsage::OUTPUT_ATTACHMENT,
-            format: wgpu::TextureFormat::Bgra8UnormSrgb,
-            width: size.width,
-            height: size.height,
-            present_mode: wgpu::PresentMode::Fifo,
-        };
+        let sc_desc = WgpuState::get_sc_desc(size);
+
         let swap_chain = device.create_swap_chain(&surface, &sc_desc);
         let depth_texture = DepthTexture::create_depth_texture(&device, &sc_desc, "depth_texture");
 
@@ -57,6 +53,15 @@ impl WgpuState {
             swap_chain,
             size,
             depth_texture,
+        }
+    }
+    pub fn get_sc_desc(size: PhysicalSize<u32>) -> wgpu::SwapChainDescriptor {
+        wgpu::SwapChainDescriptor {
+            usage: wgpu::TextureUsage::OUTPUT_ATTACHMENT,
+            format: wgpu::TextureFormat::Bgra8UnormSrgb,
+            width: size.width,
+            height: size.height,
+            present_mode: wgpu::PresentMode::Fifo,
         }
     }
 
@@ -129,5 +134,3 @@ pub fn gen_perspective_mat(size: (u32, u32)) -> [[f32; 4]; 4] {
         [0.0, 0.0, -(2.0 * zfar * znear) / (zfar - znear), 1.0],
     ]
 }
-
-pub fn start_main_loop() {}

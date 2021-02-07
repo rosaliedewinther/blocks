@@ -66,7 +66,6 @@ impl MetaChunk {
         let structure_x = pos.x * METACHUNKSIZE as i32 * CHUNKSIZE as i32 + 3;
         let structure_z = pos.z * METACHUNKSIZE as i32 * CHUNKSIZE as i32 + 60;
         let structure_y = chunk.first_above_land_y(structure_x, structure_z);
-        println!("{}", structure_y);
         let global_center_pos = GlobalBlockPos {
             x: structure_x,
             y: structure_y,

@@ -1,5 +1,6 @@
 use crate::personal_world::PersonalWorld;
 use crate::renderer::wgpu::WgpuState;
+use crate::ui::UiRenderer;
 use std::time::Instant;
 use winit::event::{ElementState, Event, KeyboardInput, VirtualKeyCode, WindowEvent};
 use winit::event_loop::{ControlFlow, EventLoop};
@@ -23,7 +24,10 @@ impl MainLoop {
 
     pub fn run(self) {
         let event_loop = EventLoop::new();
-        let window = WindowBuilder::new().build(&event_loop).unwrap();
+        let window = WindowBuilder::new()
+            .with_maximized(true)
+            .build(&event_loop)
+            .unwrap();
         let mut personal_world = PersonalWorld::new(&window);
         let mut world_tick_timer = Instant::now();
 
@@ -46,10 +50,11 @@ impl MainLoop {
                             _ => {}
                         },
                         WindowEvent::Resized(physical_size) => {
+                            personal_world.ui = UiRenderer::new(&window, &personal_world.renderer);
                             MainLoop::resize(*physical_size, &mut personal_world.renderer.wgpu);
                         }
                         WindowEvent::ScaleFactorChanged { new_inner_size, .. } => {
-                            // new_inner_size is &&mut so we have to dereference it twice
+                            personal_world.ui = UiRenderer::new(&window, &personal_world.renderer);
                             MainLoop::resize(**new_inner_size, &mut personal_world.renderer.wgpu);
                         }
 
@@ -59,7 +64,7 @@ impl MainLoop {
             }
             Event::RedrawRequested(_) => {
                 personal_world.player.handle_input(&(0.01 as f32));
-                personal_world.render(control_flow);
+                personal_world.render(control_flow, &window, &event);
             }
             Event::MainEventsCleared => {
                 // RedrawRequested will only trigger once, unless we manually

@@ -2,9 +2,11 @@ use crate::positions::ChunkPos;
 use crate::renderer::chunk_render_data::ChunkRenderData;
 use crate::renderer::wgpu::WgpuState;
 use crate::renderer::wgpu_pipeline::WgpuPipeline;
+use crate::ui::UiRenderer;
 use futures::executor::block_on;
 use std::collections::HashMap;
 use wgpu::SwapChainError;
+use winit::event::Event;
 use winit::window::Window;
 
 pub struct Renderer {
@@ -25,6 +27,9 @@ impl Renderer {
     pub fn do_render_pass(
         &mut self,
         render_data: &HashMap<ChunkPos, ChunkRenderData>,
+        mut ui: &mut UiRenderer,
+        window: &Window,
+        event: &Event<()>,
     ) -> Result<(), SwapChainError> {
         let frame = self.wgpu.swap_chain.get_current_frame()?.output;
         let mut encoder =
@@ -64,6 +69,26 @@ impl Renderer {
             render_data.iter().for_each(|(_, data)| {
                 data.do_render_pass(&mut render_pass);
             });
+        }
+        {
+            let mut render_pass = encoder.begin_render_pass(&wgpu::RenderPassDescriptor {
+                color_attachments: &[wgpu::RenderPassColorAttachmentDescriptor {
+                    attachment: &frame.view,
+                    resolve_target: None,
+                    ops: wgpu::Operations {
+                        load: wgpu::LoadOp::Load,
+                        store: true,
+                    },
+                }],
+                depth_stencil_attachment: None,
+            });
+            ui.render(
+                &mut render_pass,
+                &self.wgpu.queue,
+                &self.wgpu.device,
+                window,
+                event,
+            );
         }
         // submit will accept anything that implements IntoIter
         self.wgpu.queue.submit(std::iter::once(encoder.finish()));
