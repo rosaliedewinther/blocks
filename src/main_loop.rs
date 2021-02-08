@@ -37,52 +37,43 @@ impl MainLoop {
             Event::WindowEvent {
                 ref event,
                 window_id,
-            } if window_id == window.id() => {
-                if true
-                /*check for input*/
-                {
-                    match event {
-                        WindowEvent::CursorMoved { position, .. } => {
-                            println!("CursorMoved");
-                            window_input.update_cursor_moved(position);
-                        }
-                        WindowEvent::CursorEntered { .. } => {
-                            println!("CursorEntered");
-                            window_input.update_cursor_entered();
-                        }
-                        WindowEvent::CursorLeft { .. } => {
-                            println!("CursorLeft");
-                            window_input.update_cursor_left();
-                        }
-                        WindowEvent::MouseInput { state, button, .. } => {
-                            println!("MouseInput");
-                            window_input.update_mouse_input(state, button);
-                        }
-                        WindowEvent::MouseWheel { delta, .. } => {
-                            println!("MouseWheel");
-                            window_input.update_mouse_wheel(delta);
-                        }
-                        WindowEvent::KeyboardInput { input, .. } => {
-                            println!("KeyboardInput");
-                            window_input.update_keyboard_input(input, control_flow);
-                        }
-                        WindowEvent::CloseRequested => *control_flow = ControlFlow::Exit,
-                        WindowEvent::Resized(physical_size) => {
-                            personal_world.ui = UiRenderer::new(&window, &personal_world.renderer);
-                            MainLoop::resize(*physical_size, &mut personal_world.renderer.wgpu);
-                        }
-                        WindowEvent::ScaleFactorChanged { new_inner_size, .. } => {
-                            personal_world.ui = UiRenderer::new(&window, &personal_world.renderer);
-                            MainLoop::resize(**new_inner_size, &mut personal_world.renderer.wgpu);
-                        }
-
-                        _ => {}
-                    }
+            } if window_id == window.id() => match event {
+                WindowEvent::CursorMoved { position, .. } => {
+                    window_input.update_cursor_moved(position);
                 }
-            }
+                WindowEvent::CursorEntered { .. } => {
+                    window_input.update_cursor_entered();
+                }
+                WindowEvent::CursorLeft { .. } => {
+                    window_input.update_cursor_left();
+                }
+                WindowEvent::MouseInput { state, button, .. } => {
+                    window_input.update_mouse_input(state, button);
+                }
+                WindowEvent::MouseWheel { delta, .. } => {
+                    window_input.update_mouse_wheel(delta);
+                }
+                WindowEvent::KeyboardInput { input, .. } => {
+                    window_input.update_keyboard_input(input, control_flow);
+                }
+                WindowEvent::CloseRequested => *control_flow = ControlFlow::Exit,
+                WindowEvent::Resized(physical_size) => {
+                    personal_world.ui = UiRenderer::new(&window, &personal_world.renderer);
+                    MainLoop::resize(*physical_size, &mut personal_world.renderer.wgpu);
+                }
+                WindowEvent::ScaleFactorChanged { new_inner_size, .. } => {
+                    personal_world.ui = UiRenderer::new(&window, &personal_world.renderer);
+                    MainLoop::resize(**new_inner_size, &mut personal_world.renderer.wgpu);
+                }
+
+                _ => {}
+            },
             Event::RedrawRequested(_) => {
-                personal_world.player.handle_input(&(0.01 as f32));
+                personal_world
+                    .player
+                    .handle_input(&window_input, &(0.01 as f32));
                 personal_world.render(control_flow, &window, &event);
+                window_input.update();
             }
             Event::MainEventsCleared => {
                 // RedrawRequested will only trigger once, unless we manually
@@ -90,9 +81,9 @@ impl MainLoop {
                 window.request_redraw();
             }
             _ => {
+                personal_world.load_generated_chunks();
                 if world_tick_timer.elapsed().as_secs_f32() * 20f32 > 1f32 {
                     personal_world.on_game_tick(0.1);
-                    //MainLoop::on_game_tick(0.01 as f32, &mut personal_world, &renderer);
                     world_tick_timer = Instant::now();
                 }
             }

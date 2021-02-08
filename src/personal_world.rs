@@ -50,7 +50,6 @@ impl PersonalWorld {
     }
     pub fn on_game_tick(&mut self, dt: f32) {
         self.player.update(&dt);
-        self.load_generated_chunks();
         self.update();
         if self.player.generated_chunks_for != self.player.position.get_chunk()
             || self.reload_vertex_load_order
@@ -167,7 +166,7 @@ impl PersonalWorld {
         let renderer = &self.renderer;
         let starting_size = self.to_generate.len();
         let to_generate = Arc::new(Mutex::new(&mut self.to_generate));
-        println!("started generating vertices");
+        //println!("started generating vertices");
         while lag_timer.elapsed().as_secs_f32() < 0.001 && !to_generate.lock().unwrap().is_empty() {
             let len = to_generate.lock().unwrap().len();
             rayon::scope(|s| {
@@ -185,11 +184,11 @@ impl PersonalWorld {
             });
             to_generate.lock().unwrap().drain(0..min(len, 1));
         }
-        println!(
+        /*println!(
             "done generating: {} vertices in: {} sec",
             starting_size - self.to_generate.len(),
             lag_timer.elapsed().as_secs_f32()
-        );
+        );*/
     }
     fn threaded_vertex_generation(
         world: &World,

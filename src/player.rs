@@ -1,8 +1,10 @@
+use crate::input::input::Input;
 use crate::positions::{ChunkPos, ObjectPos};
 use crate::utils::{get_rotation_matrix_y, get_rotation_matrix_z};
 use device_query::Keycode;
 use nalgebra::{Matrix3, Vector3};
 use std::f32::consts::PI;
+use winit::event::VirtualKeyCode;
 
 pub struct Player {
     pub position: ObjectPos,
@@ -35,22 +37,21 @@ impl Player {
         }
     }
 
-    pub fn handle_input(&mut self, dt: &f32) {
-        /*self.input.update();
-        self.change_position(Keycode::A, 1.5f32 * PI, *dt * self.speed);
-        self.change_position(Keycode::D, 0.5f32 * PI, *dt * self.speed);
-        self.change_position(Keycode::W, 0f32 * PI, *dt * self.speed);
-        self.change_position(Keycode::S, 1f32 * PI, *dt * self.speed);
-        if self.input.key_pressed(Keycode::Space) {
+    pub fn handle_input(&mut self, input: &Input, dt: &f32) {
+        self.change_position(input, VirtualKeyCode::A, 1.5f32 * PI, *dt * self.speed);
+        self.change_position(input, VirtualKeyCode::D, 0.5f32 * PI, *dt * self.speed);
+        self.change_position(input, VirtualKeyCode::W, 0f32 * PI, *dt * self.speed);
+        self.change_position(input, VirtualKeyCode::S, 1f32 * PI, *dt * self.speed);
+        if input.key_pressed(VirtualKeyCode::Space) {
             self.position.y += *dt * self.speed
         }
-        if self.input.key_pressed(Keycode::LShift) {
+        if input.key_pressed(VirtualKeyCode::LShift) {
             self.position.y += -*dt * self.speed
         }
 
-        let mouse_change = self.input.mouse_change();
-        let xdiff = mouse_change.0 * dt * self.camera_speed;
-        let ydiff = -mouse_change.1 * dt * self.camera_speed;
+        let mouse_change = input.mouse_change();
+        let xdiff = mouse_change[0] * dt * self.camera_speed;
+        let ydiff = -mouse_change[1] * dt * self.camera_speed;
 
         if ydiff < 0f32 {
             self.change_direction_vertical(ydiff);
@@ -61,18 +62,23 @@ impl Player {
             self.change_direction_horizontal(&get_rotation_matrix_y(xdiff));
         } else {
             self.change_direction_horizontal(&get_rotation_matrix_y(xdiff));
-        }*/
+        }
     }
 
-    pub fn change_position(&mut self, key: Keycode, rotation_degree: f32, change: f32) {
-        /*
-        if self.input.key_pressed(key) {
+    pub fn change_position(
+        &mut self,
+        input: &Input,
+        key: VirtualKeyCode,
+        rotation_degree: f32,
+        change: f32,
+    ) {
+        if input.key_pressed(key) {
             let move_vec = get_rotation_matrix_y(rotation_degree) * &self.direction;
             let to_extend =
                 1f32 / (move_vec[0].powf(2f32).abs() + move_vec[2].powf(2f32).abs()).sqrt();
             self.position.x += change * move_vec.x * to_extend;
             self.position.z += change * move_vec.z * to_extend;
-        }*/
+        }
     }
     pub fn change_direction_horizontal(&mut self, mat: &Matrix3<f32>) {
         self.direction = mat * &self.direction;

@@ -1,45 +1,40 @@
 use crate::input::button::ButtonState;
+use std::collections::HashSet;
 use winit::event::VirtualKeyCode;
 
 pub struct KeyboardState {
-    going_down: Vec<VirtualKeyCode>,
-    down: Vec<VirtualKeyCode>,
-    released: Vec<VirtualKeyCode>,
+    going_down: HashSet<VirtualKeyCode>,
+    down: HashSet<VirtualKeyCode>,
+    released: HashSet<VirtualKeyCode>,
 }
 
 impl KeyboardState {
     pub fn new() -> KeyboardState {
         KeyboardState {
-            going_down: Vec::new(),
-            down: Vec::new(),
-            released: Vec::new(),
+            going_down: HashSet::new(),
+            down: HashSet::new(),
+            released: HashSet::new(),
         }
     }
     pub fn update(&mut self) {
-        self.down.extend(self.pressed.drain(..));
+        println!("{:?}", self.going_down);
+        println!("{:?}", self.down);
+        println!("{:?}", self.released);
+        self.down.extend(self.going_down.drain());
         self.released.clear();
     }
     pub fn pressed(&mut self, key: VirtualKeyCode) {
-        self.going_down.push(key)
+        self.going_down.insert(key);
     }
     pub fn released(&mut self, key: VirtualKeyCode) {
-        let mut index = self.down.iter().position(|k| k == key);
-        if index.is_none() {
-            index = self.going_down.iter().position(|k| k == key);
-        }
-        match index {
-            None => {}
-            Some(k) => {
-                self.pressed.remove(k);
-                self.released.push(key);
-                return;
-            }
-        }
+        self.down.remove(&key);
+        self.going_down.remove(&key);
     }
     pub fn just_pressed(&self, key: VirtualKeyCode) -> bool {
-        self.going_down.iter().find(key).is_some()
+        self.going_down.iter().find(|k| **k == key).is_some()
     }
     pub fn down(&self, key: VirtualKeyCode) -> bool {
-        self.going_down.iter().find(key).is_some() || self.down.iter().find(key).is_some()
+        self.going_down.iter().find(|k| **k == key).is_some()
+            || self.down.iter().find(|k| **k == key).is_some()
     }
 }

@@ -1,3 +1,4 @@
+use crate::input::button::ButtonState;
 use crate::input::keyboard::KeyboardState;
 use crate::input::mouse::MouseState;
 use device_query::{DeviceState, Keycode};
@@ -18,14 +19,16 @@ pub struct Input {
 impl Input {
     pub fn new() -> Input {
         let mut input = Input {
-            sensitivity_modifier: 0.25,
+            sensitivity_modifier: 0.1,
             mouse_state: MouseState::new(),
             keyboard_state: KeyboardState::new(),
             cursor_in_screen: true,
         };
-        input.update();
-        input.update();
         return input;
+    }
+    pub fn update(&mut self) {
+        self.keyboard_state.update();
+        self.mouse_state.mouse_delta = [0.0, 0.0];
     }
     pub fn update_cursor_moved(&mut self, pos: &PhysicalPosition<f64>) {
         self.mouse_state.mouse_delta = [
@@ -64,6 +67,12 @@ impl Input {
         }
     }
     pub fn update_keyboard_input(&mut self, input: &KeyboardInput, control_flow: &mut ControlFlow) {
+        if input.state == ElementState::Pressed && input.virtual_keycode.is_some() {
+            self.keyboard_state.pressed(input.virtual_keycode.unwrap());
+        }
+        if input.state == ElementState::Released && input.virtual_keycode.is_some() {
+            self.keyboard_state.released(input.virtual_keycode.unwrap());
+        }
         match input {
             KeyboardInput {
                 state: ElementState::Pressed,
@@ -73,22 +82,18 @@ impl Input {
             _ => {}
         }
     }
-
-    pub fn update(&mut self) {
-        //let coords = self.device_state.query_pointer().coords;
-        //self.enigo.mouse_move_to(400, 400);
-        /*self.mouse_change.0 =
-            (coords.0 as f32 - self.prev_mouse_cords.0) * self.sensitivity_modifier;
-        self.mouse_change.1 =
-            (coords.1 as f32 - self.prev_mouse_cords.1) * self.sensitivity_modifier;
-        self.keys_pressed = self.device_state.query_keymap();
-        let old_coords = self.device_state.query_pointer().coords;
-        self.prev_mouse_cords = (old_coords.0 as f32, old_coords.1 as f32);*/
+    pub fn mouse_pressed(&self, button: MouseButton) -> ButtonState {
+        if button == MouseButton::Left {
+            return self.mouse_state.get_left_button();
+        } else if button == MouseButton::Right {
+            return self.mouse_state.get_right_button();
+        }
+        return ButtonState::Up;
     }
-    pub fn key_pressed(&self, key: Keycode) -> bool {
-        self.keys_pressed.contains(&key)
+    pub fn key_pressed(&self, key: VirtualKeyCode) -> bool {
+        self.keyboard_state.down(key)
     }
-    pub fn mouse_change(&self) -> (f32, f32) {
-        self.mouse_delta
+    pub fn mouse_change(&self) -> [f32; 2] {
+        self.mouse_state.mouse_delta
     }
 }
