@@ -1,7 +1,7 @@
 use crate::input::input::Input;
 use crate::personal_world::PersonalWorld;
 use crate::renderer::wgpu::WgpuState;
-use crate::ui::UiRenderer;
+use crate::ui::ui::UiRenderer;
 use std::time::Instant;
 use winit::event::{Event, WindowEvent};
 use winit::event_loop::{ControlFlow, EventLoop};
@@ -60,12 +60,18 @@ impl MainLoop {
                 _ => {}
             },
             Event::RedrawRequested(_) => {
+                let timer = Instant::now();
+
                 personal_world.update_ui_input(&window_input);
                 personal_world
                     .player
                     .handle_input(&window_input, &(0.01 as f32));
                 personal_world.render(control_flow, &window, &event);
                 window_input.update();
+                personal_world
+                    .ui
+                    .debug_info
+                    .insert_stat("render".to_string(), timer.elapsed().as_secs_f32());
             }
             Event::MainEventsCleared => {
                 // RedrawRequested will only trigger once, unless we manually
@@ -73,10 +79,20 @@ impl MainLoop {
                 window.request_redraw();
             }
             _ => {
+                let timer = Instant::now();
                 personal_world.load_generated_chunks();
+                personal_world
+                    .ui
+                    .debug_info
+                    .insert_stat("load chunks".to_string(), timer.elapsed().as_secs_f32());
                 if world_tick_timer.elapsed().as_secs_f32() * 20f32 > 1f32 {
+                    let timer = Instant::now();
                     personal_world.on_game_tick(0.1);
                     world_tick_timer = Instant::now();
+                    personal_world
+                        .ui
+                        .debug_info
+                        .insert_stat("world tick".to_string(), timer.elapsed().as_secs_f32());
                 }
             }
         });

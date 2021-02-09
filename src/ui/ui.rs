@@ -2,7 +2,9 @@ use crate::input::button::ButtonState;
 use crate::input::input::Input;
 use crate::renderer::renderer::Renderer;
 use crate::renderer::wgpu::WgpuState;
-use imgui::{im_str, Condition, FontSource};
+use crate::ui::debug_info::DebugInfo;
+use imgui::im_str;
+use imgui::{Condition, FontSource};
 use imgui_wgpu::Renderer as imgui_renderer;
 use imgui_wgpu::RendererConfig;
 use std::time::Instant;
@@ -16,6 +18,7 @@ pub struct UiRenderer {
     renderer: imgui_renderer,
     clear_color: wgpu::Color,
     last_frame: Instant,
+    pub debug_info: DebugInfo,
 }
 impl UiRenderer {
     pub fn new(window: &Window, renderer: &Renderer) -> UiRenderer {
@@ -64,6 +67,7 @@ impl UiRenderer {
             renderer,
             clear_color,
             last_frame,
+            debug_info: DebugInfo::new(100),
         };
     }
     pub fn update_input(&mut self, input: &Input) {
@@ -89,32 +93,15 @@ impl UiRenderer {
             .prepare_frame(self.context.io_mut(), &window)
             .expect("Failed to prepare frame");
         let ui = self.context.frame();
+        let debug_info = &self.debug_info;
 
         {
-            let window = imgui::Window::new(im_str!("Hello world"));
-            window
-                .size([300.0, 100.0], Condition::FirstUseEver)
-                .build(&ui, || {
-                    ui.text(im_str!("Hello world!"));
-                    ui.text(im_str!("This...is...imgui-rs on WGPU!"));
-                    ui.separator();
-                    let mouse_pos = ui.io().mouse_pos;
-                    ui.text(im_str!(
-                        "Mouse Position: ({:.1},{:.1})",
-                        mouse_pos[0],
-                        mouse_pos[1]
-                    ));
-                });
-
             let window = imgui::Window::new(im_str!("Hello too"));
             window
                 .size([400.0, 200.0], Condition::FirstUseEver)
                 .position([400.0, 200.0], Condition::FirstUseEver)
-                .build(&ui, || {
-                    ui.text(im_str!("Frametime: {:?}", timediff));
-                });
-
-            ui.show_demo_window(&mut true);
+                .build(&ui, || debug_info.add_to_ui(&ui));
+            //ui.show_demo_window(&mut true);
         }
         self.platform.prepare_render(&ui, &window);
         self.renderer

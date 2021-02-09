@@ -2,7 +2,7 @@ use crate::positions::ChunkPos;
 use crate::renderer::chunk_render_data::ChunkRenderData;
 use crate::renderer::wgpu::WgpuState;
 use crate::renderer::wgpu_pipeline::WgpuPipeline;
-use crate::ui::UiRenderer;
+use crate::ui::ui::UiRenderer;
 use futures::executor::block_on;
 use std::collections::HashMap;
 use wgpu::SwapChainError;

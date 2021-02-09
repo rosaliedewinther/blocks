@@ -15,7 +15,7 @@ pub struct Input {
 impl Input {
     pub fn new() -> Input {
         return Input {
-            sensitivity_modifier: 0.25,
+            sensitivity_modifier: 0.8,
             mouse_state: MouseState::new(),
             keyboard_state: KeyboardState::new(),
             cursor_in_screen: true,
