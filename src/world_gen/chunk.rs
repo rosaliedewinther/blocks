@@ -12,7 +12,7 @@ pub struct Chunk {
 
 impl Chunk {
     pub fn generate(pos: &ChunkPos, seed: u32) -> Chunk {
-        let chunk_generator = ChunkGenerator::new();
+        let chunk_generator = ChunkGenerator::new(seed);
         return chunk_generator.full_generation_pass(pos);
     }
 

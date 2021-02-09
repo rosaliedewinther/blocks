@@ -12,14 +12,14 @@ pub struct ChunkGenerator {
 }
 
 impl ChunkGenerator {
-    pub fn new() -> ChunkGenerator {
+    pub fn new(seed: u32) -> ChunkGenerator {
         let mut functions = Vec::new();
         functions.push(generate_landmass as fn(&ChunkGenerator, &ChunkPos, &mut Chunk));
         functions.push(floodfill_water as fn(&ChunkGenerator, &ChunkPos, &mut Chunk));
         functions.push(plant_grass as fn(&ChunkGenerator, &ChunkPos, &mut Chunk));
         ChunkGenerator {
             noise: Fbm::new()
-                .set_seed(1)
+                .set_seed(seed)
                 .set_octaves(3)
                 .set_persistence(0.6f64),
             seed: 1,

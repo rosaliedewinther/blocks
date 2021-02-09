@@ -1,7 +1,7 @@
+use crate::input::button::ButtonState;
+use crate::input::input::Input;
 use crate::renderer::renderer::Renderer;
 use crate::renderer::wgpu::WgpuState;
-use device_query::DeviceState;
-use enigo::Enigo;
 use imgui::{im_str, Condition, FontSource};
 use imgui_wgpu::Renderer as imgui_renderer;
 use imgui_wgpu::RendererConfig;
@@ -51,7 +51,7 @@ impl UiRenderer {
             ..Default::default()
         };
 
-        let mut renderer = imgui_renderer::new(
+        let renderer = imgui_renderer::new(
             &mut context,
             &renderer.wgpu.device,
             &renderer.wgpu.queue,
@@ -65,6 +65,12 @@ impl UiRenderer {
             clear_color,
             last_frame,
         };
+    }
+    pub fn update_input(&mut self, input: &Input) {
+        self.context.io_mut().mouse_pos = input.mouse_state.mouse_location;
+        self.context.io_mut().mouse_down[0] = input.mouse_state.get_left_button()
+            == ButtonState::Down
+            || input.mouse_state.get_left_button() == ButtonState::Pressed;
     }
     pub fn render<'a>(
         &'a mut self,
@@ -82,19 +88,6 @@ impl UiRenderer {
         self.platform
             .prepare_frame(self.context.io_mut(), &window)
             .expect("Failed to prepare frame");
-        let input = DeviceState::new();
-        self.context.io_mut().mouse_pos = [
-            input.query_pointer().coords.0 as f32,
-            input.query_pointer().coords.1 as f32,
-        ];
-
-        self.context.io_mut().mouse_down = [
-            input.query_pointer().button_pressed[1],
-            input.query_pointer().button_pressed[1],
-            input.query_pointer().button_pressed[1],
-            input.query_pointer().button_pressed[1],
-            input.query_pointer().button_pressed[1],
-        ];
         let ui = self.context.frame();
 
         {
@@ -125,55 +118,7 @@ impl UiRenderer {
         }
         self.platform.prepare_render(&ui, &window);
         self.renderer
-            .render(ui.render(), queue, device, render_pass);
+            .render(ui.render(), queue, device, render_pass)
+            .unwrap();
     }
 }
-
-/*
-pub struct UiRenderer {
-    pub context: imgui::Context,
-    pub renderer: imgui_glium_renderer::Renderer,
-    pub platform: WinitPlatform,
-}
-
-impl UiRenderer {
-    pub fn init(draw_info: &DrawInfo) -> UiRenderer {
-        let mut context = imgui::Context::create();
-        let renderer =
-            imgui_glium_renderer::Renderer::init(&mut context, &draw_info.display).unwrap();
-
-        let mut platform = WinitPlatform::init(&mut context);
-        {
-            let gl_window = &draw_info.display.gl_window();
-            let window = gl_window.window();
-            platform.attach_window(context.io_mut(), &window, HiDpiMode::Rounded);
-        }
-        UiRenderer {
-            context,
-            renderer,
-            platform,
-        }
-    }
-    pub fn draw(
-        &mut self,
-        draw_info: &DrawInfo,
-        strings: &Vec<String>,
-        target: &mut Frame,
-    ) -> Result<(), RendererError> {
-        let ui = self.context.frame();
-
-        Window::new(im_str!("it just works"))
-            .size([300.0, 200.0], Condition::FirstUseEver)
-            .opened(&mut false)
-            .build(&ui, || {
-                for line in strings.iter() {
-                    ui.text(line);
-                }
-            });
-
-        self.platform
-            .prepare_render(&ui, draw_info.display.gl_window().window());
-        self.renderer.render(target, ui.render())
-    }
-}
-*/

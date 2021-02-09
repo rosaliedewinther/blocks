@@ -1,5 +1,4 @@
 use crate::input::button::ButtonState;
-use winit::event::DeviceEvent::Button;
 
 pub struct MouseState {
     pub mouse_location: [f32; 2],

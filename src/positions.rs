@@ -109,7 +109,7 @@ impl ChunkPos {
             z: self.z + z_diff,
         }
     }
-    pub fn in_fov(&self, player: &Player) -> bool {
+    pub fn in_fov(&self) -> bool {
         true
     }
 

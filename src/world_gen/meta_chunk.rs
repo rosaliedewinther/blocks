@@ -28,7 +28,7 @@ impl MetaChunk {
                 return loaded.unwrap();
             }
         }
-        let chunk_generator = ChunkGenerator::new();
+        let chunk_generator = ChunkGenerator::new(seed);
 
         let mut chunks: Vec<Vec<Vec<Chunk>>> = Vec::with_capacity(METACHUNKSIZE);
         for x in 0..METACHUNKSIZE {

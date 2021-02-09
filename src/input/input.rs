@@ -1,12 +1,8 @@
 use crate::input::button::ButtonState;
 use crate::input::keyboard::KeyboardState;
 use crate::input::mouse::MouseState;
-use device_query::{DeviceState, Keycode};
-use enigo::Enigo;
 use winit::dpi::PhysicalPosition;
-use winit::event::{
-    ElementState, KeyboardInput, MouseButton, MouseScrollDelta, TouchPhase, VirtualKeyCode,
-};
+use winit::event::{ElementState, KeyboardInput, MouseButton, MouseScrollDelta, VirtualKeyCode};
 use winit::event_loop::ControlFlow;
 
 pub struct Input {
@@ -18,13 +14,12 @@ pub struct Input {
 
 impl Input {
     pub fn new() -> Input {
-        let mut input = Input {
-            sensitivity_modifier: 0.1,
+        return Input {
+            sensitivity_modifier: 0.25,
             mouse_state: MouseState::new(),
             keyboard_state: KeyboardState::new(),
             cursor_in_screen: true,
         };
-        return input;
     }
     pub fn update(&mut self) {
         self.keyboard_state.update();
@@ -32,8 +27,8 @@ impl Input {
     }
     pub fn update_cursor_moved(&mut self, pos: &PhysicalPosition<f64>) {
         self.mouse_state.mouse_delta = [
-            pos.x as f32 - self.mouse_state.mouse_location[0],
-            pos.y as f32 - self.mouse_state.mouse_location[1],
+            (pos.x as f32 - self.mouse_state.mouse_location[0]) * self.sensitivity_modifier,
+            (pos.y as f32 - self.mouse_state.mouse_location[1]) * self.sensitivity_modifier,
         ];
         self.mouse_state.mouse_location = [pos.x as f32, pos.y as f32];
     }
@@ -63,7 +58,7 @@ impl Input {
                 self.mouse_state.scroll_delta = *scrolled as f64;
                 self.mouse_state.scroll_location += *scrolled as f64;
             }
-            MouseScrollDelta::PixelDelta(z) => {}
+            MouseScrollDelta::PixelDelta(_) => {}
         }
     }
     pub fn update_keyboard_input(&mut self, input: &KeyboardInput, control_flow: &mut ControlFlow) {

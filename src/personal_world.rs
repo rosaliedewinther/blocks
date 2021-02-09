@@ -1,4 +1,5 @@
 use crate::constants::{METACHUNK_GEN_RANGE, METACHUNK_UNLOAD_RADIUS};
+use crate::input::input::Input;
 use crate::main_loop::MainLoop;
 use crate::player::Player;
 use crate::positions::{ChunkPos, MetaChunkPos};
@@ -209,6 +210,9 @@ impl PersonalWorld {
             }
             Err(_) => return,
         }
+    }
+    pub fn update_ui_input(&mut self, input: &Input) {
+        self.ui.update_input(input);
     }
     pub fn render(&mut self, control_flow: &mut ControlFlow, window: &Window, event: &Event<()>) {
         let main_pipeline = self.renderer.pipelines.get_mut("main").unwrap();

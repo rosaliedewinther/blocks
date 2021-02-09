@@ -27,7 +27,7 @@ impl Renderer {
     pub fn do_render_pass(
         &mut self,
         render_data: &HashMap<ChunkPos, ChunkRenderData>,
-        mut ui: &mut UiRenderer,
+        ui: &mut UiRenderer,
         window: &Window,
         event: &Event<()>,
     ) -> Result<(), SwapChainError> {

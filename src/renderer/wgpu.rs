@@ -1,7 +1,7 @@
 use crate::renderer::depth_texture::DepthTexture;
 use std::f32::consts::PI;
 use winit::dpi::PhysicalSize;
-use winit::{event::*, window::Window};
+use winit::window::Window;
 
 pub struct WgpuState {
     pub surface: wgpu::Surface,
@@ -71,12 +71,6 @@ impl WgpuState {
         self.sc_desc.height = new_size.height;
         self.swap_chain = self.device.create_swap_chain(&self.surface, &self.sc_desc);
     }
-
-    fn input(&mut self, event: &WindowEvent) -> bool {
-        false
-    }
-
-    fn update(&mut self) {}
 
     fn render(&mut self) -> Result<(), wgpu::SwapChainError> {
         let frame = self.swap_chain.get_current_frame()?.output;

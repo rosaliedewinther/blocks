@@ -1,4 +1,3 @@
-use crate::input::button::ButtonState;
 use std::collections::HashSet;
 use winit::event::VirtualKeyCode;
 
@@ -17,9 +16,6 @@ impl KeyboardState {
         }
     }
     pub fn update(&mut self) {
-        println!("{:?}", self.going_down);
-        println!("{:?}", self.down);
-        println!("{:?}", self.released);
         self.down.extend(self.going_down.drain());
         self.released.clear();
     }
