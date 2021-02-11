@@ -81,11 +81,13 @@ impl MainLoop {
             _ => {
                 if world_tick_timer.elapsed().as_secs_f32() * 20f32 > 1f32 {
                     let timer = Instant::now();
-                    personal_world.check_vertices_to_generate();
-                    personal_world.ui.debug_info.insert_stat(
-                        "load vertices chunks".to_string(),
-                        timer.elapsed().as_secs_f32(),
-                    );
+                    let number_generated = personal_world.check_vertices_to_generate();
+                    if number_generated > 0 {
+                        personal_world.ui.debug_info.insert_stat(
+                            "per chunk vertex time".to_string(),
+                            timer.elapsed().as_secs_f32() / number_generated as f32,
+                        );
+                    }
 
                     let timer = Instant::now();
 

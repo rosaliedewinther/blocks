@@ -60,9 +60,10 @@ impl PersonalWorld {
             self.reload_vertex_load_order = false;
         }
     }
+
     pub fn vertex_buffers_to_generate(&self) -> Vec<(f32, ChunkPos)> {
         let to_render = Mutex::new(Vec::new());
-        for (_, meta_chunk) in &self.world.chunks {
+        for (_, meta_chunk) in self.world.get_all_chunks() {
             meta_chunk.for_each(|_, pos| {
                 if self.should_generate_vertex_buffers(pos.clone()) {
                     let distance = pos.get_distance(&self.player.position.get_chunk());
@@ -125,9 +126,9 @@ impl PersonalWorld {
         self.check_chunks_to_generate();
         self.to_generate = self.vertex_buffers_to_generate();
         let player = &self.player;
-        self.world
-            .chunks
-            .retain(|pos, _| PersonalWorld::meta_chunk_should_be_loaded(&player, pos));
+        /*self.world
+        .chunks
+        .retain(|pos, _| PersonalWorld::meta_chunk_should_be_loaded(&player, pos));*/
     }
     pub fn check_chunks_to_generate(&mut self) {
         let current_chunk = self.player.position.get_meta_chunk();
@@ -156,56 +157,42 @@ impl PersonalWorld {
             self.load_chunk(to_load.pop().unwrap().1);
         }
     }
-    pub fn check_vertices_to_generate(&mut self) {
+    pub fn check_vertices_to_generate(&mut self) -> i32 {
         if self.to_generate.is_empty() {
-            return;
+            return 0;
         }
         let lag_timer = Instant::now();
-        let world = &self.world;
-        let chunk_render_data = Arc::new(Mutex::new(&mut self.chunk_render_data));
-
-        let renderer = &self.renderer;
-        let starting_size = self.to_generate.len();
-        let to_generate = Arc::new(Mutex::new(&mut self.to_generate));
         println!("started generating vertices");
-        while lag_timer.elapsed().as_secs_f32() < 0.001 && !to_generate.lock().unwrap().is_empty() {
-            let len = to_generate.lock().unwrap().len();
-            rayon::scope(|s| {
-                if len > 0 {
-                    s.spawn(|_| {
-                        let (_, pos) = &to_generate.lock().unwrap()[0];
-                        PersonalWorld::threaded_vertex_generation(
-                            world,
-                            renderer,
-                            &chunk_render_data,
-                            pos,
-                        );
-                    });
-                }
-            });
-            to_generate.lock().unwrap().drain(0..min(len, 1));
+        let starting_size = self.to_generate.len();
+        while lag_timer.elapsed().as_secs_f32() < 0.001 && !self.to_generate.is_empty() {
+            let len = self.to_generate.len();
+            if len > 0 {
+                let (_, pos) = &self.to_generate[0];
+                let data = ChunkRenderData::new(&self.world, &pos, &self.renderer.wgpu.device);
+                self.chunk_render_data.insert(pos.clone(), data);
+            }
+            self.to_generate.remove(0);
         }
         println!(
             "done generating: {} vertices in: {} sec",
             starting_size - self.to_generate.len(),
             lag_timer.elapsed().as_secs_f32()
         );
+        return (starting_size - self.to_generate.len()) as i32;
     }
     fn threaded_vertex_generation(
         world: &World,
         renderer: &Renderer,
-        chunk_render_data: &Arc<Mutex<&mut HashMap<ChunkPos, ChunkRenderData>>>,
+        chunk_render_data: &mut HashMap<ChunkPos, ChunkRenderData>,
         pos: &ChunkPos,
     ) {
-        let data = ChunkRenderData::new(world, &pos, &renderer.wgpu.device);
-        chunk_render_data.lock().unwrap().insert(pos.clone(), data);
     }
     pub fn load_generated_chunks(&mut self) {
         let message = self.chunk_gen_thread.get();
         match message {
             Ok((chunk, pos)) => {
                 self.loading_chunks.remove(&pos);
-                self.world.chunks.insert(pos, chunk);
+                self.world.add_chunk(pos, chunk);
                 self.reload_vertex_load_order = true;
             }
             Err(_) => return,

@@ -1,4 +1,4 @@
-use crate::block::Block;
+use crate::block::{Block, BlockType};
 use crate::constants::CHUNKSIZE;
 use crate::positions::{ChunkPos, LocalBlockPos};
 use crate::world_gen::basic::ChunkGenerator;
@@ -8,15 +8,35 @@ use serde::{Deserialize, Serialize};
 #[derive(Serialize, Deserialize)]
 pub struct Chunk {
     blocks: Vec<Block>,
+    pub is_completely_air: bool,
 }
 
 impl Chunk {
     pub fn new(blocks: Vec<Block>) -> Chunk {
-        Chunk { blocks }
+        Chunk {
+            blocks,
+            is_completely_air: false,
+        }
     }
     pub fn generate(pos: &ChunkPos, seed: u32) -> Chunk {
         let chunk_generator = ChunkGenerator::new(seed);
-        return chunk_generator.full_generation_pass(pos);
+        let mut chunk = chunk_generator.full_generation_pass(pos);
+        for x in 0..CHUNKSIZE as i32 {
+            for y in 0..CHUNKSIZE as i32 {
+                for z in 0..CHUNKSIZE as i32 {
+                    if chunk
+                        .get_block(&LocalBlockPos { x, y, z })
+                        .unwrap()
+                        .block_type
+                        != BlockType::Air
+                    {
+                        return chunk;
+                    }
+                }
+            }
+        }
+        chunk.is_completely_air = true;
+        return chunk;
     }
 
     pub fn update(&mut self, _dt: f32) -> bool {

@@ -51,19 +51,6 @@ pub struct Block {
     pub block_type: BlockType,
 }
 
-impl Distribution<BlockType> for Standard {
-    fn sample<R: Rng + ?Sized>(&self, rng: &mut R) -> BlockType {
-        match rng.gen_range(1..5) {
-            0 => BlockType::Water,
-            1 => BlockType::Dirt,
-            2 => BlockType::Sand,
-            3 => BlockType::Stone,
-            4 => BlockType::Grass,
-            _ => BlockType::Stone,
-        }
-    }
-}
-
 impl Default for Block {
     fn default() -> Block {
         Block::new(BlockType::Air)
@@ -84,10 +71,6 @@ impl Block {
             BlockType::Air => [255, 0, 255, 0],
             BlockType::Leaf => [0, 128, 0, 255],
         }
-    }
-
-    pub fn rand_new() -> Block {
-        return Block::new(rand::random());
     }
 
     pub fn should_render_against(&self, block: &Block) -> bool {
