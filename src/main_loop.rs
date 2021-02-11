@@ -79,14 +79,16 @@ impl MainLoop {
                 window.request_redraw();
             }
             _ => {
-                let timer = Instant::now();
-                personal_world.load_generated_chunks();
-                personal_world
-                    .ui
-                    .debug_info
-                    .insert_stat("load chunks".to_string(), timer.elapsed().as_secs_f32());
                 if world_tick_timer.elapsed().as_secs_f32() * 20f32 > 1f32 {
                     let timer = Instant::now();
+                    personal_world.check_vertices_to_generate();
+                    personal_world.ui.debug_info.insert_stat(
+                        "load vertices chunks".to_string(),
+                        timer.elapsed().as_secs_f32(),
+                    );
+
+                    let timer = Instant::now();
+
                     personal_world.on_game_tick(0.1);
                     world_tick_timer = Instant::now();
                     personal_world

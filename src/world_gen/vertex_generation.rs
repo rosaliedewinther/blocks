@@ -23,7 +23,7 @@ pub fn get_chunk_vertices(world: &World, chunk_pos: &ChunkPos) -> (Vec<Vertex>, 
                 }
                 let sides = sides_to_render(&world, &global_pos);
 
-                let block: &Block = &chunk.blocks[x as usize][y as usize][z as usize];
+                let block: &Block = &chunk.get_block(&LocalBlockPos { x, y, z }).unwrap();
                 let (mut temp_vertices, mut temp_indices) = block.get_mesh(&global_pos, &sides);
                 temp_indices = temp_indices
                     .iter()

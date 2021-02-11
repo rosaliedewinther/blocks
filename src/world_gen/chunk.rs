@@ -7,10 +7,13 @@ use serde::{Deserialize, Serialize};
 
 #[derive(Serialize, Deserialize)]
 pub struct Chunk {
-    pub blocks: Vec<Vec<Vec<Block>>>,
+    blocks: Vec<Block>,
 }
 
 impl Chunk {
+    pub fn new(blocks: Vec<Block>) -> Chunk {
+        Chunk { blocks }
+    }
     pub fn generate(pos: &ChunkPos, seed: u32) -> Chunk {
         let chunk_generator = ChunkGenerator::new(seed);
         return chunk_generator.full_generation_pass(pos);
@@ -31,7 +34,9 @@ impl Chunk {
             warn!("tried to place block outside chunk with pos: {:?}", &pos);
             return;
         }
-        self.blocks[pos.x as usize][pos.y as usize][pos.z as usize] = block;
+        self.blocks[pos.x as usize
+            + pos.y as usize * CHUNKSIZE as usize
+            + pos.z as usize * CHUNKSIZE as usize * CHUNKSIZE as usize] = block;
     }
     pub fn get_block(&self, pos: &LocalBlockPos) -> Option<&Block> {
         if pos.x < 0
@@ -44,6 +49,10 @@ impl Chunk {
             //println!("couldn't get block at: {:?}", &pos);
             return None;
         }
-        return Some(&self.blocks[pos.x as usize][pos.y as usize][pos.z as usize]);
+        return Some(
+            &self.blocks[pos.x as usize
+                + pos.y as usize * CHUNKSIZE as usize
+                + pos.z as usize * CHUNKSIZE as usize * CHUNKSIZE as usize],
+        );
     }
 }

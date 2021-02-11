@@ -15,7 +15,7 @@ use std::borrow::BorrowMut;
 
 #[derive(Serialize, Deserialize)]
 pub struct MetaChunk {
-    pub chunks: Vec<Vec<Vec<Chunk>>>,
+    chunks: Vec<Chunk>,
     pub pos: MetaChunkPos,
     pub seed: u32,
 }
@@ -30,18 +30,17 @@ impl MetaChunk {
         }
         let chunk_generator = ChunkGenerator::new(seed);
 
-        let mut chunks: Vec<Vec<Vec<Chunk>>> = Vec::with_capacity(METACHUNKSIZE);
-        for x in 0..METACHUNKSIZE {
-            chunks.push(Vec::new());
+        let mut chunks: Vec<Chunk> =
+            Vec::with_capacity(METACHUNKSIZE * METACHUNKSIZE * METACHUNKSIZE);
+        for z in 0..METACHUNKSIZE {
             for y in 0..METACHUNKSIZE {
-                chunks[x].push(Vec::new());
-                for z in 0..METACHUNKSIZE {
+                for x in 0..METACHUNKSIZE {
                     let local_pos = &ChunkPos {
                         x: x as i32 + pos.x * METACHUNKSIZE as i32,
                         y: y as i32,
                         z: z as i32 + pos.z * METACHUNKSIZE as i32,
                     };
-                    chunks[x][y].push(chunk_generator.full_generation_pass(local_pos));
+                    chunks.push(chunk_generator.full_generation_pass(local_pos));
                 }
             }
         }
@@ -188,10 +187,19 @@ impl MetaChunk {
         }
     }
     pub fn get_chunk_mut(&mut self, pos: &LocalChunkPos) -> Option<&mut Chunk> {
-        return Some(self.chunks[pos.x as usize][pos.y as usize][pos.z as usize].borrow_mut());
+        return Some(
+            self.chunks[pos.x as usize
+                + pos.y as usize * METACHUNKSIZE as usize
+                + pos.z as usize * METACHUNKSIZE as usize * METACHUNKSIZE as usize]
+                .borrow_mut(),
+        );
     }
     pub fn get_chunk(&self, pos: &LocalChunkPos) -> Option<&Chunk> {
-        return Some(&self.chunks[pos.x as usize][pos.y as usize][pos.z as usize]);
+        return Some(
+            &self.chunks[pos.x as usize
+                + pos.y as usize * METACHUNKSIZE as usize
+                + pos.z as usize * METACHUNKSIZE as usize * METACHUNKSIZE as usize],
+        );
     }
     pub fn get_chunk_pos(&self, pos: &LocalChunkPos) -> ChunkPos {
         let x = self.pos.x * METACHUNKSIZE as i32
