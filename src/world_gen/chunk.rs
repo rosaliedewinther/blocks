@@ -58,6 +58,11 @@ impl Chunk {
             + pos.y as usize * CHUNKSIZE as usize
             + pos.z as usize * CHUNKSIZE as usize * CHUNKSIZE as usize] = block;
     }
+    pub fn get_block_unsafe(&self, pos: &LocalBlockPos) -> &Block {
+        &self.blocks[pos.x as usize
+            + pos.y as usize * CHUNKSIZE as usize
+            + pos.z as usize * CHUNKSIZE as usize * CHUNKSIZE as usize]
+    }
     pub fn get_block(&self, pos: &LocalBlockPos) -> Option<&Block> {
         if pos.x < 0
             || pos.x >= (CHUNKSIZE) as i32

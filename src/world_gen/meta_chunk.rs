@@ -143,6 +143,12 @@ impl MetaChunk {
             None => {}
         }
     }
+    pub fn get_block_unsafe(&self, pos: &GlobalBlockPos) -> &Block {
+        let chunk_pos = pos.get_local_chunk();
+        let chunk = self.get_chunk(&chunk_pos).unwrap();
+        chunk.get_block_unsafe(&pos.get_local_pos())
+    }
+
     pub fn get_block(&self, pos: &GlobalBlockPos) -> Option<&Block> {
         if !(pos.x >= self.pos.x * METACHUNKSIZE as i32 * CHUNKSIZE as i32
             && pos.x < (self.pos.x + 1) * METACHUNKSIZE as i32 * CHUNKSIZE as i32
@@ -200,6 +206,11 @@ impl MetaChunk {
                 + pos.y as usize * METACHUNKSIZE as usize
                 + pos.z as usize * METACHUNKSIZE as usize * METACHUNKSIZE as usize],
         );
+    }
+    pub fn get_chunk_unsafe(&self, pos: &LocalChunkPos) -> &Chunk {
+        &self.chunks[pos.x as usize
+            + pos.y as usize * METACHUNKSIZE as usize
+            + pos.z as usize * METACHUNKSIZE as usize * METACHUNKSIZE as usize]
     }
     pub fn get_chunk_pos(&self, pos: &LocalChunkPos) -> ChunkPos {
         let x = self.pos.x * METACHUNKSIZE as i32

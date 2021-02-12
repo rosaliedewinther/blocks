@@ -1,12 +1,12 @@
 use crate::block::{Block, BlockSides, BlockType};
-use crate::constants::CHUNKSIZE;
+use crate::constants::{CHUNKSIZE, METACHUNKSIZE};
 use crate::positions::{ChunkPos, GlobalBlockPos, LocalBlockPos};
 use crate::renderer::vertex::Vertex;
 use crate::world::World;
 use std::time::Instant;
 
 pub fn get_chunk_vertices(world: &World, chunk_pos: &ChunkPos) -> (Vec<Vertex>, Vec<u32>) {
-    let chunk = world.get_chunk(chunk_pos).unwrap();
+    let chunk = world.get_chunk_unsafe(chunk_pos);
     if chunk.is_completely_air {
         return (Vec::new(), Vec::new());
     }
@@ -33,16 +33,15 @@ pub fn get_chunk_vertices(world: &World, chunk_pos: &ChunkPos) -> (Vec<Vertex>, 
                 //block_pos += timer.elapsed().as_micros();
                 //timer = Instant::now();
 
-                let block = chunk.get_block(&LocalBlockPos { x, y, z });
-                if block.is_some() && block.unwrap().block_type == BlockType::Air {
+                let block = chunk.get_block_unsafe(&LocalBlockPos { x, y, z });
+                if block.block_type == BlockType::Air {
                     continue;
                 }
-                let block = block.unwrap();
 
                 //get_block += timer.elapsed().as_micros();
                 //timer = Instant::now();
 
-                let sides = sides_to_render(&world, &global_pos);
+                let mut sides = sides_to_render(&world, &global_pos);
 
                 //sides_to_render_t += timer.elapsed().as_micros();
                 //timer = Instant::now();
@@ -108,9 +107,9 @@ pub fn should_render_against_block(
     pos: &GlobalBlockPos,
     reference_block: &Block,
 ) -> bool {
-    let block = world.get_block(&pos);
-    match block {
-        Some(b) => b.should_render_against(reference_block),
-        None => true,
+    if pos.y == (METACHUNKSIZE * CHUNKSIZE) as i32 || pos.y < 0 {
+        return true;
     }
+    let block = world.get_block_unsafe(&pos);
+    block.should_render_against(reference_block)
 }
