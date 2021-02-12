@@ -29,6 +29,9 @@ impl World {
             start_time: Instant::now(),
         }
     }
+    pub fn count_chunks(&self) -> i32 {
+        return self.chunks.len() as i32;
+    }
     pub fn update(&mut self) {
         self.time = self.start_time.elapsed().as_secs_f64();
     }

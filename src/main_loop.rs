@@ -80,6 +80,26 @@ impl MainLoop {
             }
             _ => {
                 if world_tick_timer.elapsed().as_secs_f32() * 20f32 > 1f32 {
+                    personal_world.ui.debug_info.set_numbers(
+                        "player x".to_string(),
+                        personal_world.player.position.x as f64,
+                    );
+                    personal_world.ui.debug_info.set_numbers(
+                        "player y".to_string(),
+                        personal_world.player.position.y as f64,
+                    );
+                    personal_world.ui.debug_info.set_numbers(
+                        "player z".to_string(),
+                        personal_world.player.position.z as f64,
+                    );
+                    personal_world.ui.debug_info.set_numbers(
+                        "amount of renderable chunks".to_string(),
+                        personal_world.chunk_render_data.len() as f64,
+                    );
+                    personal_world.ui.debug_info.set_numbers(
+                        "amount of chunks".to_string(),
+                        personal_world.world.count_chunks() as f64,
+                    );
                     let timer = Instant::now();
                     let number_generated = personal_world.check_vertices_to_generate();
                     if number_generated > 0 {

@@ -70,7 +70,7 @@ impl PersonalWorld {
                     to_render
                         .lock()
                         .unwrap()
-                        .push((-distance * 10000f32, pos.clone()));
+                        .push((distance * 10000f32, pos.clone()));
                 }
             });
         }
@@ -112,7 +112,7 @@ impl PersonalWorld {
             && pos.z >= player_chunk_pos.z - METACHUNK_UNLOAD_RADIUS as i32
     }
     pub fn load_chunk(&mut self, pos: MetaChunkPos) {
-        if self.loading_chunks.contains(&pos) {
+        if self.world.chunk_exists_or_generating(&pos) {
             return;
         }
         self.loading_chunks.insert(pos.clone());
@@ -167,11 +167,11 @@ impl PersonalWorld {
         while lag_timer.elapsed().as_secs_f32() < 0.001 && !self.to_generate.is_empty() {
             let len = self.to_generate.len();
             if len > 0 {
-                let (_, pos) = &self.to_generate[0];
+                let (_, pos) = &self.to_generate[self.to_generate.len() - 1];
                 let data = ChunkRenderData::new(&self.world, &pos, &self.renderer.wgpu.device);
                 self.chunk_render_data.insert(pos.clone(), data);
             }
-            self.to_generate.remove(0);
+            self.to_generate.remove(self.to_generate.len() - 1);
         }
         println!(
             "done generating: {} vertices in: {} sec",
@@ -179,13 +179,6 @@ impl PersonalWorld {
             lag_timer.elapsed().as_secs_f32()
         );
         return (starting_size - self.to_generate.len()) as i32;
-    }
-    fn threaded_vertex_generation(
-        world: &World,
-        renderer: &Renderer,
-        chunk_render_data: &mut HashMap<ChunkPos, ChunkRenderData>,
-        pos: &ChunkPos,
-    ) {
     }
     pub fn load_generated_chunks(&mut self) {
         let message = self.chunk_gen_thread.get();

@@ -109,6 +109,7 @@ impl Block {
         }
         return (vertices, indices);
     }
+    #[inline]
     pub fn mesh_front(&self, pos: &ObjectPos, vec: &mut Vec<Vertex>, indices: &mut Vec<u32>) {
         indices.push((vec.len() + 0) as u32);
         indices.push((vec.len() + 1) as u32);
@@ -137,6 +138,7 @@ impl Block {
             [0f32, 0f32, 1f32],
         ));
     }
+    #[inline]
     pub fn mesh_back(&self, pos: &ObjectPos, vec: &mut Vec<Vertex>, indices: &mut Vec<u32>) {
         indices.push((vec.len() + 0) as u32);
         indices.push((vec.len() + 1) as u32);
@@ -165,6 +167,7 @@ impl Block {
             [0f32, 0f32, -1f32],
         ));
     }
+    #[inline]
     pub fn mesh_left(&self, pos: &ObjectPos, vec: &mut Vec<Vertex>, indices: &mut Vec<u32>) {
         indices.push((vec.len() + 0) as u32);
         indices.push((vec.len() + 1) as u32);
@@ -193,6 +196,7 @@ impl Block {
             [-1f32, 0f32, 0f32],
         ));
     }
+    #[inline]
     pub fn mesh_right(&self, pos: &ObjectPos, vec: &mut Vec<Vertex>, indices: &mut Vec<u32>) {
         indices.push((vec.len() + 0) as u32);
         indices.push((vec.len() + 1) as u32);
@@ -221,6 +225,7 @@ impl Block {
             [1f32, 0f32, 0f32],
         ));
     }
+    #[inline]
     pub fn mesh_top(&self, pos: &ObjectPos, vec: &mut Vec<Vertex>, indices: &mut Vec<u32>) {
         indices.push((vec.len() + 0) as u32);
         indices.push((vec.len() + 1) as u32);
@@ -249,6 +254,7 @@ impl Block {
             [0f32, 1f32, 0f32],
         ));
     }
+    #[inline]
     pub fn mesh_bottom(&self, pos: &ObjectPos, vec: &mut Vec<Vertex>, indices: &mut Vec<u32>) {
         indices.push((vec.len() + 0) as u32);
         indices.push((vec.len() + 1) as u32);
