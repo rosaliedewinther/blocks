@@ -76,11 +76,7 @@ pub fn get_chunk_vertices(world: &World, chunk_pos: &ChunkPos) -> (Vec<Vertex>, 
 }
 pub fn sides_to_render(world: &World, global_pos: &GlobalBlockPos) -> BlockSides {
     let mut sides = BlockSides::new();
-    let mut reference_block = Block::new(BlockType::Air);
-    let b = world.get_block(global_pos);
-    if b.is_some() {
-        reference_block = *b.unwrap();
-    }
+    let mut reference_block = world.get_block_unsafe(global_pos);
     if should_render_against_block(world, &global_pos.get_diff(1, 0, 0), &reference_block) {
         sides.right = true;
     }

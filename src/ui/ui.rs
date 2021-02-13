@@ -30,7 +30,6 @@ impl UiRenderer {
             window,
             imgui_winit_support::HiDpiMode::Default,
         );
-        context.set_ini_filename(None);
 
         let font_size = (13.0 * hidpi_factor) as f32;
         context.io_mut().font_global_scale = (1.0 / hidpi_factor) as f32;

@@ -22,8 +22,10 @@ const vec3 diffuse_color = vec3(1.0, 1.0, 1.0);
 void main() {
     vec3 perm_position = a_position;
     if (type == 1){
-        float perm = sin(time*5)/2;
-        perm_position = perm_position + ((perm_position - (2 * floor(perm_position/2)))-0.5) *perm;
+        float perm_x = cos(perm_position[0]+time)/4;
+        float perm_z = cos(perm_position[2]+time)/4;
+        vec3 permutation = vec3(perm_x, 0, perm_z);
+        perm_position = perm_position + permutation;
     }
     float diffuse = max(dot(normalize(a_normal), normalize(sun_dir)), 0.1);
     vec4 new_color = vec4(a_color[0]/255,a_color[1]/255,a_color[2]/255,a_color[3]/255);

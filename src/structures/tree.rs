@@ -8,7 +8,7 @@ pub fn place_tree(pos: &GlobalBlockPos, world: &mut MetaChunk) {
     let height_range = Uniform::from(4..10);
     let height = height_range.sample(&mut rng);
     for y in 0..height {
-        if y != height - 1 {
+        if y < height - 2 {
             world.set_block(&pos.get_diff(0, y, 0), Block::new(BlockType::Sand));
         }
         if y >= 2 {
