@@ -54,7 +54,7 @@ impl PersonalWorld {
         self.world.update();
     }
     pub fn on_game_tick(&mut self, dt: f32) {
-        self.player.update(&dt);
+        self.player.update(&dt, &self.world);
         self.update();
         self.load_generated_chunks();
         if self.player.generated_chunks_for != self.player.position.get_chunk()

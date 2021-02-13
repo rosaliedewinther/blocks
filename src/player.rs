@@ -1,6 +1,8 @@
+use crate::block::{Block, BlockType};
 use crate::input::input::Input;
 use crate::positions::{ChunkPos, ObjectPos};
 use crate::utils::{get_rotation_matrix_y, get_rotation_matrix_z};
+use crate::world::World;
 use nalgebra::{Matrix3, Vector3};
 use std::f32::consts::PI;
 use winit::event::VirtualKeyCode;
@@ -13,6 +15,7 @@ pub struct Player {
     pub camera_speed: f32,
     pub render_distance: f32,
     pub generated_chunks_for: ChunkPos,
+    pub gravity: f32,
 }
 
 impl Player {
@@ -20,7 +23,7 @@ impl Player {
         Player {
             position: ObjectPos {
                 x: 10000f32,
-                y: 150f32,
+                y: 100f32,
                 z: 10000f32,
             },
             direction: Vector3::new(0f32, 0.0f32, 1.0f32),
@@ -33,6 +36,7 @@ impl Player {
                 y: i32::max_value(),
                 z: i32::max_value(),
             },
+            gravity: 0.0,
         }
     }
 
@@ -105,7 +109,20 @@ impl Player {
         }
     }
 
-    pub fn update(&mut self, _dt: &f32) {}
+    pub fn update(&mut self, _dt: &f32, world: &World) {
+        loop {
+            let blockpos = self.position.get_block();
+            let faceblock = world.get_block(&blockpos);
+            let feetblock = world.get_block(&blockpos.get_diff(0, -1, 0));
+            if (faceblock.is_some() && faceblock.unwrap().block_type != BlockType::Air)
+                || (feetblock.is_some() && feetblock.unwrap().block_type != BlockType::Air)
+            {
+                self.position.y += 1.0;
+            } else {
+                return;
+            }
+        }
+    }
 
     pub fn get_view_matrix(&self) -> [[f32; 4]; 4] {
         let f = {

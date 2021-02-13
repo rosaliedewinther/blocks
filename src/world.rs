@@ -1,4 +1,5 @@
 use crate::block::Block;
+use crate::constants::METACHUNKSIZE;
 use crate::player::Player;
 use crate::positions::{ChunkPos, GlobalBlockPos, MetaChunkPos};
 use crate::world_gen::chunk::Chunk;
@@ -75,6 +76,9 @@ impl World {
         meta_chunk.get_chunk_unsafe(&pos.get_local_chunk_pos())
     }
     pub fn get_chunk(&self, pos: &ChunkPos) -> Option<&Chunk> {
+        if pos.y >= METACHUNKSIZE as i32 {
+            return None;
+        }
         let c = self.get_meta_chunk(&pos.get_meta_chunk_pos());
         return match c {
             Some(chunk) => chunk.get_chunk(&pos.get_local_chunk_pos()),

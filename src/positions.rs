@@ -156,6 +156,13 @@ impl MetaChunkPos {
 }
 
 impl ObjectPos {
+    pub fn get_block(&self) -> GlobalBlockPos {
+        GlobalBlockPos {
+            x: self.x as i32,
+            y: self.y as i32,
+            z: self.z as i32,
+        }
+    }
     pub fn get_chunk(&self) -> ChunkPos {
         ChunkPos {
             x: self.x as i32 / CHUNKSIZE as i32,
