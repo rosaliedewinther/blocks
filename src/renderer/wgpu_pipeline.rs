@@ -2,7 +2,7 @@ use crate::renderer::depth_texture::DepthTexture;
 use crate::renderer::uniforms::Uniforms;
 use crate::renderer::vertex::Vertex;
 use wgpu::util::DeviceExt;
-use wgpu::{Device, Queue, RenderPass, SwapChainDescriptor};
+use wgpu::{BlendFactor, BlendOperation, Device, Queue, RenderPass, SwapChainDescriptor};
 
 pub struct WgpuPipeline {
     pub uniform_buffer: wgpu::Buffer,
@@ -79,7 +79,11 @@ impl WgpuPipeline {
             }),
             color_states: &[wgpu::ColorStateDescriptor {
                 format: sc_desc.format,
-                color_blend: wgpu::BlendDescriptor::REPLACE,
+                color_blend: wgpu::BlendDescriptor {
+                    src_factor: BlendFactor::SrcAlpha,
+                    dst_factor: BlendFactor::OneMinusSrcAlpha,
+                    operation: BlendOperation::Add,
+                },
                 alpha_blend: wgpu::BlendDescriptor::REPLACE,
                 write_mask: wgpu::ColorWrite::ALL,
             }],

@@ -12,7 +12,7 @@ use rayon::prelude::ParallelSliceMut;
 use std::cmp::{min, Ordering};
 use std::collections::{BinaryHeap, HashMap, HashSet};
 use std::sync::{Arc, Mutex};
-use std::time::Instant;
+use std::time::{Instant, SystemTime, UNIX_EPOCH};
 use winit::event::Event;
 use winit::event_loop::ControlFlow;
 use winit::window::Window;
@@ -35,7 +35,12 @@ impl PersonalWorld {
         let ui_renderer = UiRenderer::new(window, &renderer);
         PersonalWorld {
             renderer,
-            world: World::new(1),
+            world: World::new(
+                SystemTime::now()
+                    .duration_since(UNIX_EPOCH)
+                    .unwrap()
+                    .as_secs() as u32,
+            ),
             chunk_render_data: HashMap::new(),
             player: Player::new(),
             chunk_gen_thread: ChunkGenThread::new(),
@@ -147,7 +152,7 @@ impl PersonalWorld {
                 {
                     let chunk_pos = MetaChunkPos { x, z };
                     to_load.push((
-                        (chunk_pos.get_distance_to_object(&self.player.position) * 10f32) as i64,
+                        (chunk_pos.get_distance_to_object(&self.player.position) * -10f32) as i64,
                         chunk_pos,
                     ));
                 }
@@ -206,7 +211,6 @@ impl PersonalWorld {
         );
         let render_data = &self.chunk_render_data;
         main_pipeline.set_uniform_buffer(&self.renderer.wgpu.queue, main_pipeline.uniforms);
-        //self.renderer.do_render_pass(render_data, &self.ui).unwrap();
         match self
             .renderer
             .do_render_pass(render_data, &mut self.ui, window, event)

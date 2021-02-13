@@ -11,6 +11,7 @@ pub struct Uniforms {
     viewer_pos: [f32; 3],
     _padding: f32,
     sun_dir: [f32; 3],
+    time: f32,
 }
 
 impl Uniforms {
@@ -31,6 +32,7 @@ impl Uniforms {
             viewer_pos: [0.0, 0.0, 0.0],
             _padding: 0.0,
             sun_dir: [0.0, 0.0, 0.0],
+            time: 0.0,
         }
     }
 
@@ -41,5 +43,6 @@ impl Uniforms {
         self.viewer_pos = [player.position.x, player.position.y, player.position.z];
         let sun_dir = get_rotation_matrix_y(time as f32) * Vector3::new(1.0, 1.0, 0.0);
         self.sun_dir = [sun_dir[0], sun_dir[1], sun_dir[2]];
+        self.time = time as f32;
     }
 }

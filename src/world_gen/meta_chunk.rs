@@ -73,7 +73,7 @@ impl MetaChunk {
         place_square(&global_center_pos, 10, &mut chunk);
 
         let mut rng = rand::thread_rng();
-        let location_range = Uniform::from(0..(METACHUNKSIZE * CHUNKSIZE));
+        let location_range = Uniform::from(5..(METACHUNKSIZE * CHUNKSIZE) - 5);
         for _ in 0..1000 {
             let structure_x = pos.x * METACHUNKSIZE as i32 * CHUNKSIZE as i32
                 + location_range.sample(&mut rng) as i32;

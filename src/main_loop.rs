@@ -15,6 +15,7 @@ impl MainLoop {
     }
 
     pub fn run(self) {
+        let mut frame_rate_timer = Instant::now();
         let event_loop = EventLoop::new();
         let window = WindowBuilder::new()
             .with_maximized(true)
@@ -60,18 +61,17 @@ impl MainLoop {
                 _ => {}
             },
             Event::RedrawRequested(_) => {
-                let timer = Instant::now();
-
                 personal_world.update_ui_input(&window_input);
                 personal_world
                     .player
                     .handle_input(&window_input, &(0.01 as f32));
                 personal_world.render(control_flow, &window, &event);
                 window_input.update();
-                personal_world
-                    .ui
-                    .debug_info
-                    .insert_stat("render".to_string(), timer.elapsed().as_secs_f32());
+                personal_world.ui.debug_info.insert_stat(
+                    "framerate".to_string(),
+                    1.0 / frame_rate_timer.elapsed().as_secs_f32(),
+                );
+                frame_rate_timer = Instant::now();
             }
             Event::MainEventsCleared => {
                 // RedrawRequested will only trigger once, unless we manually

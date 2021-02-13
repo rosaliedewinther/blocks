@@ -20,7 +20,7 @@ impl Player {
         Player {
             position: ObjectPos {
                 x: 10000f32,
-                y: 40f32,
+                y: 150f32,
                 z: 10000f32,
             },
             direction: Vector3::new(0f32, 0.0f32, 1.0f32),

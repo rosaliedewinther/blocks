@@ -1,5 +1,5 @@
 use crate::positions::{GlobalBlockPos, ObjectPos};
-use crate::renderer::vertex::{vertex, Vertex};
+use crate::renderer::vertex::{vertex, vertex_typed, Vertex};
 use rand::distributions::{Distribution, Standard};
 use rand::Rng;
 use serde::{Deserialize, Serialize};
@@ -61,6 +61,7 @@ impl Block {
     pub fn new(block_type: BlockType) -> Block {
         Block { block_type }
     }
+    #[inline]
     pub fn get_col(&self) -> [u8; 4] {
         match self.block_type {
             BlockType::Grass => [0, 255, 0, 255],
@@ -69,7 +70,19 @@ impl Block {
             BlockType::Stone => [128, 128, 128, 255],
             BlockType::Sand => [255, 0, 0, 255],
             BlockType::Air => [255, 0, 255, 0],
-            BlockType::Leaf => [0, 128, 0, 255],
+            BlockType::Leaf => [0, 128, 0, 200],
+        }
+    }
+    #[inline]
+    pub fn get_type(&self) -> u32 {
+        match self.block_type {
+            BlockType::Grass => 0,
+            BlockType::Water => 0,
+            BlockType::Dirt => 0,
+            BlockType::Stone => 0,
+            BlockType::Sand => 0,
+            BlockType::Air => 0,
+            BlockType::Leaf => 1,
         }
     }
 
@@ -117,25 +130,29 @@ impl Block {
         indices.push((vec.len() + 1) as u32);
         indices.push((vec.len() + 3) as u32);
         indices.push((vec.len() + 2) as u32);
-        vec.push(vertex(
+        vec.push(vertex_typed(
             [pos.x, pos.y, pos.z],
             self.get_col(),
             [0f32, 0f32, 1f32],
+            self.get_type(),
         ));
-        vec.push(vertex(
+        vec.push(vertex_typed(
             [pos.x + 1f32, pos.y, pos.z],
             self.get_col(),
             [0f32, 0f32, 1f32],
+            self.get_type(),
         ));
-        vec.push(vertex(
+        vec.push(vertex_typed(
             [pos.x, pos.y + 1f32, pos.z],
             self.get_col(),
             [0f32, 0f32, 1f32],
+            self.get_type(),
         ));
-        vec.push(vertex(
+        vec.push(vertex_typed(
             [pos.x + 1f32, pos.y + 1f32, pos.z],
             self.get_col(),
             [0f32, 0f32, 1f32],
+            self.get_type(),
         ));
     }
     #[inline]
@@ -146,25 +163,29 @@ impl Block {
         indices.push((vec.len() + 1) as u32);
         indices.push((vec.len() + 3) as u32);
         indices.push((vec.len() + 2) as u32);
-        vec.push(vertex(
+        vec.push(vertex_typed(
             [pos.x, pos.y, pos.z + 1f32],
             self.get_col(),
             [0f32, 0f32, -1f32],
+            self.get_type(),
         ));
-        vec.push(vertex(
+        vec.push(vertex_typed(
             [pos.x, pos.y + 1f32, pos.z + 1f32],
             self.get_col(),
             [0f32, 0f32, -1f32],
+            self.get_type(),
         ));
-        vec.push(vertex(
+        vec.push(vertex_typed(
             [pos.x + 1f32, pos.y, pos.z + 1f32],
             self.get_col(),
             [0f32, 0f32, -1f32],
+            self.get_type(),
         ));
-        vec.push(vertex(
+        vec.push(vertex_typed(
             [pos.x + 1f32, pos.y + 1f32, pos.z + 1f32],
             self.get_col(),
             [0f32, 0f32, -1f32],
+            self.get_type(),
         ));
     }
     #[inline]
@@ -175,25 +196,29 @@ impl Block {
         indices.push((vec.len() + 1) as u32);
         indices.push((vec.len() + 3) as u32);
         indices.push((vec.len() + 2) as u32);
-        vec.push(vertex(
+        vec.push(vertex_typed(
             [pos.x, pos.y, pos.z],
             self.get_col(),
             [-1f32, 0f32, 0f32],
+            self.get_type(),
         ));
-        vec.push(vertex(
+        vec.push(vertex_typed(
             [pos.x, pos.y + 1f32, pos.z],
             self.get_col(),
             [-1f32, 0f32, 0f32],
+            self.get_type(),
         ));
-        vec.push(vertex(
+        vec.push(vertex_typed(
             [pos.x, pos.y, pos.z + 1f32],
             self.get_col(),
             [-1f32, 0f32, 0f32],
+            self.get_type(),
         ));
-        vec.push(vertex(
+        vec.push(vertex_typed(
             [pos.x, pos.y + 1f32, pos.z + 1f32],
             self.get_col(),
             [-1f32, 0f32, 0f32],
+            self.get_type(),
         ));
     }
     #[inline]
@@ -204,25 +229,29 @@ impl Block {
         indices.push((vec.len() + 1) as u32);
         indices.push((vec.len() + 3) as u32);
         indices.push((vec.len() + 2) as u32);
-        vec.push(vertex(
+        vec.push(vertex_typed(
             [pos.x + 1f32, pos.y, pos.z],
             self.get_col(),
             [1f32, 0f32, 0f32],
+            self.get_type(),
         ));
-        vec.push(vertex(
+        vec.push(vertex_typed(
             [pos.x + 1f32, pos.y, pos.z + 1f32],
             self.get_col(),
             [1f32, 0f32, 0f32],
+            self.get_type(),
         ));
-        vec.push(vertex(
+        vec.push(vertex_typed(
             [pos.x + 1f32, pos.y + 1f32, pos.z],
             self.get_col(),
             [1f32, 0f32, 0f32],
+            self.get_type(),
         ));
-        vec.push(vertex(
+        vec.push(vertex_typed(
             [pos.x + 1f32, pos.y + 1f32, pos.z + 1f32],
             self.get_col(),
             [1f32, 0f32, 0f32],
+            self.get_type(),
         ));
     }
     #[inline]
@@ -233,25 +262,29 @@ impl Block {
         indices.push((vec.len() + 1) as u32);
         indices.push((vec.len() + 3) as u32);
         indices.push((vec.len() + 2) as u32);
-        vec.push(vertex(
+        vec.push(vertex_typed(
             [pos.x, pos.y + 1f32, pos.z],
             self.get_col(),
             [0f32, 1f32, 0f32],
+            self.get_type(),
         ));
-        vec.push(vertex(
+        vec.push(vertex_typed(
             [pos.x + 1f32, pos.y + 1f32, pos.z],
             self.get_col(),
             [0f32, 1f32, 0f32],
+            self.get_type(),
         ));
-        vec.push(vertex(
+        vec.push(vertex_typed(
             [pos.x, pos.y + 1f32, pos.z + 1f32],
             self.get_col(),
             [0f32, 1f32, 0f32],
+            self.get_type(),
         ));
-        vec.push(vertex(
+        vec.push(vertex_typed(
             [pos.x + 1f32, pos.y + 1f32, pos.z + 1f32],
             self.get_col(),
             [0f32, 1f32, 0f32],
+            self.get_type(),
         ));
     }
     #[inline]
@@ -262,25 +295,29 @@ impl Block {
         indices.push((vec.len() + 1) as u32);
         indices.push((vec.len() + 3) as u32);
         indices.push((vec.len() + 2) as u32);
-        vec.push(vertex(
+        vec.push(vertex_typed(
             [pos.x, pos.y, pos.z],
             self.get_col(),
             [0f32, -1f32, 0f32],
+            self.get_type(),
         ));
-        vec.push(vertex(
+        vec.push(vertex_typed(
             [pos.x, pos.y, pos.z + 1f32],
             self.get_col(),
             [0f32, -1f32, 0f32],
+            self.get_type(),
         ));
-        vec.push(vertex(
+        vec.push(vertex_typed(
             [pos.x + 1f32, pos.y, pos.z],
             self.get_col(),
             [0f32, -1f32, 0f32],
+            self.get_type(),
         ));
-        vec.push(vertex(
+        vec.push(vertex_typed(
             [pos.x + 1f32, pos.y, pos.z + 1f32],
             self.get_col(),
             [0f32, -1f32, 0f32],
+            self.get_type(),
         ));
     }
 }

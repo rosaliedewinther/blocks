@@ -3,7 +3,7 @@ use imgui::{Condition, Ui, Window};
 use std::collections::HashMap;
 
 pub struct DebugInfo {
-    stats: HashMap<String, (f32, f32, Vec<f32>)>,
+    stats: HashMap<String, (f32, f32, u32, Vec<f32>)>,
     numbers: HashMap<String, f64>,
     size: u32,
 }
@@ -17,7 +17,7 @@ impl DebugInfo {
         }
     }
     pub fn add_to_ui(&self, ui: &Ui) {
-        for (key, (max, min, arr)) in self.stats.iter() {
+        for (key, (max, min, _, arr)) in self.stats.iter() {
             let avg: f32 = arr.iter().sum::<f32>() / arr.len() as f32;
             ui.plot_lines(
                 &*im_str!("{} max: {} min: {} avg: {}", key, max, min, avg),
@@ -36,18 +36,23 @@ impl DebugInfo {
         let vec = self.stats.get_mut(&*name);
         match vec {
             None => {
-                self.stats.insert(name, (value, value, vec![value]));
+                self.stats.insert(name, (value, value, 0, vec![value]));
             }
-            Some((max, min, realvec)) => {
+            Some((max, min, i, realvec)) => {
                 if value < *min {
                     *min = value
                 }
                 if value > *max {
                     *max = value
                 }
-                realvec.push(value);
-                if realvec.len() > self.size as usize {
-                    realvec.remove(0);
+                if realvec.len() < self.size as usize {
+                    realvec.push(value);
+                } else {
+                    realvec[*i as usize] = value;
+                    *i += 1;
+                    if *i == self.size {
+                        *i = 0;
+                    }
                 }
             }
         };
