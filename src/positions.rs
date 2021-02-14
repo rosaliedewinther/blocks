@@ -133,6 +133,13 @@ impl ChunkPos {
             z: (self.z as f32 / METACHUNKSIZE as f32).floor() as i32,
         }
     }
+    pub fn get_center_pos(&self) -> ObjectPos {
+        ObjectPos {
+            x: self.x as f32 * CHUNKSIZE as f32 + CHUNKSIZE as f32 / 2.0,
+            y: self.y as f32 * CHUNKSIZE as f32 + CHUNKSIZE as f32 / 2.0,
+            z: self.z as f32 * CHUNKSIZE as f32 + CHUNKSIZE as f32 / 2.0,
+        }
+    }
 }
 
 impl MetaChunkPos {
@@ -148,9 +155,9 @@ impl MetaChunkPos {
     }
     pub fn get_center_pos(&self) -> ObjectPos {
         ObjectPos {
-            x: self.x as f32 * METACHUNKSIZE as f32 * CHUNKSIZE as f32 + CHUNKSIZE as f32 / 2.0,
+            x: self.x as f32 * METACHUNKSIZE as f32 * CHUNKSIZE as f32 + METACHUNKSIZE as f32 / 2.0,
             y: 0f32,
-            z: self.z as f32 * METACHUNKSIZE as f32 * CHUNKSIZE as f32 + CHUNKSIZE as f32 / 2.0,
+            z: self.z as f32 * METACHUNKSIZE as f32 * CHUNKSIZE as f32 + METACHUNKSIZE as f32 / 2.0,
         }
     }
 }
@@ -163,6 +170,7 @@ impl ObjectPos {
             z: self.z as i32,
         }
     }
+
     pub fn get_chunk(&self) -> ChunkPos {
         ChunkPos {
             x: self.x as i32 / CHUNKSIZE as i32,
@@ -170,10 +178,23 @@ impl ObjectPos {
             z: self.z as i32 / CHUNKSIZE as i32,
         }
     }
+    pub fn get_distance(&self, pos: &ObjectPos) -> f32 {
+        ((self.x - pos.x).pow(2) as f32
+            + (self.y - pos.y).pow(2) as f32
+            + (self.z - pos.z).pow(2) as f32)
+            .sqrt()
+    }
     pub fn get_meta_chunk(&self) -> MetaChunkPos {
         MetaChunkPos {
             x: self.x as i32 / (CHUNKSIZE as i32 * METACHUNKSIZE as i32),
             z: self.z as i32 / (CHUNKSIZE as i32 * METACHUNKSIZE as i32),
+        }
+    }
+    pub fn get_diff(&self, x_diff: f32, y_diff: f32, z_diff: f32) -> ObjectPos {
+        ObjectPos {
+            x: (self.x + x_diff),
+            y: (self.y + y_diff),
+            z: (self.z + z_diff),
         }
     }
 }

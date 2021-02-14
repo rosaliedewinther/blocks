@@ -62,9 +62,11 @@ impl MainLoop {
             },
             Event::RedrawRequested(_) => {
                 personal_world.update_ui_input(&window_input);
-                personal_world
-                    .player
-                    .handle_input(&window_input, &(0.01 as f32));
+                personal_world.player.handle_input(
+                    &window_input,
+                    &(0.01 as f32),
+                    &personal_world.world,
+                );
                 personal_world.render(control_flow, &window, &event);
                 window_input.update();
                 personal_world.ui.debug_info.insert_stat(

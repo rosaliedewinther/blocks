@@ -80,7 +80,7 @@ impl PersonalWorld {
             });
         }
         let mut result = to_render.into_inner().unwrap();
-        result.par_sort_by(|val1, val2| {
+        result.par_sort_unstable_by(|val1, val2| {
             if val1 > val2 {
                 return Ordering::Less;
             } else if val2 > val1 {

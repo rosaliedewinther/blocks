@@ -28,7 +28,7 @@ impl Player {
             },
             direction: Vector3::new(0f32, 0.0f32, 1.0f32),
             up: [0f32, 1.0f32, 0f32],
-            speed: 200f32,
+            speed: 100f32,
             camera_speed: 1f32,
             render_distance: 5000f32,
             generated_chunks_for: ChunkPos {
@@ -40,11 +40,23 @@ impl Player {
         }
     }
 
-    pub fn handle_input(&mut self, input: &Input, dt: &f32) {
-        self.change_position(input, VirtualKeyCode::A, 1.5f32 * PI, *dt * self.speed);
-        self.change_position(input, VirtualKeyCode::D, 0.5f32 * PI, *dt * self.speed);
-        self.change_position(input, VirtualKeyCode::W, 0f32 * PI, *dt * self.speed);
-        self.change_position(input, VirtualKeyCode::S, 1f32 * PI, *dt * self.speed);
+    pub fn handle_input(&mut self, input: &Input, dt: &f32, world: &World) {
+        self.change_position(
+            input,
+            VirtualKeyCode::A,
+            1.5f32 * PI,
+            *dt * self.speed,
+            world,
+        );
+        self.change_position(
+            input,
+            VirtualKeyCode::D,
+            0.5f32 * PI,
+            *dt * self.speed,
+            world,
+        );
+        self.change_position(input, VirtualKeyCode::W, 0f32 * PI, *dt * self.speed, world);
+        self.change_position(input, VirtualKeyCode::S, 1f32 * PI, *dt * self.speed, world);
         if input.key_pressed(VirtualKeyCode::Space) {
             self.position.y += *dt * self.speed
         }
@@ -74,13 +86,18 @@ impl Player {
         key: VirtualKeyCode,
         rotation_degree: f32,
         change: f32,
+        world: &World,
     ) {
         if input.key_pressed(key) {
             let move_vec = get_rotation_matrix_y(rotation_degree) * &self.direction;
             let to_extend =
                 1f32 / (move_vec[0].powf(2f32).abs() + move_vec[2].powf(2f32).abs()).sqrt();
-            self.position.x += change * move_vec.x * to_extend;
-            self.position.z += change * move_vec.z * to_extend;
+            let x_change = change * move_vec.x * to_extend;
+            let z_change = change * move_vec.z * to_extend;
+            if !Player::collides(&self.position.get_diff(x_change, 0.0, z_change), world) {
+                self.position.x += x_change;
+                self.position.z += z_change;
+            }
         }
     }
     pub fn change_direction_horizontal(&mut self, mat: &Matrix3<f32>) {
@@ -111,16 +128,24 @@ impl Player {
 
     pub fn update(&mut self, _dt: &f32, world: &World) {
         loop {
-            let blockpos = self.position.get_block();
-            let faceblock = world.get_block(&blockpos);
-            let feetblock = world.get_block(&blockpos.get_diff(0, -1, 0));
-            if (faceblock.is_some() && faceblock.unwrap().block_type != BlockType::Air)
-                || (feetblock.is_some() && feetblock.unwrap().block_type != BlockType::Air)
-            {
+            if Player::collides(&self.position, world) {
                 self.position.y += 1.0;
             } else {
                 return;
             }
+        }
+    }
+    //pub fn get_collision_points() -> [ObjectPos; 8] {}
+    pub fn collides(pos: &ObjectPos, world: &World) -> bool {
+        let blockpos = pos.get_block();
+        let faceblock = world.get_block(&blockpos);
+        let feetblock = world.get_block(&blockpos.get_diff(0, -1, 0));
+        if (faceblock.is_some() && faceblock.unwrap().get_col()[3] == 255)
+            || (feetblock.is_some() && feetblock.unwrap().get_col()[3] == 255)
+        {
+            return true;
+        } else {
+            return false;
         }
     }
 

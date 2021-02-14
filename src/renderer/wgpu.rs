@@ -84,7 +84,7 @@ pub fn gen_perspective_mat(size: (u32, u32)) -> [[f32; 4]; 4] {
 
     let fov: f32 = PI / 3.0;
     let zfar = 1024.0;
-    let znear = 0.1;
+    let znear = 0.0;
 
     let f = 1.0 / (fov / 2.0).tan();
 

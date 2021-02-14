@@ -5,6 +5,7 @@ use crate::positions::{ChunkPos, GlobalBlockPos, MetaChunkPos};
 use crate::world_gen::chunk::Chunk;
 use crate::world_gen::chunk_loader::ChunkLoader;
 use crate::world_gen::meta_chunk::MetaChunk;
+use rayon::prelude::ParallelSliceMut;
 use std::collections::{HashMap, HashSet};
 use std::time::Instant;
 
@@ -57,7 +58,8 @@ impl World {
     }
     pub fn add_chunk(&mut self, pos: MetaChunkPos, chunk: MetaChunk) {
         self.chunks.push((pos, chunk));
-        self.chunks.sort_by(|(p1, _), (p2, _)| p1.cmp(p2))
+        self.chunks
+            .par_sort_unstable_by(|(p1, _), (p2, _)| p1.cmp(p2))
     }
     #[inline]
     pub fn get_block(&self, pos: &GlobalBlockPos) -> Option<&Block> {

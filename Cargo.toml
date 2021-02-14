@@ -35,7 +35,7 @@ shaderc = "0.7"
 
 
 [profile.dev]
-debug = true
+debug = false
 opt-level = 2
 
 [profile.test]
