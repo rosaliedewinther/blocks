@@ -19,7 +19,7 @@ pub struct Renderer {
 impl Renderer {
     pub fn new(window: &Window) -> Renderer {
         let mut pipelines = HashMap::new();
-        let wgpu = block_on(WgpuState::new(&window));
+        let wgpu = WgpuState::new(&window);
         pipelines.insert(
             "main".to_string(),
             WgpuPipeline::new(&wgpu.device, &wgpu.sc_desc),
