@@ -6,7 +6,7 @@ use crate::positions::{ChunkPos, MetaChunkPos};
 use crate::renderer::chunk_render_data::ChunkRenderData;
 use crate::renderer::renderer::Renderer;
 use crate::ui::ui::UiRenderer;
-use crate::world::World;
+use crate::world::world::World;
 use crate::world_gen::chunk_gen_thread::ChunkGenThread;
 use rayon::prelude::ParallelSliceMut;
 use std::cmp::{min, Ordering};

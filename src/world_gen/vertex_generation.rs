@@ -2,7 +2,7 @@ use crate::block::{Block, BlockSides, BlockType};
 use crate::constants::{CHUNKSIZE, METACHUNKSIZE};
 use crate::positions::{ChunkPos, GlobalBlockPos, LocalBlockPos};
 use crate::renderer::vertex::Vertex;
-use crate::world::World;
+use crate::world::world::World;
 use std::time::Instant;
 
 pub fn get_chunk_vertices(world: &World, chunk_pos: &ChunkPos) -> (Vec<Vertex>, Vec<u32>) {
