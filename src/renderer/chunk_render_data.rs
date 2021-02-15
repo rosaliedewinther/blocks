@@ -50,7 +50,10 @@ impl ChunkRenderData {
     pub fn do_render_pass<'a>(&'a self, render_pass: &mut RenderPass<'a>) {
         if self.num_indices.is_some() {
             render_pass.set_vertex_buffer(0, self.vertex_buffer.as_ref().unwrap().slice(..));
-            render_pass.set_index_buffer(self.index_buffer.as_ref().unwrap().slice(..));
+            render_pass.set_index_buffer(
+                self.index_buffer.as_ref().unwrap().slice(..),
+                wgpu::IndexFormat::Uint32,
+            );
             render_pass.draw_indexed(0..self.num_indices.unwrap(), 0, 0..1);
         }
     }

@@ -32,11 +32,11 @@ impl WgpuState {
         let (device, queue) = adapter
             .request_device(
                 &wgpu::DeviceDescriptor {
+                    label: Some("requested device"),
                     features: wgpu::Features::empty(),
                     limits: wgpu::Limits::default(),
-                    shader_validation: true,
                 },
-                None, // Trace path
+                None,
             )
             .await
             .unwrap();
@@ -57,7 +57,7 @@ impl WgpuState {
     }
     pub fn get_sc_desc(size: PhysicalSize<u32>) -> wgpu::SwapChainDescriptor {
         wgpu::SwapChainDescriptor {
-            usage: wgpu::TextureUsage::OUTPUT_ATTACHMENT,
+            usage: wgpu::TextureUsage::RENDER_ATTACHMENT,
             format: wgpu::TextureFormat::Bgra8UnormSrgb,
             width: size.width,
             height: size.height,
