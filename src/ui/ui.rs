@@ -13,7 +13,7 @@ use winit::event::Event;
 use winit::window::Window;
 
 pub struct UiRenderer {
-    context: imgui::Context,
+    pub context: imgui::Context,
     platform: imgui_winit_support::WinitPlatform,
     renderer: imgui_renderer,
     clear_color: wgpu::Color,
@@ -100,7 +100,6 @@ impl UiRenderer {
                 .size([400.0, 200.0], Condition::FirstUseEver)
                 .position([400.0, 200.0], Condition::FirstUseEver)
                 .build(&ui, || debug_info.add_to_ui(&ui));
-            //ui.show_demo_window(&mut true);
         }
         self.platform.prepare_render(&ui, &window);
         self.renderer

@@ -28,7 +28,7 @@ impl WgpuPipeline {
                     binding: 0,
                     visibility: wgpu::ShaderStage::VERTEX,
                     ty: wgpu::BindingType::Buffer {
-                        ty: Default::default(),
+                        ty: wgpu::BufferBindingType::Uniform,
                         min_binding_size: None,
                         has_dynamic_offset: false,
                     },
@@ -68,14 +68,20 @@ impl WgpuPipeline {
                 entry_point: "main", // 1.
                 buffers: &[Vertex::desc()],
             },
-            primitive: Default::default(),
+            primitive: wgpu::PrimitiveState {
+                topology: wgpu::PrimitiveTopology::TriangleList,
+                strip_index_format: Some(wgpu::IndexFormat::Uint32),
+                front_face: wgpu::FrontFace::Ccw,
+                cull_mode: wgpu::CullMode::Back,
+                polygon_mode: wgpu::PolygonMode::Fill,
+            },
             depth_stencil: Some(wgpu::DepthStencilState {
                 format: DepthTexture::DEPTH_FORMAT,
                 depth_write_enabled: true,
                 depth_compare: wgpu::CompareFunction::Less, // 1.
                 stencil: wgpu::StencilState {
-                    front: Default::default(),
-                    back: Default::default(),
+                    front: wgpu::StencilFaceState::IGNORE,
+                    back: wgpu::StencilFaceState::IGNORE,
                     read_mask: 0,
                     /*format: DepthTexture::DEPTH_FORMAT,
                     depth_write_enabled: true,
