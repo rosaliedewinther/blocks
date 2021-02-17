@@ -1,5 +1,9 @@
+use crate::renderer::compute::Compute;
 use crate::renderer::depth_texture::DepthTexture;
+use fern::Panic;
+use futures::executor::block_on;
 use std::f32::consts::PI;
+use wgpu::{Device, Queue, Surface};
 use winit::dpi::PhysicalSize;
 use winit::window::Window;
 
@@ -15,36 +19,20 @@ pub struct WgpuState {
 
 impl WgpuState {
     // Creating some of the wgpu types requires async code
-    pub async fn new(window: &Window) -> Self {
+    pub fn new(window: &Window) -> Self {
         let size = window.inner_size();
 
         // The instance is A handle to our GPU
         // BackendBit::PRIMARY => Vulkan + Metal + DX12 + Browser WebGPU
-        let instance = wgpu::Instance::new(wgpu::BackendBit::PRIMARY);
-        let surface = unsafe { instance.create_surface(window) };
-        let adapter = instance
-            .request_adapter(&wgpu::RequestAdapterOptions {
-                power_preference: wgpu::PowerPreference::HighPerformance,
-                compatible_surface: Some(&surface),
-            })
-            .await
-            .unwrap();
-        let (device, queue) = adapter
-            .request_device(
-                &wgpu::DeviceDescriptor {
-                    features: wgpu::Features::empty(),
-                    limits: wgpu::Limits::default(),
-                    shader_validation: true,
-                },
-                None, // Trace path
-            )
-            .await
-            .unwrap();
+
+        let (device, queue, surface) = WgpuState::get_device_queue_surface(window);
         let sc_desc = WgpuState::get_sc_desc(size);
 
         let swap_chain = device.create_swap_chain(&surface, &sc_desc);
         let depth_texture = DepthTexture::create_depth_texture(&device, &sc_desc, "depth_texture");
-
+        let mut compute = Compute::new(&device, &queue);
+        compute.compute_pass(&device, &queue);
+        panic!("execution successful");
         Self {
             surface,
             device,
@@ -55,9 +43,34 @@ impl WgpuState {
             depth_texture,
         }
     }
+    pub fn get_device_queue_surface(window: &Window) -> (Device, Queue, Surface) {
+        block_on(async {
+            let instance = wgpu::Instance::new(wgpu::BackendBit::PRIMARY);
+            let surface = unsafe { instance.create_surface(window) };
+            let adapter = instance
+                .request_adapter(&wgpu::RequestAdapterOptions {
+                    power_preference: wgpu::PowerPreference::HighPerformance,
+                    compatible_surface: Some(&surface),
+                })
+                .await
+                .unwrap();
+            let (device, queue) = adapter
+                .request_device(
+                    &wgpu::DeviceDescriptor {
+                        label: Some("requested device"),
+                        features: wgpu::Features::empty(),
+                        limits: wgpu::Limits::default(),
+                    },
+                    None,
+                )
+                .await
+                .unwrap();
+            return (device, queue, surface);
+        })
+    }
     pub fn get_sc_desc(size: PhysicalSize<u32>) -> wgpu::SwapChainDescriptor {
         wgpu::SwapChainDescriptor {
-            usage: wgpu::TextureUsage::OUTPUT_ATTACHMENT,
+            usage: wgpu::TextureUsage::RENDER_ATTACHMENT,
             format: wgpu::TextureFormat::Bgra8UnormSrgb,
             width: size.width,
             height: size.height,

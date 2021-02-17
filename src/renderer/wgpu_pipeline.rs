@@ -2,7 +2,9 @@ use crate::renderer::depth_texture::DepthTexture;
 use crate::renderer::uniforms::Uniforms;
 use crate::renderer::vertex::Vertex;
 use wgpu::util::DeviceExt;
-use wgpu::{BlendFactor, BlendOperation, Device, Queue, RenderPass, SwapChainDescriptor};
+use wgpu::{
+    BlendFactor, BlendOperation, Device, Queue, RenderPass, SwapChainDescriptor, VertexState,
+};
 
 pub struct WgpuPipeline {
     pub uniform_buffer: wgpu::Buffer,
@@ -25,9 +27,10 @@ impl WgpuPipeline {
                 entries: &[wgpu::BindGroupLayoutEntry {
                     binding: 0,
                     visibility: wgpu::ShaderStage::VERTEX,
-                    ty: wgpu::BindingType::UniformBuffer {
-                        dynamic: false,
+                    ty: wgpu::BindingType::Buffer {
+                        ty: wgpu::BufferBindingType::Uniform,
                         min_binding_size: None,
+                        has_dynamic_offset: false,
                     },
                     count: None,
                 }],
@@ -37,15 +40,19 @@ impl WgpuPipeline {
             layout: &uniform_bind_group_layout,
             entries: &[wgpu::BindGroupEntry {
                 binding: 0,
-                resource: wgpu::BindingResource::Buffer(uniform_buffer.slice(..)),
+                resource: wgpu::BindingResource::Buffer {
+                    buffer: &(uniform_buffer),
+                    offset: 0,
+                    size: None,
+                },
             }],
             label: Some("uniform_bind_group"),
         });
 
         let vs_module =
-            device.create_shader_module(wgpu::include_spirv!("../shaders/main.shader.vert.spv"));
+            device.create_shader_module(&wgpu::include_spirv!("../shaders/main.shader.vert.spv"));
         let fs_module =
-            device.create_shader_module(wgpu::include_spirv!("../shaders/main.shader.frag.spv"));
+            device.create_shader_module(&wgpu::include_spirv!("../shaders/main.shader.frag.spv"));
 
         let render_pipeline_layout =
             device.create_pipeline_layout(&wgpu::PipelineLayoutDescriptor {
@@ -56,47 +63,53 @@ impl WgpuPipeline {
         let render_pipeline = device.create_render_pipeline(&wgpu::RenderPipelineDescriptor {
             label: Some("Render Pipeline"),
             layout: Some(&render_pipeline_layout),
-            vertex_stage: wgpu::ProgrammableStageDescriptor {
+            vertex: wgpu::VertexState {
                 module: &vs_module,
                 entry_point: "main", // 1.
+                buffers: &[Vertex::desc()],
             },
-            vertex_state: wgpu::VertexStateDescriptor {
-                index_format: wgpu::IndexFormat::Uint32,
-                vertex_buffers: &[Vertex::desc()],
-            },
-            fragment_stage: Some(wgpu::ProgrammableStageDescriptor {
-                // 2.
-                module: &fs_module,
-                entry_point: "main",
-            }),
-            rasterization_state: Some(wgpu::RasterizationStateDescriptor {
+            primitive: wgpu::PrimitiveState {
+                topology: wgpu::PrimitiveTopology::TriangleList,
+                strip_index_format: Some(wgpu::IndexFormat::Uint32),
                 front_face: wgpu::FrontFace::Ccw,
                 cull_mode: wgpu::CullMode::Back,
-                depth_bias: 0,
-                depth_bias_slope_scale: 0.0,
-                depth_bias_clamp: 0.0,
-                clamp_depth: false,
-            }),
-            color_states: &[wgpu::ColorStateDescriptor {
-                format: sc_desc.format,
-                color_blend: wgpu::BlendDescriptor {
-                    src_factor: BlendFactor::SrcAlpha,
-                    dst_factor: BlendFactor::OneMinusSrcAlpha,
-                    operation: BlendOperation::Add,
-                },
-                alpha_blend: wgpu::BlendDescriptor::REPLACE,
-                write_mask: wgpu::ColorWrite::ALL,
-            }],
-            primitive_topology: wgpu::PrimitiveTopology::TriangleList, // 1.
-            depth_stencil_state: Some(wgpu::DepthStencilStateDescriptor {
+                polygon_mode: wgpu::PolygonMode::Fill,
+            },
+            depth_stencil: Some(wgpu::DepthStencilState {
                 format: DepthTexture::DEPTH_FORMAT,
                 depth_write_enabled: true,
                 depth_compare: wgpu::CompareFunction::Less, // 1.
-                stencil: wgpu::StencilStateDescriptor::default(), // 2.
-            }), // 2.
-            sample_count: 1,                                           // 5.
-            sample_mask: !0,                                           // 6.
-            alpha_to_coverage_enabled: false,                          // 7.
+                stencil: wgpu::StencilState {
+                    front: wgpu::StencilFaceState::IGNORE,
+                    back: wgpu::StencilFaceState::IGNORE,
+                    read_mask: 0,
+                    /*format: DepthTexture::DEPTH_FORMAT,
+                    depth_write_enabled: true,
+                    depth_compare: wgpu::CompareFunction::Less,
+                    stencil: Default::default(),
+                    bias: Default::default(),
+                    clamp_depth: false,*/
+                    write_mask: 0,
+                }, // 2.
+                bias: Default::default(),
+                clamp_depth: false,
+            }),
+            multisample: Default::default(),
+            fragment: Some(wgpu::FragmentState {
+                // 2.
+                module: &fs_module,
+                entry_point: "main",
+                targets: &[wgpu::ColorTargetState {
+                    format: sc_desc.format,
+                    alpha_blend: wgpu::BlendState::REPLACE,
+                    color_blend: wgpu::BlendState {
+                        src_factor: BlendFactor::SrcAlpha,
+                        dst_factor: BlendFactor::OneMinusSrcAlpha,
+                        operation: BlendOperation::Add,
+                    },
+                    write_mask: wgpu::ColorWrite::ALL,
+                }],
+            }),
         });
 
         return WgpuPipeline {

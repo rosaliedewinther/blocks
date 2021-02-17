@@ -54,7 +54,7 @@ impl MainLoop {
                     MainLoop::resize(*physical_size, &mut personal_world.renderer.wgpu);
                 }
                 WindowEvent::ScaleFactorChanged { new_inner_size, .. } => {
-                    personal_world.ui = UiRenderer::new(&window, &personal_world.renderer);
+                    //personal_world.ui = UiRenderer::new(&window, &personal_world.renderer);
                     MainLoop::resize(**new_inner_size, &mut personal_world.renderer.wgpu);
                 }
 

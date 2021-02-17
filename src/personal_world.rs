@@ -167,7 +167,7 @@ impl PersonalWorld {
             return 0;
         }
         let lag_timer = Instant::now();
-        println!("started generating vertices");
+        //println!("started generating vertices");
         let starting_size = self.to_generate.len();
         while lag_timer.elapsed().as_secs_f32() < 0.001 && !self.to_generate.is_empty() {
             let len = self.to_generate.len();
@@ -178,11 +178,11 @@ impl PersonalWorld {
             }
             self.to_generate.remove(self.to_generate.len() - 1);
         }
-        println!(
+        /*println!(
             "done generating: {} vertices in: {} sec",
             starting_size - self.to_generate.len(),
             lag_timer.elapsed().as_secs_f32()
-        );
+        );*/
         return (starting_size - self.to_generate.len()) as i32;
     }
     pub fn load_generated_chunks(&mut self) {

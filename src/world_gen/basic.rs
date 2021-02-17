@@ -4,6 +4,7 @@ use crate::constants::{CHUNKSIZE, METACHUNKSIZE};
 use crate::positions::{ChunkPos, LocalBlockPos};
 use crate::world_gen::chunk::Chunk;
 use noise::{Fbm, MultiFractal, NoiseFn, Seedable};
+use std::cmp::max;
 
 pub struct ChunkGenerator {
     pub noise: Fbm,
@@ -79,12 +80,12 @@ pub fn plant_grass(chunk_generator: &ChunkGenerator, pos: &ChunkPos, chunk: &mut
 }
 
 fn get_xz_heigth(x: i32, z: i32, chunk_generator: &ChunkGenerator, pos: &ChunkPos) -> i32 {
-    let perlin_input = [
+    let noise = [
         (x + (pos.x * CHUNKSIZE as i32)) as f64 / (METACHUNKSIZE * CHUNKSIZE) as f64,
         (z + (pos.z * CHUNKSIZE as i32)) as f64 / (METACHUNKSIZE * CHUNKSIZE) as f64,
     ];
-    ((chunk_generator.noise.get(perlin_input) + 1.0) * METACHUNKSIZE as f64 * CHUNKSIZE as f64
-        / 2.0) as i32
+    ((chunk_generator.noise.get(noise) + 1.0) * METACHUNKSIZE as f64 * CHUNKSIZE as f64 / 2.0)
+        as i32
 }
 
 pub fn floodfill_water(_: &ChunkGenerator, pos: &ChunkPos, chunk: &mut Chunk) {
