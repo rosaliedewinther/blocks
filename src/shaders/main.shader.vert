@@ -13,8 +13,8 @@ uniform Uniforms {
     mat4 u_view;
     mat4 u_perspective;
     vec3 viewer_pos;
-    vec3 sun_dir;
     float time;
+    vec3 sun_dir;
 };
 
 const vec3 diffuse_color = vec3(1.0, 1.0, 1.0);

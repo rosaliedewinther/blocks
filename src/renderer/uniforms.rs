@@ -9,9 +9,8 @@ pub struct Uniforms {
     view: [[f32; 4]; 4],
     perspective: [[f32; 4]; 4],
     viewer_pos: [f32; 3],
-    _padding: f32,
-    sun_dir: [f32; 3],
     time: f32,
+    sun_dir: [f32; 3],
 }
 
 impl Uniforms {
@@ -30,7 +29,6 @@ impl Uniforms {
                 [0.0, 0.0, 0.0, 0.0],
             ],
             viewer_pos: [0.0, 0.0, 0.0],
-            _padding: 0.0,
             sun_dir: [0.0, 0.0, 0.0],
             time: 0.0,
         }

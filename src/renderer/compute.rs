@@ -1,19 +1,22 @@
+use crate::renderer::wgpu::WgpuState;
 use futures::executor::block_on;
 use std::borrow::Cow;
 use std::convert::TryInto;
 use std::time::Instant;
 use wgpu::util::DeviceExt;
-use wgpu::{BindGroup, Buffer, ComputePipeline, Device, Instance, Queue};
+use wgpu::{BindGroup, Buffer, ComputePipeline, Device, Instance, Queue, SwapChainTexture};
+use winit::window::Window;
 
 pub struct Compute {
     bind_group: BindGroup,
     cpu_buffer: Buffer,
     gpu_buffer: Buffer,
     pipeline: ComputePipeline,
+    texture: wgpu::TextureView,
 }
 
 impl Compute {
-    pub fn new(device: &Device, queue: &Queue) -> Compute {
+    pub fn new(device: &Device, queue: &Queue, window: &Window) -> Compute {
         block_on(async {
             let cs_module = device.create_shader_module(&wgpu::ShaderModuleDescriptor {
                 label: None,
@@ -30,7 +33,7 @@ impl Compute {
             // `usage` of buffer specifies how it can be used:
             //   `BufferUsage::MAP_READ` allows it to be read (outside the shader).
             //   `BufferUsage::COPY_DST` allows it to be the destination of the copy.
-            let staging_buffer = device.create_buffer(&wgpu::BufferDescriptor {
+            let cpu_buffer = device.create_buffer(&wgpu::BufferDescriptor {
                 label: None,
                 size,
                 usage: wgpu::BufferUsage::MAP_READ | wgpu::BufferUsage::COPY_DST,
@@ -42,13 +45,15 @@ impl Compute {
             //   A storage buffer (can be bound within a bind group and thus available to a shader).
             //   The destination of a copy.
             //   The source of a copy.
-            let storage_buffer = device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
+            let gpu_buffer = device.create_buffer(&wgpu::BufferDescriptor {
                 label: Some("Storage Buffer"),
-                contents: bytemuck::cast_slice(&numbers),
+                size,
                 usage: wgpu::BufferUsage::STORAGE
                     | wgpu::BufferUsage::COPY_DST
                     | wgpu::BufferUsage::COPY_SRC,
+                mapped_at_creation: false,
             });
+
             // A bind group defines how buffers are accessed by shaders.
             // It is to WebGPU what a descriptor set is to Vulkan.
             // `binding` here refers to the `binding` of a buffer in the shader (`layout(set = 0, binding = 0) buffer`).
@@ -78,7 +83,7 @@ impl Compute {
                 layout: &bind_group_layout,
                 entries: &[wgpu::BindGroupEntry {
                     binding: 0,
-                    resource: storage_buffer.as_entire_binding(),
+                    resource: gpu_buffer.as_entire_binding(),
                 }],
             });
 
@@ -91,24 +96,43 @@ impl Compute {
                 push_constant_ranges: &[],
             });
 
+            let sc_desc = WgpuState::get_sc_desc(window.inner_size());
             // Instantiates the pipeline.
-            let compute_pipeline =
-                device.create_compute_pipeline(&wgpu::ComputePipelineDescriptor {
-                    label: None,
-                    layout: Some(&pipeline_layout),
-                    module: &cs_module,
-                    entry_point: "main",
-                });
+            let pipeline = device.create_compute_pipeline(&wgpu::ComputePipelineDescriptor {
+                label: None,
+                layout: Some(&pipeline_layout),
+                module: &cs_module,
+                entry_point: "main",
+            });
+            let multisampled_texture_extent = wgpu::Extent3d {
+                width: sc_desc.width,
+                height: sc_desc.height,
+                depth: 1,
+            };
+            let multisampled_frame_descriptor = &wgpu::TextureDescriptor {
+                size: multisampled_texture_extent,
+                mip_level_count: 1,
+                sample_count: 1,
+                dimension: wgpu::TextureDimension::D2,
+                format: sc_desc.format,
+                usage: wgpu::TextureUsage::RENDER_ATTACHMENT,
+                label: None,
+            };
+
+            let texture = device
+                .create_texture(multisampled_frame_descriptor)
+                .create_view(&wgpu::TextureViewDescriptor::default());
 
             return Compute {
                 bind_group,
-                cpu_buffer: staging_buffer,
-                gpu_buffer: storage_buffer,
-                pipeline: compute_pipeline,
+                cpu_buffer,
+                gpu_buffer,
+                pipeline,
+                texture,
             };
         })
     }
-    pub fn compute_pass(&mut self, device: &Device, queue: &Queue) {
+    pub fn compute_pass(&mut self, device: &Device, queue: &Queue, frame: &SwapChainTexture) {
         let numbers = [1u32, 2, 3, 4];
         let slice_size = numbers.len() * std::mem::size_of::<u32>();
         let size = slice_size as wgpu::BufferAddress;
@@ -116,6 +140,7 @@ impl Compute {
         // It is to WebGPU what a command buffer is to Vulkan.
         let mut encoder =
             device.create_command_encoder(&wgpu::CommandEncoderDescriptor { label: None });
+        queue.write_buffer(&self.gpu_buffer, 0, bytemuck::cast_slice(&numbers));
         {
             let mut cpass =
                 encoder.begin_compute_pass(&wgpu::ComputePassDescriptor { label: None });
@@ -128,6 +153,23 @@ impl Compute {
         // Will copy data from storage buffer on GPU to staging buffer on CPU.
         encoder.copy_buffer_to_buffer(&self.gpu_buffer, 0, &self.cpu_buffer, 0, size);
 
+        let buffer_copy_view = wgpu::BufferCopyView {
+            buffer: &self.gpu_buffer,
+            layout: Default::default(),
+        };
+
+        let extend = wgpu::Extent3d {
+            width: size as u32,
+            height: 0,
+            depth: 0,
+        };
+        /*let texture_copy_view = wgpu::TextureCopyView{
+            texture: frame.view,
+            mip_level: 0,
+            origin: Default::default()
+        }
+        encoder.begin_render_pass()
+        encoder.copy_texture_to_texture(buffer_copy_view, frame, extend);*/
         // Submits command encoder for processing
         queue.submit(Some(encoder.finish()));
 
@@ -146,15 +188,16 @@ impl Compute {
             if let Ok(()) = buffer_future.await {
                 // Gets contents of buffer
                 let data = buffer_slice.get_mapped_range();
+
                 // Since contents are got in bytes, this converts these bytes back to u32
                 let result: Vec<u32> = data
                     .chunks_exact(4)
                     .map(|b| u32::from_ne_bytes(b.try_into().unwrap()))
                     .collect();
-
                 // With the current interface, we have to make sure all mapped views are
                 // dropped before we unmap the buffer.
                 drop(data);
+
                 self.cpu_buffer.unmap(); // Unmaps buffer from memory
                                          // If you are familiar with C++ these 2 lines can be thought of similarly to:
                                          //   delete myPointer;
