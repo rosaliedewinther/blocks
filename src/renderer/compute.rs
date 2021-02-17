@@ -3,31 +3,18 @@ use std::borrow::Cow;
 use std::convert::TryInto;
 use std::time::Instant;
 use wgpu::util::DeviceExt;
-use wgpu::{Device, Instance, Queue};
+use wgpu::{BindGroup, Buffer, ComputePipeline, Device, Instance, Queue};
 
-pub struct Compute {}
+pub struct Compute {
+    bind_group: BindGroup,
+    cpu_buffer: Buffer,
+    gpu_buffer: Buffer,
+    pipeline: ComputePipeline,
+}
 
 impl Compute {
-    pub fn new(instance: &Instance) -> Compute {
+    pub fn new(device: &Device, queue: &Queue) -> Compute {
         block_on(async {
-            let adapter = instance
-                .request_adapter(&wgpu::RequestAdapterOptions::default())
-                .await
-                .unwrap();
-
-            // `request_device` instantiates the feature specific connection to the GPU, defining some parameters,
-            //  `features` being the available features.
-            let (device, queue) = adapter
-                .request_device(
-                    &wgpu::DeviceDescriptor {
-                        label: None,
-                        features: wgpu::Features::empty(),
-                        limits: wgpu::Limits::default(),
-                    },
-                    None,
-                )
-                .await
-                .unwrap();
             let cs_module = device.create_shader_module(&wgpu::ShaderModuleDescriptor {
                 label: None,
                 source: wgpu::ShaderSource::Wgsl(Cow::Borrowed(include_str!(
@@ -35,14 +22,7 @@ impl Compute {
                 ))),
                 flags: wgpu::ShaderFlags::VALIDATION,
             });
-            let mut numbers: Vec<u32> = Vec::with_capacity(1000000);
-            for _ in 0..numbers.capacity() {
-                numbers.push(rand::random());
-            }
-            numbers = numbers
-                .iter_mut()
-                .map(|val| *val / 1000000000 as u32)
-                .collect();
+            let numbers = [1u32, 2, 3, 4];
             let slice_size = numbers.len() * std::mem::size_of::<u32>();
             let size = slice_size as wgpu::BufferAddress;
 
@@ -69,7 +49,6 @@ impl Compute {
                     | wgpu::BufferUsage::COPY_DST
                     | wgpu::BufferUsage::COPY_SRC,
             });
-
             // A bind group defines how buffers are accessed by shaders.
             // It is to WebGPU what a descriptor set is to Vulkan.
             // `binding` here refers to the `binding` of a buffer in the shader (`layout(set = 0, binding = 0) buffer`).
@@ -120,37 +99,50 @@ impl Compute {
                     module: &cs_module,
                     entry_point: "main",
                 });
-            let timer = Instant::now();
-            // A command encoder executes one or many pipelines.
-            // It is to WebGPU what a command buffer is to Vulkan.
-            let mut encoder =
-                device.create_command_encoder(&wgpu::CommandEncoderDescriptor { label: None });
-            {
-                let mut cpass =
-                    encoder.begin_compute_pass(&wgpu::ComputePassDescriptor { label: None });
-                cpass.set_pipeline(&compute_pipeline);
-                cpass.set_bind_group(0, &bind_group, &[]);
-                cpass.insert_debug_marker("compute collatz iterations");
-                cpass.dispatch(numbers.len() as u32, 1, 1); // Number of cells to run, the (x,y,z) size of item being processed
-            }
-            // Sets adds copy operation to command encoder.
-            // Will copy data from storage buffer on GPU to staging buffer on CPU.
-            encoder.copy_buffer_to_buffer(&storage_buffer, 0, &staging_buffer, 0, size);
 
-            // Submits command encoder for processing
-            queue.submit(Some(encoder.finish()));
+            return Compute {
+                bind_group,
+                cpu_buffer: staging_buffer,
+                gpu_buffer: storage_buffer,
+                pipeline: compute_pipeline,
+            };
+        })
+    }
+    pub fn compute_pass(&mut self, device: &Device, queue: &Queue) {
+        let numbers = [1u32, 2, 3, 4];
+        let slice_size = numbers.len() * std::mem::size_of::<u32>();
+        let size = slice_size as wgpu::BufferAddress;
+        // A command encoder executes one or many pipelines.
+        // It is to WebGPU what a command buffer is to Vulkan.
+        let mut encoder =
+            device.create_command_encoder(&wgpu::CommandEncoderDescriptor { label: None });
+        {
+            let mut cpass =
+                encoder.begin_compute_pass(&wgpu::ComputePassDescriptor { label: None });
+            cpass.set_pipeline(&self.pipeline);
+            cpass.set_bind_group(0, &self.bind_group, &[]);
+            cpass.insert_debug_marker("compute collatz iterations");
+            cpass.dispatch(numbers.len() as u32, 1, 1); // Number of cells to run, the (x,y,z) size of item being processed
+        }
+        // Sets adds copy operation to command encoder.
+        // Will copy data from storage buffer on GPU to staging buffer on CPU.
+        encoder.copy_buffer_to_buffer(&self.gpu_buffer, 0, &self.cpu_buffer, 0, size);
 
-            // Note that we're not calling `.await` here.
-            let buffer_slice = staging_buffer.slice(..);
-            // Gets the future representing when `staging_buffer` can be read from
-            let buffer_future = buffer_slice.map_async(wgpu::MapMode::Read);
+        // Submits command encoder for processing
+        queue.submit(Some(encoder.finish()));
 
-            // Poll the device in a blocking manner so that our future resolves.
-            // In an actual application, `device.poll(...)` should
-            // be called in an event loop or on another thread.
-            device.poll(wgpu::Maintain::Wait);
+        // Note that we're not calling `.await` here.
+        let buffer_slice = self.cpu_buffer.slice(..);
+        // Gets the future representing when `staging_buffer` can be read from
+        let buffer_future = buffer_slice.map_async(wgpu::MapMode::Read);
 
-            // Awaits until `buffer_future` can be read from
+        // Poll the device in a blocking manner so that our future resolves.
+        // In an actual application, `device.poll(...)` should
+        // be called in an event loop or on another thread.
+        device.poll(wgpu::Maintain::Wait);
+
+        // Awaits until `buffer_future` can be read from
+        block_on(async {
             if let Ok(()) = buffer_future.await {
                 // Gets contents of buffer
                 let data = buffer_slice.get_mapped_range();
@@ -163,39 +155,17 @@ impl Compute {
                 // With the current interface, we have to make sure all mapped views are
                 // dropped before we unmap the buffer.
                 drop(data);
-                staging_buffer.unmap(); // Unmaps buffer from memory
-                                        // If you are familiar with C++ these 2 lines can be thought of similarly to:
-                                        //   delete myPointer;
-                                        //   myPointer = NULL;
-                                        // It effectively frees the memory
+                self.cpu_buffer.unmap(); // Unmaps buffer from memory
+                                         // If you are familiar with C++ these 2 lines can be thought of similarly to:
+                                         //   delete myPointer;
+                                         //   myPointer = NULL;
+                                         // It effectively frees the memory
 
                 // Returns data from buffer
-                println!("gpu: {}", timer.elapsed().as_secs_f64());
-            //println!("{:?}", result);
+                println!("{:?}", result);
             } else {
                 panic!("failed to run compute on gpu!")
             }
-            let mut numbers: Vec<u32> = Vec::with_capacity(1000000);
-            for _ in 0..numbers.capacity() {
-                numbers.push(rand::random());
-            }
-            numbers = numbers
-                .iter_mut()
-                .map(|val| *val / 1000000000 as u32)
-                .collect();
-            let timer = Instant::now();
-            for i in 0..numbers.len() {
-                let mut j = 0;
-                loop {
-                    numbers[i] = (numbers[i] + numbers[i]) / 2;
-                    j += 1;
-                    if j == 100 {
-                        break;
-                    }
-                }
-            }
-            println!("cpu: {}", timer.elapsed().as_secs_f64());
-            return Compute {};
-        })
+        });
     }
 }

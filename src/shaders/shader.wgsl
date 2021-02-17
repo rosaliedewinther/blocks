@@ -10,16 +10,7 @@ struct PrimeIndices {
 var<storage> v_indices: [[access(read_write)]] PrimeIndices;
 
 fn collatz_iterations(n_base: u32) -> u32{
-    var n: u32 = n_base;
-    var i: u32 = 0u;
-    loop {
-        n = (n+n)/2;
-        i = i+1;
-        if (i == 100){
-            break;
-        }
-    }
-    return n;
+    return n_base*n_base;
 }
 
 [[stage(compute), workgroup_size(1)]]
