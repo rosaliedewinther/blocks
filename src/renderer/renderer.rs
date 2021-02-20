@@ -19,7 +19,7 @@ pub struct Renderer {
 impl Renderer {
     pub fn new(window: &Window) -> Renderer {
         let mut pipelines = HashMap::new();
-        let wgpu = block_on(WgpuState::new(&window));
+        let wgpu = WgpuState::new(&window);
         pipelines.insert(
             "main".to_string(),
             WgpuPipeline::new(&wgpu.device, &wgpu.sc_desc),
@@ -40,8 +40,12 @@ impl Renderer {
                 .create_command_encoder(&wgpu::CommandEncoderDescriptor {
                     label: Some("Render Encoder"),
                 });
+        self.wgpu
+            .compute
+            .compute_pass(&self.wgpu.device, &self.wgpu.queue, &frame);
         {
             let mut render_pass = encoder.begin_render_pass(&wgpu::RenderPassDescriptor {
+                label: Some("Render pass world"),
                 color_attachments: &[wgpu::RenderPassColorAttachmentDescriptor {
                     attachment: &frame.view,
                     resolve_target: None,
@@ -74,6 +78,7 @@ impl Renderer {
         }
         {
             let mut render_pass = encoder.begin_render_pass(&wgpu::RenderPassDescriptor {
+                label: Some("Render pass ui"),
                 color_attachments: &[wgpu::RenderPassColorAttachmentDescriptor {
                     attachment: &frame.view,
                     resolve_target: None,
