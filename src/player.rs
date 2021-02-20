@@ -22,9 +22,9 @@ impl Player {
     pub fn new() -> Player {
         Player {
             position: ObjectPos {
-                x: 10000f32,
-                y: 100f32,
-                z: 10000f32,
+                x: 0.0,
+                y: 0.0,
+                z: 0.0,
             },
             direction: Vector3::new(0f32, 0.0f32, 1.0f32),
             up: [0f32, 1.0f32, 0f32],
@@ -58,10 +58,16 @@ impl Player {
         self.change_position(input, VirtualKeyCode::W, 0f32 * PI, *dt * self.speed, world);
         self.change_position(input, VirtualKeyCode::S, 1f32 * PI, *dt * self.speed, world);
         if input.key_pressed(VirtualKeyCode::Space) {
-            self.position.y += *dt * self.speed
+            let diff = *dt * self.speed;
+            if !Player::collides(&self.position.get_diff(0.0, diff, 0.0), world) {
+                self.position.y += diff;
+            }
         }
         if input.key_pressed(VirtualKeyCode::LShift) {
-            self.position.y += -*dt * self.speed
+            let diff = -*dt * self.speed;
+            if !Player::collides(&self.position.get_diff(0.0, diff, 0.0), world) {
+                self.position.y += diff;
+            }
         }
 
         let mouse_change = input.mouse_change();

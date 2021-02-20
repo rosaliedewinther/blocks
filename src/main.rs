@@ -2,6 +2,7 @@
 
 use crate::logger::setup_logger;
 use crate::main_loop::MainLoop;
+use crate::world::octree::{Octree, OctreeChunk, OctreeManager};
 
 mod algorithms;
 mod block;
@@ -24,10 +25,10 @@ mod world_gen;
 fn main() {
     setup_logger().unwrap();
 
+    let mut octree = OctreeManager::new();
+    octree.increase(OctreeChunk::LeftBottomBack);
+    println!("{:?}", octree);
+
     let main_loop = MainLoop::new();
     main_loop.run();
-
-    //let mut main_loop = MainLoop::new();
-    //main_loop.run();
-    //start_main_loop();
 }
