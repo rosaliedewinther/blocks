@@ -1,12 +1,13 @@
 #![allow(dead_code)]
 
+use crate::game::VoxGame;
 use crate::logger::setup_logger;
-use crate::main_loop::MainLoop;
 use crate::world::octree::{Octree, OctreeChunk, OctreeManager};
 
 mod algorithms;
 mod block;
 mod constants;
+mod game;
 mod input;
 mod io;
 mod logger;
@@ -29,6 +30,6 @@ fn main() {
     octree.increase(OctreeChunk::LeftBottomBack);
     println!("{:?}", octree);
 
-    let main_loop = MainLoop::new();
-    main_loop.run();
+    let mut game = VoxGame::new();
+    game.run();
 }

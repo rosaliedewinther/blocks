@@ -1,6 +1,6 @@
 use crate::constants::{METACHUNK_GEN_RANGE, METACHUNK_UNLOAD_RADIUS};
 use crate::input::input::Input;
-use crate::main_loop::MainLoop;
+use crate::main_loop::{resize, RenderResult};
 use crate::player::Player;
 use crate::positions::{ChunkPos, MetaChunkPos};
 use crate::renderer::chunk_render_data::ChunkRenderData;
@@ -199,7 +199,7 @@ impl PersonalWorld {
     pub fn update_ui_input(&mut self, input: &Input) {
         self.ui.update_input(input);
     }
-    pub fn render(&mut self, control_flow: &mut ControlFlow, window: &Window, event: &Event<()>) {
+    pub fn render(&mut self, window: &Window, event: &Event<()>) -> RenderResult {
         let main_pipeline = self.renderer.pipelines.get_mut("main").unwrap();
         main_pipeline.uniforms.update_view_proj(
             &self.player,
@@ -218,12 +218,13 @@ impl PersonalWorld {
             Ok(_) => {}
             // Recreate the swap_chain if lost
             Err(wgpu::SwapChainError::Lost) => {
-                MainLoop::resize(self.renderer.wgpu.size, &mut self.renderer.wgpu)
+                resize(self.renderer.wgpu.size, &mut self.renderer.wgpu)
             }
             // The system is out of memory, we should probably quit
-            Err(wgpu::SwapChainError::OutOfMemory) => *control_flow = ControlFlow::Exit,
+            Err(wgpu::SwapChainError::OutOfMemory) => return RenderResult::Exit,
             // All other errors (Outdated, Timeout) should be resolved by the next frame
             Err(e) => eprintln!("{:?}", e),
         }
+        return RenderResult::Continue;
     }
 }
