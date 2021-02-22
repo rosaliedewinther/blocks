@@ -31,6 +31,14 @@ impl Octree {
             OctreeChunk::RightTopBack => self.children[7] = Some(octree),
         }
     }
+    pub fn try_populate(&mut self, size: u32) {
+        for child in self.children.iter_mut() {
+            match child {
+                None => {}
+                Some(_) => {}
+            }
+        }
+    }
 }
 #[derive(Debug)]
 pub struct OctreeManager {
@@ -70,6 +78,7 @@ impl OctreeManager {
         self.octree = Some(new_octree);
         self.height += 1;
     }
+
     pub fn generate(&mut self) {
         let noise = Fbm::new();
         for i in 0..3 {
