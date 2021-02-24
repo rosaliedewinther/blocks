@@ -1,11 +1,11 @@
 use crate::block::{Block, BlockType};
-use crate::input::input::Input;
 use crate::positions::{ChunkPos, ObjectPos};
 use crate::utils::{get_rotation_matrix_y, get_rotation_matrix_z};
 use crate::world::world::World;
 use nalgebra::{Matrix3, Vector3};
 use std::f32::consts::PI;
 use winit::event::VirtualKeyCode;
+use winit_window_control::input::input::Input;
 
 pub struct Player {
     pub position: ObjectPos,

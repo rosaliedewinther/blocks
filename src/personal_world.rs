@@ -1,6 +1,4 @@
 use crate::constants::{METACHUNK_GEN_RANGE, METACHUNK_UNLOAD_RADIUS};
-use crate::input::input::Input;
-use crate::main_loop::RenderResult;
 use crate::player::Player;
 use crate::positions::{ChunkPos, MetaChunkPos};
 use crate::renderer::chunk_render_data::ChunkRenderData;
@@ -16,6 +14,8 @@ use std::time::{Instant, SystemTime, UNIX_EPOCH};
 use winit::event::Event;
 use winit::event_loop::ControlFlow;
 use winit::window::Window;
+use winit_window_control::input::input::Input;
+use winit_window_control::main_loop::RenderResult;
 
 pub struct PersonalWorld {
     pub world: World,
@@ -199,7 +199,7 @@ impl PersonalWorld {
     pub fn update_ui_input(&mut self, input: &Input) {
         self.ui.update_input(input);
     }
-    pub fn render(&mut self, window: &Window, event: &Event<()>) -> RenderResult {
+    pub fn render(&mut self, window: &Window) -> RenderResult {
         let main_pipeline = self.renderer.pipelines.get_mut("main").unwrap();
         main_pipeline.uniforms.update_view_proj(
             &self.player,
@@ -213,7 +213,7 @@ impl PersonalWorld {
         main_pipeline.set_uniform_buffer(&self.renderer.wgpu.queue, main_pipeline.uniforms);
         match self
             .renderer
-            .do_render_pass(render_data, &mut self.ui, window, event)
+            .do_render_pass(render_data, &mut self.ui, window)
         {
             Ok(_) => {}
             // Recreate the swap_chain if lost

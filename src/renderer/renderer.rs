@@ -31,7 +31,6 @@ impl Renderer {
         render_data: &HashMap<ChunkPos, ChunkRenderData>,
         ui: &mut UiRenderer,
         window: &Window,
-        event: &Event<()>,
     ) -> Result<(), SwapChainError> {
         let frame = self.wgpu.swap_chain.get_current_frame()?.output;
         let mut encoder =
@@ -94,7 +93,6 @@ impl Renderer {
                 &self.wgpu.queue,
                 &self.wgpu.device,
                 window,
-                event,
             );
         }
         // submit will accept anything that implements IntoIter

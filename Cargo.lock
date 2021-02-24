@@ -2149,6 +2149,7 @@ dependencies = [
  "shaderc",
  "wgpu",
  "winit",
+ "winit_window_control",
 ]
 
 [[package]]
@@ -2453,6 +2454,13 @@ dependencies = [
  "wayland-client",
  "winapi 0.3.9",
  "x11-dl",
+]
+
+[[package]]
+name = "winit_window_control"
+version = "0.1.0"
+dependencies = [
+ "winit",
 ]
 
 [[package]]

@@ -22,13 +22,7 @@ pub enum InitResult {
 
 pub trait Game {
     fn on_tick(&mut self, dt: f64) -> UpdateResult;
-    fn on_render(
-        &mut self,
-        input: &mut Input,
-        dt: f64,
-        window: &Window,
-        event: &Event<()>,
-    ) -> RenderResult;
+    fn on_render(&mut self, input: &mut Input, dt: f64, window: &Window) -> RenderResult;
     fn on_init(&mut self, window: &Window) -> InitResult;
 }
 
@@ -86,7 +80,6 @@ where
                 &mut window_input,
                 on_render_timer.elapsed().as_secs_f64(),
                 &window,
-                &event,
             ) {
                 RenderResult::Continue => {}
                 RenderResult::Exit => *control_flow = ControlFlow::Exit,

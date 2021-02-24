@@ -1,10 +1,11 @@
-use crate::input::input::Input;
-use crate::main_loop::{main_loop_run, Game};
-use crate::main_loop::{InitResult, RenderResult, UpdateResult};
 use crate::personal_world::PersonalWorld;
 use std::time::Instant;
 use winit::event::Event;
 use winit::window::Window;
+use winit_window_control::input::input::Input;
+use winit_window_control::main_loop::{
+    main_loop_run, Game, InitResult, RenderResult, UpdateResult,
+};
 
 pub struct VoxGame {
     personal_world: Option<PersonalWorld>,
@@ -58,17 +59,11 @@ impl Game for VoxGame {
             .insert_stat("world tick".to_string(), timer.elapsed().as_secs_f32());
         return UpdateResult::Continue;
     }
-    fn on_render(
-        &mut self,
-        input: &mut Input,
-        dt: f64,
-        window: &Window,
-        event: &Event<()>,
-    ) -> RenderResult {
+    fn on_render(&mut self, input: &mut Input, dt: f64, window: &Window) -> RenderResult {
         let pw = self.personal_world.as_mut().unwrap();
         pw.update_ui_input(&input);
         pw.player.handle_input(&input, &(0.01 as f32), &pw.world);
-        if pw.render(&window, &event) == RenderResult::Exit {
+        if pw.render(&window) == RenderResult::Exit {
             return RenderResult::Exit;
         }
         input.update();
