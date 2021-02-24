@@ -102,3 +102,10 @@ impl Renderer {
         Ok(())
     }
 }
+
+pub(crate) fn resize(new_size: winit::dpi::PhysicalSize<u32>, wgpu: &mut WgpuState) {
+    wgpu.size = new_size;
+    wgpu.sc_desc.width = new_size.width;
+    wgpu.sc_desc.height = new_size.height;
+    wgpu.swap_chain = wgpu.device.create_swap_chain(&wgpu.surface, &wgpu.sc_desc);
+}

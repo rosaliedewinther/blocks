@@ -1,8 +1,4 @@
-use crate::game::VoxGame;
 use crate::input::input::Input;
-use crate::personal_world::PersonalWorld;
-use crate::renderer::wgpu::WgpuState;
-use crate::ui::ui::UiRenderer;
 use std::time::Instant;
 use winit::event::{Event, WindowEvent};
 use winit::event_loop::{ControlFlow, EventLoop};
@@ -109,11 +105,4 @@ where
             }
         }
     });
-}
-
-pub(crate) fn resize(new_size: winit::dpi::PhysicalSize<u32>, wgpu: &mut WgpuState) {
-    wgpu.size = new_size;
-    wgpu.sc_desc.width = new_size.width;
-    wgpu.sc_desc.height = new_size.height;
-    wgpu.swap_chain = wgpu.device.create_swap_chain(&wgpu.surface, &wgpu.sc_desc);
 }

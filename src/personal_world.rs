@@ -1,10 +1,10 @@
 use crate::constants::{METACHUNK_GEN_RANGE, METACHUNK_UNLOAD_RADIUS};
 use crate::input::input::Input;
-use crate::main_loop::{resize, RenderResult};
+use crate::main_loop::RenderResult;
 use crate::player::Player;
 use crate::positions::{ChunkPos, MetaChunkPos};
 use crate::renderer::chunk_render_data::ChunkRenderData;
-use crate::renderer::renderer::Renderer;
+use crate::renderer::renderer::{resize, Renderer};
 use crate::ui::ui::UiRenderer;
 use crate::world::world::World;
 use crate::world_gen::chunk_gen_thread::ChunkGenThread;
