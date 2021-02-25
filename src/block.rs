@@ -1,3 +1,4 @@
+use crate::constants::COLORS;
 use crate::positions::{GlobalBlockPos, ObjectPos};
 use crate::renderer::vertex::{vertex, vertex_typed, Vertex};
 use rand::distributions::{Distribution, Standard};
@@ -62,15 +63,15 @@ impl Block {
         Block { block_type }
     }
     #[inline]
-    pub fn get_col(&self) -> [u8; 4] {
+    pub fn get_col(&self) -> u32 {
         match self.block_type {
-            BlockType::Grass => [0, 255, 0, 255],
-            BlockType::Water => [0, 0, 255, 128],
-            BlockType::Dirt => [255, 64, 64, 255],
-            BlockType::Stone => [128, 128, 128, 255],
-            BlockType::Sand => [255, 0, 0, 255],
-            BlockType::Air => [255, 0, 255, 0],
-            BlockType::Leaf => [0, 128, 0, 200],
+            BlockType::Grass => 0,
+            BlockType::Water => 1,
+            BlockType::Dirt => 2,
+            BlockType::Stone => 3,
+            BlockType::Sand => 4,
+            BlockType::Air => 5,
+            BlockType::Leaf => 6,
         }
     }
     #[inline]
@@ -90,7 +91,7 @@ impl Block {
         if self.block_type == block.block_type {
             return false;
         }
-        if self.get_col()[3] == 255 {
+        if COLORS[self.get_col() as usize][3] == 255.0 {
             return false;
         }
         return true;

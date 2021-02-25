@@ -1,4 +1,4 @@
-use crate::constants::{METACHUNK_GEN_RANGE, METACHUNK_UNLOAD_RADIUS};
+use crate::constants::{METACHUNKSIZE, METACHUNK_GEN_RANGE, METACHUNK_UNLOAD_RADIUS};
 use crate::player::Player;
 use crate::positions::{ChunkPos, MetaChunkPos};
 use crate::renderer::chunk_render_data::ChunkRenderData;
@@ -97,8 +97,9 @@ impl PersonalWorld {
         }
         if self.world.get_chunk(&pos.get_diff(0, 0, 1)).is_none()
             || self.world.get_chunk(&pos.get_diff(0, 0, -1)).is_none()
-            || self.world.get_chunk(&pos.get_diff(0, 1, 0)).is_none()
-            || self.world.get_chunk(&pos.get_diff(0, -1, 0)).is_none()
+            || (self.world.get_chunk(&pos.get_diff(0, 1, 0)).is_none()
+                && pos.y + 1 != METACHUNKSIZE as i32)
+            || (self.world.get_chunk(&pos.get_diff(0, -1, 0)).is_none() && pos.y - 1 >= 0)
             || self.world.get_chunk(&pos.get_diff(1, 0, 0)).is_none()
             || self.world.get_chunk(&pos.get_diff(-1, 0, 0)).is_none()
         {
