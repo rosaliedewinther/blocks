@@ -2,18 +2,35 @@
 var global_id: vec3<u32>;
 
 [[block]]
-struct PrimeIndices {
-    data: [[stride(4)]] array<u32>;
-}; // this is used as both input and output for convenience
+struct ChunkData {
+    data: [[stride(1)]] array<u8>;
+};
 
-[[group(0), binding(0)]]
-var<storage> v_indices: [[access(read_write)]] PrimeIndices;
-
-fn collatz_iterations(n_base: u32) -> u32{
-    return n_base*n_base;
+[[block]]
+struct Vertex {
+    _pos: vec3<f32>,
+    _color: u32,
+    _normal: vec3<f32>,
+    _type: u32,
 }
+
+[[block]]
+struct ChunckVertexData{
+    data: [[stride(32)]] array<Vertex>;
+}
+
+[[group(0), binding(0)]] var<storage> chunk_top: [[access(read_write)]] ChunkData;
+[[group(0), binding(1)]] var<storage> chunk_bot: [[access(read_write)]] ChunkData;
+[[group(0), binding(2)]] var<storage> chunk_front: [[access(read_write)]] ChunkData;
+[[group(0), binding(3)]] var<storage> chunk_back: [[access(read_write)]] ChunkData;
+[[group(0), binding(4)]] var<storage> chunk_left: [[access(read_write)]] ChunkData;
+[[group(0), binding(5)]] var<storage> chunk_right: [[access(read_write)]] ChunkData;
+[[group(0), binding(6)]] var<storage> chunk_main: [[access(read_write)]] ChunkData;
+[[group(0), binding(7)]] var<storage> out: [[access(read_write)]] ChunkData;
 
 [[stage(compute), workgroup_size(1)]]
 fn main() {
-    v_indices.data[global_id.x] = collatz_iterations(v_indices.data[global_id.x]);
+
+
+
 }

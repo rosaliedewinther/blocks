@@ -16,6 +16,7 @@ use winit::event_loop::ControlFlow;
 use winit::window::Window;
 use winit_window_control::input::input::Input;
 use winit_window_control::main_loop::RenderResult;
+use zerocopy::AsBytes;
 
 pub struct PersonalWorld {
     pub world: World,
@@ -52,6 +53,29 @@ impl PersonalWorld {
     }
     pub fn update(&mut self) {
         self.world.update();
+        let chunk = self.world.get_chunk(&ChunkPos { x: 2, y: 2, z: 2 });
+        if chunk.is_none() {
+            return;
+        }
+        let chunk = chunk.unwrap();
+        let main: &[u8] = chunk.blocks.as_bytes();
+        let top: &[u8] = chunk.blocks.as_bytes();
+        let bot: &[u8] = chunk.blocks.as_bytes();
+        let front: &[u8] = chunk.blocks.as_bytes();
+        let back: &[u8] = chunk.blocks.as_bytes();
+        let left: &[u8] = chunk.blocks.as_bytes();
+        let right: &[u8] = chunk.blocks.as_bytes();
+        self.renderer.wgpu.compute.compute_pass(
+            &self.renderer.wgpu.device,
+            &self.renderer.wgpu.queue,
+            main,
+            top,
+            bot,
+            front,
+            back,
+            left,
+            right,
+        );
     }
     pub fn on_game_tick(&mut self, dt: f32) {
         self.player.update(&dt, &self.world);

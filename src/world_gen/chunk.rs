@@ -11,7 +11,7 @@ use zerocopy::{AsBytes, FromBytes};
 big_array! { BigArray; }
 
 #[repr(C)]
-#[derive(Serialize, Deserialize, Copy, Clone)]
+#[derive(Serialize, Deserialize, Copy, Clone, FromBytes, AsBytes)]
 pub struct ChunkData {
     #[serde(with = "BigArray")]
     pub d: [BlockId; CHUNKSIZE * CHUNKSIZE * CHUNKSIZE],
@@ -19,7 +19,7 @@ pub struct ChunkData {
 
 #[derive(Serialize, Deserialize)]
 pub struct Chunk {
-    blocks: ChunkData,
+    pub blocks: ChunkData,
     pub is_completely_air: bool,
 }
 
