@@ -1,5 +1,7 @@
 use crate::algorithms::bfs_world::bfs_world_air;
-use crate::block::{Block, BlockType};
+
+use crate::blocks::block::{get_blockid, get_blocktype, BlockId};
+use crate::blocks::block_type::BlockType;
 use crate::constants::{CHUNKSIZE, METACHUNKSIZE};
 use crate::io::file_reader::read_meta_chunk_from_file;
 use crate::io::file_writer::write_to_file;
@@ -59,7 +61,7 @@ impl MetaChunk {
             &global_center_pos,
             5,
             &mut chunk,
-            Block::new(BlockType::Sand),
+            get_blockid(BlockType::Sand),
         );
 
         let structure_x = pos.x * METACHUNKSIZE as i32 * CHUNKSIZE as i32 + 3;
@@ -85,10 +87,7 @@ impl MetaChunk {
                 y: structure_y,
                 z: structure_z,
             };
-            if chunk
-                .get_block(&tree_pos.get_diff(0, -1, 0))
-                .unwrap()
-                .block_type
+            if get_blocktype(chunk.get_block(&tree_pos.get_diff(0, -1, 0)).unwrap())
                 == BlockType::Grass
             {
                 place_tree(&tree_pos, &mut chunk);
@@ -105,7 +104,7 @@ impl MetaChunk {
                 y,
                 z: structure_z,
             };
-            chunk.set_block(&global_center_pos, Block::new(BlockType::Sand));
+            chunk.set_block(&global_center_pos, get_blockid(BlockType::Sand));
         }
 
         return chunk;
@@ -113,10 +112,11 @@ impl MetaChunk {
     pub fn first_above_land_y(&self, x: i32, z: i32) -> i32 {
         let mut y = METACHUNKSIZE as i32 * CHUNKSIZE as i32 - 1;
         while let Some(b) = self.get_block(&GlobalBlockPos { x, y, z }) {
-            if b.block_type == BlockType::Grass
-                || b.block_type == BlockType::Water
-                || b.block_type == BlockType::Dirt
-                || b.block_type == BlockType::Stone
+            let b_type = get_blocktype(b);
+            if b_type == BlockType::Grass
+                || b_type == BlockType::Water
+                || b_type == BlockType::Dirt
+                || b_type == BlockType::Stone
             {
                 return y + 1;
             }
@@ -135,7 +135,7 @@ impl MetaChunk {
         write_to_file(filename.as_str(), self)
     }
 
-    pub fn set_block(&mut self, pos: &GlobalBlockPos, block: Block) {
+    pub fn set_block(&mut self, pos: &GlobalBlockPos, block: BlockId) {
         let chunk_pos = pos.get_local_chunk();
         let chunk = self.get_chunk_mut(&chunk_pos);
         match chunk {
@@ -143,13 +143,13 @@ impl MetaChunk {
             None => {}
         }
     }
-    pub fn get_block_unsafe(&self, pos: &GlobalBlockPos) -> &Block {
+    pub fn get_block_unsafe(&self, pos: &GlobalBlockPos) -> BlockId {
         let chunk_pos = pos.get_local_chunk();
         let chunk = self.get_chunk(&chunk_pos).unwrap();
         chunk.get_block_unsafe(&pos.get_local_pos())
     }
 
-    pub fn get_block(&self, pos: &GlobalBlockPos) -> Option<&Block> {
+    pub fn get_block(&self, pos: &GlobalBlockPos) -> Option<BlockId> {
         if !(pos.x >= self.pos.x * METACHUNKSIZE as i32 * CHUNKSIZE as i32
             && pos.x < (self.pos.x + 1) * METACHUNKSIZE as i32 * CHUNKSIZE as i32
             && pos.z >= self.pos.z * METACHUNKSIZE as i32 * CHUNKSIZE as i32

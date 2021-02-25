@@ -1,4 +1,4 @@
-use crate::block::BlockType;
+use crate::blocks::block_type::BlockType;
 use crate::positions::ObjectPos;
 use noise::Fbm;
 

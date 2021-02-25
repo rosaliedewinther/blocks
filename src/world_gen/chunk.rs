@@ -1,18 +1,30 @@
-use crate::block::{Block, BlockType};
+use crate::blocks::block::{get_blocktype, BlockId};
+use crate::blocks::block_type::BlockType;
 use crate::constants::CHUNKSIZE;
 use crate::positions::{ChunkPos, LocalBlockPos};
 use crate::world_gen::basic::ChunkGenerator;
 use log::warn;
 use serde::{Deserialize, Serialize};
+use serde_big_array::big_array;
+use zerocopy::{AsBytes, FromBytes};
+
+big_array! { BigArray; }
+
+#[repr(C)]
+#[derive(Serialize, Deserialize, Copy, Clone)]
+pub struct ChunkData {
+    #[serde(with = "BigArray")]
+    pub d: [BlockId; CHUNKSIZE * CHUNKSIZE * CHUNKSIZE],
+}
 
 #[derive(Serialize, Deserialize)]
 pub struct Chunk {
-    blocks: Vec<Block>,
+    blocks: ChunkData,
     pub is_completely_air: bool,
 }
 
 impl Chunk {
-    pub fn new(blocks: Vec<Block>) -> Chunk {
+    pub fn new(blocks: ChunkData) -> Chunk {
         Chunk {
             blocks,
             is_completely_air: false,
@@ -24,10 +36,7 @@ impl Chunk {
         for x in 0..CHUNKSIZE as i32 {
             for y in 0..CHUNKSIZE as i32 {
                 for z in 0..CHUNKSIZE as i32 {
-                    if chunk
-                        .get_block(&LocalBlockPos { x, y, z })
-                        .unwrap()
-                        .block_type
+                    if get_blocktype(chunk.get_block(&LocalBlockPos { x, y, z }).unwrap())
                         != BlockType::Air
                     {
                         return chunk;
@@ -43,7 +52,7 @@ impl Chunk {
         return false;
     }
 
-    pub fn set_block(&mut self, block: Block, pos: &LocalBlockPos) {
+    pub fn set_block(&mut self, block: BlockId, pos: &LocalBlockPos) {
         if pos.x < 0
             || pos.x > (CHUNKSIZE - 1) as i32
             || pos.y < 0
@@ -54,16 +63,16 @@ impl Chunk {
             warn!("tried to place block outside chunk with pos: {:?}", &pos);
             return;
         }
-        self.blocks[pos.x as usize
+        self.blocks.d[pos.x as usize
             + pos.y as usize * CHUNKSIZE as usize
             + pos.z as usize * CHUNKSIZE as usize * CHUNKSIZE as usize] = block;
     }
-    pub fn get_block_unsafe(&self, pos: &LocalBlockPos) -> &Block {
-        &self.blocks[pos.x as usize
+    pub fn get_block_unsafe(&self, pos: &LocalBlockPos) -> BlockId {
+        self.blocks.d[pos.x as usize
             + pos.y as usize * CHUNKSIZE as usize
             + pos.z as usize * CHUNKSIZE as usize * CHUNKSIZE as usize]
     }
-    pub fn get_block(&self, pos: &LocalBlockPos) -> Option<&Block> {
+    pub fn get_block(&self, pos: &LocalBlockPos) -> Option<BlockId> {
         if pos.x < 0
             || pos.x >= (CHUNKSIZE) as i32
             || pos.y < 0
@@ -75,7 +84,7 @@ impl Chunk {
             return None;
         }
         return Some(
-            &self.blocks[pos.x as usize
+            self.blocks.d[pos.x as usize
                 + pos.y as usize * CHUNKSIZE as usize
                 + pos.z as usize * CHUNKSIZE as usize * CHUNKSIZE as usize],
         );

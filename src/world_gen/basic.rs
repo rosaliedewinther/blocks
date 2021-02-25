@@ -1,8 +1,8 @@
-use crate::block;
-use crate::block::{Block, BlockType};
+use crate::blocks::block::{get_blockid, get_blocktype};
+use crate::blocks::block_type::BlockType;
 use crate::constants::{CHUNKSIZE, METACHUNKSIZE};
 use crate::positions::{ChunkPos, LocalBlockPos};
-use crate::world_gen::chunk::Chunk;
+use crate::world_gen::chunk::{Chunk, ChunkData};
 use noise::{Fbm, MultiFractal, NoiseFn, Seedable};
 use std::cmp::max;
 
@@ -36,15 +36,16 @@ impl ChunkGenerator {
     }
 }
 pub fn generate_empty_chunk() -> Chunk {
-    let mut arr: Vec<Block> = Vec::with_capacity(CHUNKSIZE * CHUNKSIZE * CHUNKSIZE);
+    let empty = [get_blockid(BlockType::Air); CHUNKSIZE * CHUNKSIZE * CHUNKSIZE];
+    /*let mut arr: Vec<Block> = Vec::with_capacity(CHUNKSIZE * CHUNKSIZE * CHUNKSIZE);
     for x in 0..CHUNKSIZE as i32 {
         for y in 0..CHUNKSIZE as i32 {
             for _ in 0..CHUNKSIZE as i32 {
                 arr.push(block::Block::new(BlockType::Air));
             }
         }
-    }
-    return Chunk::new(arr);
+    }*/
+    return Chunk::new(ChunkData { d: empty });
 }
 
 pub fn generate_landmass(chunk_generator: &ChunkGenerator, pos: &ChunkPos, chunk: &mut Chunk) {
@@ -56,10 +57,7 @@ pub fn generate_landmass(chunk_generator: &ChunkGenerator, pos: &ChunkPos, chunk
                 if y >= CHUNKSIZE as i32 {
                     continue;
                 }
-                chunk.set_block(
-                    block::Block::new(BlockType::Stone),
-                    &LocalBlockPos { x, y, z },
-                );
+                chunk.set_block(get_blockid(BlockType::Stone), &LocalBlockPos { x, y, z });
             }
         }
     }
@@ -70,10 +68,7 @@ pub fn plant_grass(chunk_generator: &ChunkGenerator, pos: &ChunkPos, chunk: &mut
             let height = get_xz_heigth(x, z, chunk_generator, pos);
             if height < (pos.y + 1) * CHUNKSIZE as i32 && height >= (pos.y) * CHUNKSIZE as i32 {
                 let y = height - pos.y * CHUNKSIZE as i32;
-                chunk.set_block(
-                    block::Block::new(BlockType::Grass),
-                    &LocalBlockPos { x, y, z },
-                );
+                chunk.set_block(get_blockid(BlockType::Grass), &LocalBlockPos { x, y, z });
             }
         }
     }
@@ -95,16 +90,10 @@ pub fn floodfill_water(_: &ChunkGenerator, pos: &ChunkPos, chunk: &mut Chunk) {
                 let water_level = CHUNKSIZE * METACHUNKSIZE / 3;
                 let global_y = (y as i32 + (pos.y * CHUNKSIZE as i32)) as f64;
                 if global_y < water_level as f64
-                    && chunk
-                        .get_block(&LocalBlockPos { x, y, z })
-                        .unwrap()
-                        .block_type
+                    && get_blocktype(chunk.get_block(&LocalBlockPos { x, y, z }).unwrap())
                         == BlockType::Air
                 {
-                    chunk.set_block(
-                        block::Block::new(BlockType::Water),
-                        &LocalBlockPos { x, y, z },
-                    );
+                    chunk.set_block(get_blockid(BlockType::Water), &LocalBlockPos { x, y, z });
                 }
             }
         }

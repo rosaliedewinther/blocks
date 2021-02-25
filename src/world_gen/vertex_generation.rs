@@ -1,4 +1,6 @@
-use crate::block::{Block, BlockSides, BlockType};
+use crate::blocks::block::{get_blocktype, get_mesh, should_render_against, BlockId};
+use crate::blocks::block_type::BlockType;
+use crate::blocks::blockside::BlockSides;
 use crate::constants::{CHUNKSIZE, METACHUNKSIZE};
 use crate::positions::{ChunkPos, GlobalBlockPos, LocalBlockPos};
 use crate::renderer::vertex::Vertex;
@@ -34,7 +36,7 @@ pub fn get_chunk_vertices(world: &World, chunk_pos: &ChunkPos) -> (Vec<Vertex>, 
                 //timer = Instant::now();
 
                 let block = chunk.get_block_unsafe(&LocalBlockPos { x, y, z });
-                if block.block_type == BlockType::Air {
+                if get_blocktype(block) == BlockType::Air {
                     continue;
                 }
 
@@ -46,7 +48,7 @@ pub fn get_chunk_vertices(world: &World, chunk_pos: &ChunkPos) -> (Vec<Vertex>, 
                 //sides_to_render_t += timer.elapsed().as_micros();
                 //timer = Instant::now();
 
-                let (mut temp_vertices, mut temp_indices) = block.get_mesh(&global_pos, &sides);
+                let (mut temp_vertices, mut temp_indices) = get_mesh(block, &global_pos, &sides);
 
                 //get_mesh_t += timer.elapsed().as_micros();
                 //timer = Instant::now();
@@ -77,22 +79,22 @@ pub fn get_chunk_vertices(world: &World, chunk_pos: &ChunkPos) -> (Vec<Vertex>, 
 pub fn sides_to_render(world: &World, global_pos: &GlobalBlockPos) -> BlockSides {
     let mut sides = BlockSides::new();
     let mut reference_block = world.get_block_unsafe(global_pos);
-    if should_render_against_block(world, &global_pos.get_diff(1, 0, 0), &reference_block) {
+    if should_render_against_block(world, &global_pos.get_diff(1, 0, 0), reference_block) {
         sides.right = true;
     }
-    if should_render_against_block(world, &global_pos.get_diff(-1, 0, 0), &reference_block) {
+    if should_render_against_block(world, &global_pos.get_diff(-1, 0, 0), reference_block) {
         sides.left = true;
     }
-    if should_render_against_block(world, &global_pos.get_diff(0, 1, 0), &reference_block) {
+    if should_render_against_block(world, &global_pos.get_diff(0, 1, 0), reference_block) {
         sides.top = true;
     }
-    if should_render_against_block(world, &global_pos.get_diff(0, -1, 0), &reference_block) {
+    if should_render_against_block(world, &global_pos.get_diff(0, -1, 0), reference_block) {
         sides.bot = true;
     }
-    if should_render_against_block(world, &global_pos.get_diff(0, 0, 1), &reference_block) {
+    if should_render_against_block(world, &global_pos.get_diff(0, 0, 1), reference_block) {
         sides.back = true;
     }
-    if should_render_against_block(world, &global_pos.get_diff(0, 0, -1), &reference_block) {
+    if should_render_against_block(world, &global_pos.get_diff(0, 0, -1), reference_block) {
         sides.front = true;
     }
     return sides;
@@ -101,11 +103,11 @@ pub fn sides_to_render(world: &World, global_pos: &GlobalBlockPos) -> BlockSides
 pub fn should_render_against_block(
     world: &World,
     pos: &GlobalBlockPos,
-    reference_block: &Block,
+    reference_block: BlockId,
 ) -> bool {
     if pos.y == (METACHUNKSIZE * CHUNKSIZE) as i32 || pos.y < 0 {
         return true;
     }
     let block = world.get_block_unsafe(&pos);
-    block.should_render_against(reference_block)
+    should_render_against(reference_block, block)
 }

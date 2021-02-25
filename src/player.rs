@@ -1,4 +1,3 @@
-use crate::block::{Block, BlockType};
 use crate::constants::COLORS;
 use crate::positions::{ChunkPos, ObjectPos};
 use crate::utils::{get_rotation_matrix_y, get_rotation_matrix_z};
@@ -147,8 +146,8 @@ impl Player {
         let blockpos = pos.get_block();
         let faceblock = world.get_block(&blockpos);
         let feetblock = world.get_block(&blockpos.get_diff(0, -1, 0));
-        if (faceblock.is_some() && COLORS[faceblock.unwrap().get_col() as usize][3] == 255.0)
-            || (feetblock.is_some() && COLORS[feetblock.unwrap().get_col() as usize][3] == 255.0)
+        if (faceblock.is_some() && COLORS[faceblock.unwrap() as usize][3] == 255.0)
+            || (feetblock.is_some() && COLORS[feetblock.unwrap() as usize][3] == 255.0)
         {
             return true;
         } else {
