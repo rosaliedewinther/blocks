@@ -3,21 +3,21 @@ var global_id: vec3<u32>;
 
 [[block]]
 struct ChunkData {
-    data: [[stride(1)]] array<u8>;
+    data: [[stride(1)]] array<u32>;
 };
 
 [[block]]
 struct Vertex {
-    _pos: vec3<f32>,
-    _color: u32,
-    _normal: vec3<f32>,
-    _type: u32,
-}
+    _pos: vec3<f32>;
+    _color: u32;
+    _normal: vec3<f32>;
+    _type: u32;
+};
 
 [[block]]
 struct ChunckVertexData{
     data: [[stride(32)]] array<Vertex>;
-}
+};
 
 [[group(0), binding(0)]] var<storage> chunk_top: [[access(read_write)]] ChunkData;
 [[group(0), binding(1)]] var<storage> chunk_bot: [[access(read_write)]] ChunkData;

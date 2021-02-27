@@ -27,7 +27,7 @@ imgui-winit-support = "0.7"
 winit_window_control = {path = "./winit_window_control"}
 winit = "0.24"
 serde-big-array = "0.3"
-zerocopy = "0.3"
+memcmp = "0.0.6"
 
 [build-dependencies]
 anyhow = "1.0"

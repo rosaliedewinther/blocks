@@ -1,10 +1,10 @@
 #[repr(C)]
 #[derive(Clone, Copy, Debug, bytemuck::Pod, bytemuck::Zeroable)]
 pub struct Vertex {
-    _pos: [f32; 3],
-    _color: u32,
-    _normal: [f32; 3],
-    _type: u32,
+    pub _pos: [f32; 3],
+    pub _color: u32,
+    pub _normal: [f32; 3],
+    pub _type: u32,
 }
 
 pub fn vertex(pos: [f32; 3], col: u32, nor: [f32; 3]) -> Vertex {

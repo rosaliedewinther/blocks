@@ -3,15 +3,16 @@ use crate::blocks::block_type::BlockType;
 use crate::constants::CHUNKSIZE;
 use crate::positions::{ChunkPos, LocalBlockPos};
 use crate::world_gen::basic::ChunkGenerator;
+use bytemuck::{Pod, Zeroable};
 use log::warn;
 use serde::{Deserialize, Serialize};
 use serde_big_array::big_array;
-use zerocopy::{AsBytes, FromBytes};
 
-big_array! { BigArray; }
+big_array! { BigArray;
+CHUNKSIZE * CHUNKSIZE * CHUNKSIZE}
 
 #[repr(C)]
-#[derive(Serialize, Deserialize, Copy, Clone, FromBytes, AsBytes)]
+#[derive(Serialize, Deserialize, Copy, Clone)]
 pub struct ChunkData {
     #[serde(with = "BigArray")]
     pub d: [BlockId; CHUNKSIZE * CHUNKSIZE * CHUNKSIZE],

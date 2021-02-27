@@ -6,7 +6,6 @@ use crate::renderer::vertex::{vertex, vertex_typed, Vertex};
 use rand::distributions::{Distribution, Standard};
 use rand::Rng;
 use serde::{Deserialize, Serialize};
-use zerocopy::{AsBytes, FromBytes};
 
 pub type BlockId = u8;
 
