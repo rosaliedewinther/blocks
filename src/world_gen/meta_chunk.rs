@@ -178,7 +178,7 @@ impl MetaChunk {
             }
         }
     }
-    pub fn for_each(&self, f: impl Fn(&Chunk, ChunkPos)) {
+    pub fn for_each(&self, f: fn(&Chunk, ChunkPos)) {
         for x in 0..METACHUNKSIZE as i32 {
             for y in 0..METACHUNKSIZE as i32 {
                 for z in 0..METACHUNKSIZE as i32 {
@@ -219,5 +219,59 @@ impl MetaChunk {
         let z = self.pos.z * METACHUNKSIZE as i32
             + wrap(to_sign_of(self.pos.z, pos.z), METACHUNKSIZE as i32);
         ChunkPos { x, y, z }
+    }
+    pub fn get_iter(&self) -> MetaChunkIterator {
+        MetaChunkIterator {
+            meta_chunk: &self,
+            x: 0,
+            y: 0,
+            z: 0,
+        }
+    }
+}
+
+pub struct MetaChunkIterator<'a> {
+    meta_chunk: &'a MetaChunk,
+    x: u32,
+    y: u32,
+    z: u32,
+}
+
+impl<'a> Iterator for MetaChunkIterator<'a> {
+    type Item = (&'a Chunk, ChunkPos);
+
+    fn next(&mut self) -> Option<(&'a Chunk, ChunkPos)> {
+        if self.x == (METACHUNKSIZE - 1) as u32
+            && self.y == (METACHUNKSIZE - 1) as u32
+            && self.z == (METACHUNKSIZE - 1) as u32
+        {
+            return None;
+        }
+        let pos = ChunkPos {
+            x: self.meta_chunk.pos.x * METACHUNKSIZE as i32 + self.x as i32,
+            y: self.y as i32,
+            z: self.meta_chunk.pos.z * METACHUNKSIZE as i32 + self.z as i32,
+        };
+        let c = self
+            .meta_chunk
+            .get_chunk(&LocalChunkPos {
+                x: self.x as i32,
+                y: self.y as i32,
+                z: self.z as i32,
+            })
+            .unwrap();
+
+        if self.x == (METACHUNKSIZE) as u32 {
+            self.x = 0;
+            self.y += 1;
+        } else {
+            self.x += 1;
+        }
+        if self.y == (METACHUNKSIZE) as u32 {
+            self.y = 0;
+            self.z += 1;
+        }
+
+        return Some((c, pos));
     }
 }

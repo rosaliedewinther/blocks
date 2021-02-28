@@ -1,4 +1,4 @@
-use crate::constants::{METACHUNKSIZE, METACHUNK_GEN_RANGE, METACHUNK_UNLOAD_RADIUS};
+use crate::constants::{CHUNKSIZE, METACHUNKSIZE, METACHUNK_GEN_RANGE, METACHUNK_UNLOAD_RADIUS};
 use crate::player::Player;
 use crate::positions::{ChunkPos, MetaChunkPos};
 use crate::renderer::chunk_render_data::ChunkRenderData;
@@ -6,6 +6,9 @@ use crate::renderer::renderer::{resize, Renderer};
 use crate::ui::ui::UiRenderer;
 use crate::world::world::World;
 use crate::world_gen::chunk_gen_thread::ChunkGenThread;
+use cgmath::{InnerSpace, Vector3};
+use rayon::iter::ParallelIterator;
+use rayon::iter::{IntoParallelIterator, IntoParallelRefIterator};
 use rayon::prelude::ParallelSliceMut;
 use std::cmp::{min, Ordering};
 use std::collections::{BinaryHeap, HashMap, HashSet};
@@ -71,6 +74,7 @@ impl PersonalWorld {
         self.player.update(&dt, &self.world);
         self.update();
         self.load_generated_chunks();
+        self.to_generate = self.vertex_buffers_to_generate();
         if self.player.generated_chunks_for != self.player.position.get_chunk()
             || self.reload_vertex_load_order
         {
@@ -81,20 +85,18 @@ impl PersonalWorld {
     }
 
     pub fn vertex_buffers_to_generate(&self) -> Vec<(f32, ChunkPos)> {
-        let to_render = Mutex::new(Vec::new());
+        let mut to_render = Vec::with_capacity(
+            self.world.get_all_chunks().len() * METACHUNKSIZE * METACHUNKSIZE * METACHUNKSIZE,
+        );
         for (_, meta_chunk) in self.world.get_all_chunks() {
-            meta_chunk.for_each(|_, pos| {
+            for (_, pos) in meta_chunk.get_iter() {
                 if self.should_generate_vertex_buffers(pos.clone()) {
                     let distance = pos.get_distance(&self.player.position.get_chunk());
-                    to_render
-                        .lock()
-                        .unwrap()
-                        .push((distance * 10000f32, pos.clone()));
+                    to_render.push((distance * 10000f32, pos.clone()));
                 }
-            });
+            }
         }
-        let mut result = to_render.into_inner().unwrap();
-        result.par_sort_unstable_by(|val1, val2| {
+        to_render.par_sort_unstable_by(|val1, val2| {
             if val1 > val2 {
                 return Ordering::Less;
             } else if val2 > val1 {
@@ -102,13 +104,14 @@ impl PersonalWorld {
             }
             return Ordering::Equal;
         });
-        return result;
+        return to_render;
     }
     pub fn should_generate_vertex_buffers(&self, pos: ChunkPos) -> bool {
         let distance = pos.get_distance(&self.player.position.get_chunk());
         if distance > self.player.render_distance {
             return false;
         }
+
         if self.world.get_chunk(&pos.get_diff(0, 0, 1)).is_none()
             || self.world.get_chunk(&pos.get_diff(0, 0, -1)).is_none()
             || (self.world.get_chunk(&pos.get_diff(0, 1, 0)).is_none()
@@ -122,7 +125,27 @@ impl PersonalWorld {
         if self.chunk_render_data.contains_key(&pos) {
             return false;
         }
-        return true;
+        let view_dir = Vector3::new(
+            self.player.direction.x,
+            self.player.direction.y,
+            self.player.direction.z,
+        );
+        let viewer_pos = Vector3::new(
+            self.player.position.x,
+            self.player.position.y,
+            self.player.position.z,
+        );
+        let chunk_pos = Vector3::new(
+            (pos.x * CHUNKSIZE as i32) as f32,
+            (pos.y * CHUNKSIZE as i32) as f32,
+            (pos.z * CHUNKSIZE as i32) as f32,
+        );
+        let difference = viewer_pos - chunk_pos;
+
+        if view_dir.dot(difference) / (view_dir.magnitude() * difference.magnitude()) < -0.5 {
+            return true;
+        }
+        return false;
     }
     pub fn meta_chunk_should_be_loaded(player: &Player, pos: &MetaChunkPos) -> bool {
         let player_chunk_pos = player.position.get_meta_chunk();
@@ -144,11 +167,6 @@ impl PersonalWorld {
     }
     pub fn on_player_moved_chunks(&mut self) {
         self.check_chunks_to_generate();
-        self.to_generate = self.vertex_buffers_to_generate();
-        let player = &self.player;
-        /*self.world
-        .chunks
-        .retain(|pos, _| PersonalWorld::meta_chunk_should_be_loaded(&player, pos));*/
     }
     pub fn check_chunks_to_generate(&mut self) {
         let current_chunk = self.player.position.get_meta_chunk();
@@ -240,6 +258,7 @@ impl PersonalWorld {
             // All other errors (Outdated, Timeout) should be resolved by the next frame
             Err(e) => eprintln!("{:?}", e),
         }
+
         return RenderResult::Continue;
     }
 }

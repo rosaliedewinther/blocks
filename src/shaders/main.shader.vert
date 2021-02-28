@@ -23,7 +23,7 @@ const vec3 diffuse_color = vec3(1.0, 1.0, 1.0);
 
 void main() {
     vec3 perm_position = a_position;
-    if (type == 1){
+    if (type == 6){
         float perm_x = cos(perm_position[0]+time)/4;
         float perm_z = cos(perm_position[2]+time)/4;
         vec3 permutation = vec3(perm_x, 0, perm_z);

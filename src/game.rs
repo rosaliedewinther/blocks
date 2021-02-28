@@ -52,6 +52,7 @@ impl Game for VoxGame {
         return UpdateResult::Continue;
     }
     fn on_render(&mut self, input: &mut Input, dt: f64, window: &Window) -> RenderResult {
+        let timer = Instant::now();
         let pw = self.personal_world.as_mut().unwrap();
         let timer = Instant::now();
         let number_generated = pw.check_vertices_to_generate();
@@ -68,6 +69,12 @@ impl Game for VoxGame {
             return RenderResult::Exit;
         }
         input.update();
+        self.personal_world
+            .as_mut()
+            .unwrap()
+            .ui
+            .debug_info
+            .insert_stat("render time".to_string(), timer.elapsed().as_secs_f32());
         RenderResult::Continue
     }
     fn on_init(&mut self, window: &Window) -> InitResult {
