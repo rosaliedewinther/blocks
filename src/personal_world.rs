@@ -52,7 +52,7 @@ impl PersonalWorld {
     }
     pub fn update(&mut self) {
         self.world.update();
-        let timer = Instant::now();
+        /*let timer = Instant::now();
         let chunk = self.world.get_chunk(&ChunkPos { x: 2, y: 2, z: 2 });
         if chunk.is_none() {
             return;
@@ -65,7 +65,7 @@ impl PersonalWorld {
             &self.renderer.wgpu.queue,
             main,
         );
-        println!("compute time: {}", timer.elapsed().as_secs_f64());
+        println!("compute time: {}", timer.elapsed().as_secs_f64());*/
     }
     pub fn on_game_tick(&mut self, dt: f32) {
         self.player.update(&dt, &self.world);
@@ -182,7 +182,7 @@ impl PersonalWorld {
             return 0;
         }
         let lag_timer = Instant::now();
-        //println!("started generating vertices");
+        println!("started generating vertices");
         let starting_size = self.to_generate.len();
         while lag_timer.elapsed().as_secs_f32() < 0.001 && !self.to_generate.is_empty() {
             let len = self.to_generate.len();
@@ -193,11 +193,11 @@ impl PersonalWorld {
             }
             self.to_generate.remove(self.to_generate.len() - 1);
         }
-        /*println!(
+        println!(
             "done generating: {} vertices in: {} sec",
             starting_size - self.to_generate.len(),
             lag_timer.elapsed().as_secs_f32()
-        );*/
+        );
         return (starting_size - self.to_generate.len()) as i32;
     }
     pub fn load_generated_chunks(&mut self) {

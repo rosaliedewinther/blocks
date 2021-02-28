@@ -42,14 +42,6 @@ impl Game for VoxGame {
             "amount of chunks".to_string(),
             pw.world.count_chunks() as f64,
         );
-        let timer = Instant::now();
-        let number_generated = pw.check_vertices_to_generate();
-        if number_generated > 0 {
-            pw.ui.debug_info.insert_stat(
-                "per chunk vertex time".to_string(),
-                timer.elapsed().as_secs_f32() / number_generated as f32,
-            );
-        }
 
         let timer = Instant::now();
 
@@ -61,6 +53,15 @@ impl Game for VoxGame {
     }
     fn on_render(&mut self, input: &mut Input, dt: f64, window: &Window) -> RenderResult {
         let pw = self.personal_world.as_mut().unwrap();
+        let timer = Instant::now();
+        let number_generated = pw.check_vertices_to_generate();
+        if number_generated > 0 {
+            pw.ui.debug_info.insert_stat(
+                "per chunk vertex time".to_string(),
+                timer.elapsed().as_secs_f32() / number_generated as f32,
+            );
+        }
+
         pw.update_ui_input(&input);
         pw.player.handle_input(&input, &(0.01 as f32), &pw.world);
         if pw.render(&window) == RenderResult::Exit {

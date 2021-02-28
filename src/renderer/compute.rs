@@ -17,6 +17,7 @@ pub struct Compute {
     gpu_buffer_in: Buffer,
     gpu_buffer_out: Buffer,
     pipeline: ComputePipeline,
+    vertex_array_size: u64,
 }
 
 impl Compute {
@@ -31,9 +32,9 @@ impl Compute {
             });
             let slice_size = std::mem::size_of::<ChunkData>();
             let chunk_size = slice_size as wgpu::BufferAddress;
-            let vertex_array_size = (std::mem::size_of::<ChunkData>()
-                * std::mem::size_of::<Vertex>())
-                as wgpu::BufferAddress;
+            let vertex_array_size =
+                (CHUNKSIZE * CHUNKSIZE * CHUNKSIZE * std::mem::size_of::<Vertex>() * 6 * 2)
+                    as wgpu::BufferAddress;
 
             // Instantiates buffer without data.
             // `usage` of buffer specifies how it can be used:
@@ -146,13 +147,13 @@ impl Compute {
                 gpu_buffer_in,
                 gpu_buffer_out,
                 pipeline,
+                vertex_array_size,
             };
         })
     }
     pub fn compute_pass(&mut self, device: &Device, queue: &Queue, main: &[u8]) {
         let timer = Instant::now();
-        const SIZE: u64 = (std::mem::size_of::<ChunkData>() * std::mem::size_of::<Vertex>())
-            as wgpu::BufferAddress;
+
         // A command encoder executes one or many pipelines.
         // It is to WebGPU what a command buffer is to Vulkan.
         let mut encoder =
@@ -169,7 +170,13 @@ impl Compute {
         }
         // Sets adds copy operation to command encoder.
         // Will copy data from storage buffer on GPU to staging buffer on CPU.
-        encoder.copy_buffer_to_buffer(&self.gpu_buffer_out, 0, &self.cpu_buffer, 0, SIZE);
+        encoder.copy_buffer_to_buffer(
+            &self.gpu_buffer_out,
+            0,
+            &self.cpu_buffer,
+            0,
+            self.vertex_array_size,
+        );
 
         // Submits command encoder for processing
         queue.submit(Some(encoder.finish()));
