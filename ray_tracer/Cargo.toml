@@ -1,0 +1,21 @@
+[package]
+name = "vox"
+version = "0.1.0"
+authors = ["jasperdewinther <jasper.dewinther@student.hu.nl>"]
+edition = "2018"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+wgpu = "0.7"
+winit_window_control = {path = "../winit_window_control"}
+winit = "0.24"
+futures = "0.3"
+bytemuck = { version = "1.4", features = [ "derive" ] }
+
+
+[build-dependencies]
+anyhow = "1.0"
+fs_extra = "1.1"
+glob = "0.3"
+shaderc = "0.7"

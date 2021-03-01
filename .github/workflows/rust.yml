@@ -16,6 +16,8 @@ jobs:
       run: sudo apt install libxdo-dev
     - uses: actions/checkout@v2
     - name: Build
-      run: cargo build --verbose
+      run: cargo build --release
     - name: Run tests
-      run: cargo test --verbose
+      run: cargo test --release
+    - name: Run tests
+      run: cd ray_tracer ; cargo build --release
