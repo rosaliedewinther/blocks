@@ -2,9 +2,10 @@ use crate::algorithms::bfs_world::bfs_world_air;
 
 use crate::blocks::block::{get_blockid, get_blocktype, BlockId};
 use crate::blocks::block_type::BlockType;
-use crate::constants::{CHUNKSIZE, METACHUNKSIZE};
+use crate::constants::{CHUNKSIZE, METACHUNKSIZE, METACHUNK_GEN_RANGE};
 use crate::io::file_reader::read_meta_chunk_from_file;
 use crate::io::file_writer::write_to_file;
+use crate::player::Player;
 use crate::positions::{ChunkPos, GlobalBlockPos, LocalChunkPos, MetaChunkPos};
 use crate::structures::square::place_square;
 use crate::structures::tree::place_tree;
@@ -206,6 +207,14 @@ impl MetaChunk {
                 + pos.y as usize * METACHUNKSIZE as usize
                 + pos.z as usize * METACHUNKSIZE as usize * METACHUNKSIZE as usize],
         );
+    }
+    #[inline]
+    pub fn retain_meta_chunk(player: &Player, pos: MetaChunkPos) -> bool {
+        let current_chunk = player.position.get_meta_chunk();
+        pos.x > current_chunk.x - METACHUNK_GEN_RANGE as i32 - 2
+            && pos.x < current_chunk.x + METACHUNK_GEN_RANGE as i32 + 2
+            && pos.z > current_chunk.z - METACHUNK_GEN_RANGE as i32 - 2
+            && pos.z < current_chunk.z + METACHUNK_GEN_RANGE as i32 + 2
     }
     pub fn get_chunk_unsafe(&self, pos: &LocalChunkPos) -> &Chunk {
         &self.chunks[pos.x as usize

@@ -53,23 +53,16 @@ impl World {
             Err(_) => return None,
         };
     }
-    pub fn filter_chunks(&mut self) {
-        let current_chunk = self.player.position.get_meta_chunk();
-        self.chunks.retain(|(pos, _)|{
-            if pos.x > current_chunk.x - METACHUNK_GEN_RANGE as i32 - 2{
-
+    pub fn filter_chunks(&mut self, player: &Player) {
+        self.chunks.retain(|(pos, _)| {
+            if MetaChunk::retain_meta_chunk(player, *pos) {
+                return true;
             }
+            println!("remove chunk: {:?}", pos);
+            return false;
         });
-        for (pos, _) in  {}
-
-        for x in current_chunk.x - METACHUNK_GEN_RANGE as i32 - 2
-            ..current_chunk.x + METACHUNK_GEN_RANGE as i32 + 2
-        {
-            for z in current_chunk.z - METACHUNK_GEN_RANGE as i32 - 2
-                ..current_chunk.z + METACHUNK_GEN_RANGE as i32 + 2
-            {}
-        }
     }
+
     pub fn get_all_chunks(&self) -> &Vec<(MetaChunkPos, MetaChunk)> {
         return &self.chunks;
     }

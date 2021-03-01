@@ -6,6 +6,7 @@ use crate::renderer::renderer::{resize, Renderer};
 use crate::ui::ui::UiRenderer;
 use crate::world::world::World;
 use crate::world_gen::chunk_gen_thread::ChunkGenThread;
+use crate::world_gen::meta_chunk::MetaChunk;
 use cgmath::{InnerSpace, Vector3};
 use rayon::iter::ParallelIterator;
 use rayon::iter::{IntoParallelIterator, IntoParallelRefIterator};
@@ -90,9 +91,11 @@ impl PersonalWorld {
         );
         for (_, meta_chunk) in self.world.get_all_chunks() {
             for (_, pos) in meta_chunk.get_iter() {
-                if self.should_generate_vertex_buffers(pos.clone()) {
+                let (should_gen, additional_weight) =
+                    self.should_generate_vertex_buffers(pos.clone());
+                if should_gen {
                     let distance = pos.get_distance(&self.player.position.get_chunk());
-                    to_render.push((distance * 10000f32, pos.clone()));
+                    to_render.push((distance - additional_weight, pos.clone()));
                 }
             }
         }
@@ -106,10 +109,10 @@ impl PersonalWorld {
         });
         return to_render;
     }
-    pub fn should_generate_vertex_buffers(&self, pos: ChunkPos) -> bool {
+    pub fn should_generate_vertex_buffers(&self, pos: ChunkPos) -> (bool, f32) {
         let distance = pos.get_distance(&self.player.position.get_chunk());
         if distance > self.player.render_distance {
-            return false;
+            return (false, 0.0);
         }
 
         if self.world.get_chunk(&pos.get_diff(0, 0, 1)).is_none()
@@ -120,10 +123,10 @@ impl PersonalWorld {
             || self.world.get_chunk(&pos.get_diff(1, 0, 0)).is_none()
             || self.world.get_chunk(&pos.get_diff(-1, 0, 0)).is_none()
         {
-            return false;
+            return (false, 0.0);
         }
         if self.chunk_render_data.contains_key(&pos) {
-            return false;
+            return (false, 0.0);
         }
         let view_dir = Vector3::new(
             self.player.direction.x,
@@ -143,9 +146,9 @@ impl PersonalWorld {
         let difference = viewer_pos - chunk_pos;
 
         if view_dir.dot(difference) / (view_dir.magnitude() * difference.magnitude()) < -0.5 {
-            return true;
+            return (true, 1000.0);
         }
-        return false;
+        return (true, 0.0);
     }
     pub fn meta_chunk_should_be_loaded(player: &Player, pos: &MetaChunkPos) -> bool {
         let player_chunk_pos = player.position.get_meta_chunk();
@@ -167,7 +170,10 @@ impl PersonalWorld {
     }
     pub fn on_player_moved_chunks(&mut self) {
         self.check_chunks_to_generate();
-        self.
+        self.world.filter_chunks(&self.player);
+        let player = &self.player;
+        self.chunk_render_data
+            .retain(|pos, _| MetaChunk::retain_meta_chunk(player, pos.get_meta_chunk_pos()));
     }
     pub fn check_chunks_to_generate(&mut self) {
         let current_chunk = self.player.position.get_meta_chunk();
@@ -201,7 +207,7 @@ impl PersonalWorld {
             return 0;
         }
         let lag_timer = Instant::now();
-        println!("started generating vertices");
+        //println!("started generating vertices");
         let starting_size = self.to_generate.len();
         while lag_timer.elapsed().as_secs_f32() < 0.001 && !self.to_generate.is_empty() {
             let len = self.to_generate.len();
@@ -212,11 +218,11 @@ impl PersonalWorld {
             }
             self.to_generate.remove(self.to_generate.len() - 1);
         }
-        println!(
+        /*println!(
             "done generating: {} vertices in: {} sec",
             starting_size - self.to_generate.len(),
             lag_timer.elapsed().as_secs_f32()
-        );
+        );*/
         return (starting_size - self.to_generate.len()) as i32;
     }
     pub fn load_generated_chunks(&mut self) {
