@@ -167,6 +167,7 @@ impl PersonalWorld {
     }
     pub fn on_player_moved_chunks(&mut self) {
         self.check_chunks_to_generate();
+        self.
     }
     pub fn check_chunks_to_generate(&mut self) {
         let current_chunk = self.player.position.get_meta_chunk();
