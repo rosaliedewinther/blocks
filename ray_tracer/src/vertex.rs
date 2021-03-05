@@ -1,8 +1,8 @@
 #[repr(C)]
 #[derive(Copy, Clone, Debug)]
-pub(crate) struct Vertex {
-    position: [f32; 3],
-    tex_coords: [f32; 2],
+pub struct Vertex {
+    pub position: [f32; 3],
+    pub tex_coords: [f32; 2],
 }
 impl Vertex {
     pub fn desc<'a>() -> wgpu::VertexBufferLayout<'a> {

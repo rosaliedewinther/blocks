@@ -4,7 +4,7 @@ mod ray_tracer;
 mod uniforms;
 mod vertex;
 mod wgpu;
-mod wgpu_pipeline;
+mod renderer;
 
 fn main() {
     let rt = RayTracer::new();
