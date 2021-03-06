@@ -15,7 +15,13 @@ void main() {
 
     float sin_pixel_height = int(sin(pixel_coords[0]/(float(total_pixels[0])/PI/2))*total_pixels[1]/2) + total_pixels[1]/2;
 
+    float sin_pixel_height_2 = int(sin(pixel_coords[0]/(float(total_pixels[0])/PI))*total_pixels[1]/2) + total_pixels[1]/2;
+
+    float sin_pixel_height_3 = int(cos(pixel_coords[0]/(float(total_pixels[0])/PI/4))*total_pixels[1]/2) + total_pixels[1]/2;
+
     pixel[0] = abs(sin_pixel_height - pixel_coords[1])/float(total_pixels[1]);
+    pixel[1] = abs(sin_pixel_height_2 - pixel_coords[1])/float(total_pixels[1]);
+    pixel[2] = abs(sin_pixel_height_3 - pixel_coords[1])/float(total_pixels[1]);
 
     // output to a specific pixel in the image
     imageStore(img_output, pixel_coords, pixel);
