@@ -3,6 +3,7 @@ use crate::wgpu::WgpuState;
 use image::GenericImageView;
 use std::time::Instant;
 use wgpu::BindGroup;
+use winit::dpi::PhysicalSize;
 use winit::window::Window;
 use winit_window_control::input::input::Input;
 use winit_window_control::main_loop::{
@@ -12,6 +13,7 @@ use winit_window_control::main_loop::{
 pub struct RayTracer {
     wgpu: Option<WgpuState>,
     renderer: Option<Renderer>,
+    timer: Instant,
 }
 
 impl RayTracer {
@@ -19,6 +21,7 @@ impl RayTracer {
         RayTracer {
             wgpu: None,
             renderer: None,
+            timer: Instant::now(),
         }
     }
     pub fn run(self) {
@@ -30,11 +33,19 @@ impl Game for RayTracer {
     fn on_tick(&mut self, dt: f64) -> UpdateResult {
         return UpdateResult::Continue;
     }
+    fn on_resize(&mut self, physical_size: PhysicalSize<u32>) {
+        self.renderer
+            .as_mut()
+            .unwrap()
+            .resized(self.wgpu.as_mut().unwrap());
+    }
     fn on_render(&mut self, input: &mut Input, dt: f64, window: &Window) -> RenderResult {
         self.renderer
             .as_ref()
             .unwrap()
             .do_render_pass(self.wgpu.as_ref().unwrap());
+        println!("fps estimate: {}", 1.0 / self.timer.elapsed().as_secs_f32());
+        self.timer = Instant::now();
         RenderResult::Continue
     }
     fn on_init(&mut self, window: &Window) -> InitResult {

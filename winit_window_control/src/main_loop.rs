@@ -1,5 +1,6 @@
 use crate::input::input::Input;
 use std::time::Instant;
+use winit::dpi::PhysicalSize;
 use winit::event::{Event, WindowEvent};
 use winit::event_loop::{ControlFlow, EventLoop};
 use winit::window::{Window, WindowBuilder};
@@ -24,6 +25,7 @@ pub trait Game {
     fn on_tick(&mut self, dt: f64) -> UpdateResult;
     fn on_render(&mut self, input: &mut Input, dt: f64, window: &Window) -> RenderResult;
     fn on_init(&mut self, window: &Window) -> InitResult;
+    fn on_resize(&mut self, physical_size: PhysicalSize<u32>);
 }
 
 pub fn main_loop_run<T>(mut game: T)
@@ -65,10 +67,12 @@ where
             }
             WindowEvent::CloseRequested => *control_flow = ControlFlow::Exit,
             WindowEvent::Resized(physical_size) => {
+                game.on_resize(*physical_size);
                 //personal_world.ui = UiRenderer::new(&window, &personal_world.renderer);
                 //resize(*physical_size, &mut personal_world.renderer.wgpu);
             }
             WindowEvent::ScaleFactorChanged { new_inner_size, .. } => {
+                game.on_resize(**new_inner_size);
                 //personal_world.ui = UiRenderer::new(&window, &personal_world.renderer);
                 //resize(**new_inner_size, &mut personal_world.renderer.wgpu);
             }

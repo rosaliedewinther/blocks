@@ -4,13 +4,16 @@ use futures::prelude::sink::Buffer;
 use image::GenericImageView;
 use wgpu::util::DeviceExt;
 use wgpu::{
-    BindGroup, BindGroupLayout, BlendFactor, BlendOperation, RenderPipeline, SwapChainError,
+    BindGroup, BindGroupLayout, BlendFactor, BlendOperation, ComputePipeline, RenderPipeline,
+    Sampler, SwapChainError, Texture, TextureView, TextureViewDimension,
 };
 use winit::window::Window;
 
 pub struct Renderer {
     pub render_pipeline: wgpu::RenderPipeline,
+    pub compute_pipeline: wgpu::ComputePipeline,
     pub texture_bind_group: BindGroup,
+    pub compute_bind_group: BindGroup,
     pub vertex_buffer: wgpu::Buffer,
     pub num_vertices: u32,
     pub index_buffer: wgpu::Buffer,
@@ -20,8 +23,14 @@ impl Renderer {
     pub fn new(wgpu: &mut WgpuState) -> Renderer {
         let (vertex_buffer, index_buffer, num_indices, num_vertices) =
             Renderer::init_primitives(wgpu);
-        let (texture_bind_group, texture_bind_group_layout) = Renderer::init_texture(wgpu);
+        let (
+            texture_bind_group,
+            texture_bind_group_layout,
+            compute_bind_group,
+            compute_bind_group_layout,
+        ) = Renderer::init_texture(wgpu);
         let render_pipeline = Renderer::init_pipeline(wgpu, texture_bind_group_layout);
+        let compute_pipeline = Renderer::init_compute_pipeline(wgpu, compute_bind_group_layout);
 
         Renderer {
             render_pipeline,
@@ -30,15 +39,26 @@ impl Renderer {
             num_indices,
             num_vertices,
             texture_bind_group,
+            compute_bind_group,
+            compute_pipeline,
         }
     }
     pub fn do_render_pass(&self, wgpu: &WgpuState) -> Result<(), SwapChainError> {
         let frame = wgpu.swap_chain.get_current_frame()?.output;
+
         let mut encoder = wgpu
             .device
             .create_command_encoder(&wgpu::CommandEncoderDescriptor {
                 label: Some("Render Encoder"),
             });
+        {
+            let mut cpass =
+                encoder.begin_compute_pass(&wgpu::ComputePassDescriptor { label: None });
+            cpass.set_pipeline(&self.compute_pipeline);
+            cpass.set_bind_group(0, &self.compute_bind_group, &[]);
+            cpass.insert_debug_marker("compute collatz iterations");
+            cpass.dispatch(wgpu.size.width, wgpu.size.height, 1);
+        }
         {
             let mut render_pass = encoder.begin_render_pass(&wgpu::RenderPassDescriptor {
                 label: Some("Render pass world"),
@@ -46,12 +66,7 @@ impl Renderer {
                     attachment: &frame.view,
                     resolve_target: None,
                     ops: wgpu::Operations {
-                        load: wgpu::LoadOp::Clear(wgpu::Color {
-                            r: 0.1,
-                            g: 0.2,
-                            b: 0.6,
-                            a: 1.0,
-                        }),
+                        load: wgpu::LoadOp::Load,
                         store: true,
                     },
                 }],
@@ -67,6 +82,30 @@ impl Renderer {
         // submit will accept anything that implements IntoIter
         wgpu.queue.submit(std::iter::once(encoder.finish()));
         Ok(())
+    }
+    pub fn init_compute_pipeline(
+        wgpu: &mut WgpuState,
+        compute_bind_group_layout: BindGroupLayout,
+    ) -> ComputePipeline {
+        let pipeline_layout = wgpu
+            .device
+            .create_pipeline_layout(&wgpu::PipelineLayoutDescriptor {
+                label: None,
+                bind_group_layouts: &[&compute_bind_group_layout],
+                push_constant_ranges: &[],
+            });
+        let cs_module = wgpu
+            .device
+            .create_shader_module(&wgpu::include_spirv!("./shaders/main.shader.comp.spv"));
+        let compute_pipeline =
+            wgpu.device
+                .create_compute_pipeline(&wgpu::ComputePipelineDescriptor {
+                    label: None,
+                    layout: Some(&pipeline_layout),
+                    module: &cs_module,
+                    entry_point: "main",
+                });
+        return compute_pipeline;
     }
     pub fn init_pipeline(
         wgpu: &mut WgpuState,
@@ -123,6 +162,11 @@ impl Renderer {
             });
         return render_pipeline;
     }
+    pub fn resized(&mut self, wgpu: &mut WgpuState) {
+        let (bind_group, _, compute_bind_group, _) = Renderer::init_texture(wgpu);
+        self.texture_bind_group = bind_group;
+        self.compute_bind_group = compute_bind_group;
+    }
     pub fn init_primitives(wgpu: &mut WgpuState) -> (wgpu::Buffer, wgpu::Buffer, u32, u32) {
         let vertices = vec![
             Vertex {
@@ -166,46 +210,21 @@ impl Renderer {
         let num_vertices = vertices.len() as u32;
         return (vertex_buffer, index_buffer, num_indices, num_vertices);
     }
-    pub fn init_texture(wgpu: &mut WgpuState) -> (BindGroup, BindGroupLayout) {
-        let diffuse_bytes = include_bytes!("../happy-tree.png");
-        let diffuse_image = image::load_from_memory(diffuse_bytes).unwrap();
-        let diffuse_rgba = diffuse_image.as_rgba8().unwrap();
-        let dimensions = diffuse_image.dimensions();
+    pub fn remake_texture(wgpu: &mut WgpuState) -> (TextureView, Sampler) {
         let texture_size = wgpu::Extent3d {
-            width: dimensions.0,
-            height: dimensions.1,
+            width: wgpu.size.width,
+            height: wgpu.size.height,
             depth: 1,
         };
         let diffuse_texture = wgpu.device.create_texture(&wgpu::TextureDescriptor {
-            // All textures are stored as 3D, we represent our 2D texture
-            // by setting depth to 1.
             size: texture_size,
-            mip_level_count: 1, // We'll talk about this a little later
+            mip_level_count: 1,
             sample_count: 1,
             dimension: wgpu::TextureDimension::D2,
             format: wgpu::TextureFormat::Rgba8UnormSrgb,
-            // SAMPLED tells wgpu that we want to use this texture in shaders
-            // COPY_DST means that we want to copy data to this texture
             usage: wgpu::TextureUsage::SAMPLED | wgpu::TextureUsage::COPY_DST,
             label: Some("diffuse_texture"),
         });
-        wgpu.queue.write_texture(
-            // Tells wgpu where to copy the pixel data
-            wgpu::TextureCopyView {
-                texture: &diffuse_texture,
-                mip_level: 0,
-                origin: wgpu::Origin3d::ZERO,
-            },
-            // The actual pixel data
-            diffuse_rgba,
-            // The layout of the texture
-            wgpu::TextureDataLayout {
-                offset: 0,
-                bytes_per_row: 4 * dimensions.0,
-                rows_per_image: dimensions.1,
-            },
-            texture_size,
-        );
         let diffuse_texture_view =
             diffuse_texture.create_view(&wgpu::TextureViewDescriptor::default());
         let diffuse_sampler = wgpu.device.create_sampler(&wgpu::SamplerDescriptor {
@@ -217,6 +236,12 @@ impl Renderer {
             mipmap_filter: wgpu::FilterMode::Nearest,
             ..Default::default()
         });
+        return (diffuse_texture_view, diffuse_sampler);
+    }
+    pub fn init_texture(
+        wgpu: &mut WgpuState,
+    ) -> (BindGroup, BindGroupLayout, BindGroup, BindGroupLayout) {
+        let (diffuse_texture_view, diffuse_sampler) = Renderer::remake_texture(wgpu);
         let texture_bind_group_layout =
             wgpu.device
                 .create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
@@ -257,6 +282,35 @@ impl Renderer {
             ],
             label: Some("diffuse_bind_group"),
         });
-        return (diffuse_bind_group, texture_bind_group_layout);
+        let compute_bind_group_layout =
+            wgpu.device
+                .create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
+                    label: None,
+                    entries: &[wgpu::BindGroupLayoutEntry {
+                        binding: 0,
+                        visibility: wgpu::ShaderStage::COMPUTE,
+                        ty: wgpu::BindingType::Texture {
+                            sample_type: wgpu::TextureSampleType::Float { filterable: false },
+                            view_dimension: TextureViewDimension::D2,
+                            multisampled: false,
+                        },
+                        count: None,
+                    }],
+                });
+        let compute_bind_group = wgpu.device.create_bind_group(&wgpu::BindGroupDescriptor {
+            label: None,
+            layout: &compute_bind_group_layout,
+            entries: &[wgpu::BindGroupEntry {
+                binding: 0,
+                resource: wgpu::BindingResource::TextureView(&diffuse_texture_view),
+            }],
+        });
+
+        return (
+            diffuse_bind_group,
+            texture_bind_group_layout,
+            compute_bind_group,
+            compute_bind_group_layout,
+        );
     }
 }

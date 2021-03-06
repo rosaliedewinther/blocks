@@ -1,5 +1,6 @@
 use crate::personal_world::PersonalWorld;
 use std::time::Instant;
+use winit::dpi::PhysicalSize;
 use winit::event::Event;
 use winit::window::Window;
 use winit_window_control::input::input::Input;
@@ -51,6 +52,7 @@ impl Game for VoxGame {
             .insert_stat("world tick".to_string(), timer.elapsed().as_secs_f32());
         return UpdateResult::Continue;
     }
+    fn on_resize(&mut self, physical_size: PhysicalSize<u32>) {}
     fn on_render(&mut self, input: &mut Input, dt: f64, window: &Window) -> RenderResult {
         let timer = Instant::now();
         let pw = self.personal_world.as_mut().unwrap();
