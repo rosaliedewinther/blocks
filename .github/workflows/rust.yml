@@ -19,5 +19,5 @@ jobs:
       run: cargo build --release
     - name: Run tests
       run: cargo test --release
-    - name: Run tests
+    - name: Run ray_tracer
       run: cd ray_tracer ; cargo build --release
