@@ -1,13 +1,11 @@
+use crate::uniforms::Uniforms;
 use crate::vertex::Vertex;
 use crate::wgpu::WgpuState;
-use futures::prelude::sink::Buffer;
-use image::GenericImageView;
 use wgpu::util::DeviceExt;
 use wgpu::{
     BindGroup, BindGroupLayout, BlendFactor, BlendOperation, ComputePipeline, RenderPipeline,
     Sampler, SwapChainError, Texture, TextureView, TextureViewDimension,
 };
-use winit::window::Window;
 
 pub struct Renderer {
     pub render_pipeline: wgpu::RenderPipeline,
@@ -18,6 +16,8 @@ pub struct Renderer {
     pub num_vertices: u32,
     pub index_buffer: wgpu::Buffer,
     pub num_indices: u32,
+    pub uniforms: Uniforms,
+    pub uniform_buffer: wgpu::Buffer,
 }
 impl Renderer {
     pub fn new(wgpu: &mut WgpuState) -> Renderer {
@@ -28,6 +28,8 @@ impl Renderer {
             texture_bind_group_layout,
             compute_bind_group,
             compute_bind_group_layout,
+            uniforms,
+            uniform_buffer,
         ) = Renderer::init_texture(wgpu);
         let render_pipeline = Renderer::init_pipeline(wgpu, texture_bind_group_layout);
         let compute_pipeline = Renderer::init_compute_pipeline(wgpu, compute_bind_group_layout);
@@ -41,10 +43,18 @@ impl Renderer {
             texture_bind_group,
             compute_bind_group,
             compute_pipeline,
+            uniforms,
+            uniform_buffer,
         }
     }
     pub fn do_render_pass(&self, wgpu: &WgpuState) -> Result<(), SwapChainError> {
         let frame = wgpu.swap_chain.get_current_frame()?.output;
+
+        wgpu.queue.write_buffer(
+            &self.uniform_buffer,
+            0,
+            bytemuck::cast_slice(&[self.uniforms]),
+        );
 
         let mut encoder = wgpu
             .device
@@ -82,6 +92,9 @@ impl Renderer {
         // submit will accept anything that implements IntoIter
         wgpu.queue.submit(std::iter::once(encoder.finish()));
         Ok(())
+    }
+    pub fn update(&mut self, dt: f64) {
+        self.uniforms.update(dt as f32);
     }
     pub fn init_compute_pipeline(
         wgpu: &mut WgpuState,
@@ -163,9 +176,12 @@ impl Renderer {
         return render_pipeline;
     }
     pub fn resized(&mut self, wgpu: &mut WgpuState) {
-        let (bind_group, _, compute_bind_group, _) = Renderer::init_texture(wgpu);
+        let (bind_group, _, compute_bind_group, _, uniforms, uniform_buffer) =
+            Renderer::init_texture(wgpu);
         self.texture_bind_group = bind_group;
         self.compute_bind_group = compute_bind_group;
+        self.uniforms = uniforms;
+        self.uniform_buffer = uniform_buffer;
     }
     pub fn init_primitives(wgpu: &mut WgpuState) -> (wgpu::Buffer, wgpu::Buffer, u32, u32) {
         let vertices = vec![
@@ -210,7 +226,7 @@ impl Renderer {
         let num_vertices = vertices.len() as u32;
         return (vertex_buffer, index_buffer, num_indices, num_vertices);
     }
-    pub fn remake_texture(wgpu: &mut WgpuState) -> (TextureView, Sampler) {
+    pub fn remake_texture(wgpu: &mut WgpuState) -> (Texture, TextureView, Sampler) {
         let texture_size = wgpu::Extent3d {
             width: wgpu.size.width,
             height: wgpu.size.height,
@@ -236,12 +252,30 @@ impl Renderer {
             mipmap_filter: wgpu::FilterMode::Nearest,
             ..Default::default()
         });
-        return (diffuse_texture_view, diffuse_sampler);
+        return (diffuse_texture, diffuse_texture_view, diffuse_sampler);
+    }
+    pub fn init_uniforms(wgpu: &mut WgpuState) -> (wgpu::Buffer, Uniforms) {
+        let uniforms = Uniforms::new();
+        let uniform_buffer = wgpu
+            .device
+            .create_buffer_init(&wgpu::util::BufferInitDescriptor {
+                label: Some("Uniform Buffer"),
+                contents: bytemuck::cast_slice(&[uniforms]),
+                usage: wgpu::BufferUsage::UNIFORM | wgpu::BufferUsage::COPY_DST,
+            });
+        return (uniform_buffer, uniforms);
     }
     pub fn init_texture(
         wgpu: &mut WgpuState,
-    ) -> (BindGroup, BindGroupLayout, BindGroup, BindGroupLayout) {
-        let (diffuse_texture_view, diffuse_sampler) = Renderer::remake_texture(wgpu);
+    ) -> (
+        BindGroup,
+        BindGroupLayout,
+        BindGroup,
+        BindGroupLayout,
+        Uniforms,
+        wgpu::Buffer,
+    ) {
+        let (texture, diffuse_texture_view, diffuse_sampler) = Renderer::remake_texture(wgpu);
         let texture_bind_group_layout =
             wgpu.device
                 .create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
@@ -282,28 +316,51 @@ impl Renderer {
             ],
             label: Some("diffuse_bind_group"),
         });
+        let (uniform_buffer, uniforms) = Renderer::init_uniforms(wgpu);
         let compute_bind_group_layout =
             wgpu.device
                 .create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
                     label: None,
-                    entries: &[wgpu::BindGroupLayoutEntry {
-                        binding: 0,
-                        visibility: wgpu::ShaderStage::COMPUTE,
-                        ty: wgpu::BindingType::Texture {
-                            sample_type: wgpu::TextureSampleType::Float { filterable: false },
-                            view_dimension: TextureViewDimension::D2,
-                            multisampled: false,
+                    entries: &[
+                        wgpu::BindGroupLayoutEntry {
+                            binding: 0,
+                            visibility: wgpu::ShaderStage::COMPUTE,
+                            ty: wgpu::BindingType::Texture {
+                                sample_type: wgpu::TextureSampleType::Float { filterable: false },
+                                view_dimension: TextureViewDimension::D2,
+                                multisampled: false,
+                            },
+                            count: None,
                         },
-                        count: None,
-                    }],
+                        wgpu::BindGroupLayoutEntry {
+                            binding: 1,
+                            visibility: wgpu::ShaderStage::COMPUTE,
+                            ty: wgpu::BindingType::Buffer {
+                                ty: wgpu::BufferBindingType::Uniform,
+                                has_dynamic_offset: false,
+                                min_binding_size: None,
+                            },
+                            count: None,
+                        },
+                    ],
                 });
         let compute_bind_group = wgpu.device.create_bind_group(&wgpu::BindGroupDescriptor {
             label: None,
             layout: &compute_bind_group_layout,
-            entries: &[wgpu::BindGroupEntry {
-                binding: 0,
-                resource: wgpu::BindingResource::TextureView(&diffuse_texture_view),
-            }],
+            entries: &[
+                wgpu::BindGroupEntry {
+                    binding: 0,
+                    resource: wgpu::BindingResource::TextureView(&diffuse_texture_view),
+                },
+                wgpu::BindGroupEntry {
+                    binding: 1,
+                    resource: wgpu::BindingResource::Buffer {
+                        buffer: &(uniform_buffer),
+                        offset: 0,
+                        size: None,
+                    },
+                },
+            ],
         });
 
         return (
@@ -311,6 +368,8 @@ impl Renderer {
             texture_bind_group_layout,
             compute_bind_group,
             compute_bind_group_layout,
+            uniforms,
+            uniform_buffer,
         );
     }
 }

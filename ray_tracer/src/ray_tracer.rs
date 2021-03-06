@@ -1,8 +1,6 @@
 use crate::renderer::Renderer;
 use crate::wgpu::WgpuState;
-use image::GenericImageView;
 use std::time::Instant;
-use wgpu::BindGroup;
 use winit::dpi::PhysicalSize;
 use winit::window::Window;
 use winit_window_control::input::input::Input;
@@ -40,6 +38,7 @@ impl Game for RayTracer {
             .resized(self.wgpu.as_mut().unwrap());
     }
     fn on_render(&mut self, input: &mut Input, dt: f64, window: &Window) -> RenderResult {
+        self.renderer.as_mut().unwrap().update(dt);
         self.renderer
             .as_ref()
             .unwrap()
