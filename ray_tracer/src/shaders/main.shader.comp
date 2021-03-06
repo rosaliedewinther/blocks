@@ -22,11 +22,11 @@ void main() {
     ivec2 pixel_coords = ivec2(gl_GlobalInvocationID.xy);
     ivec2 total_pixels = ivec2(gl_NumWorkGroups.xy);
 
-    float sin_pixel_height = int(sin(uni.time*100 + pixel_coords[0]/(float(total_pixels[0])/PI/2))*total_pixels[1]/2) + total_pixels[1]/2;
+    float sin_pixel_height = int(sin(uni.time*2 + pixel_coords[0]/(float(total_pixels[0])/PI/2))*total_pixels[1]/2) + total_pixels[1]/2;
 
-    float sin_pixel_height_2 = int(sin(uni.time*100 + pixel_coords[0]/(float(total_pixels[0])/PI))*total_pixels[1]/2) + total_pixels[1]/2;
+    float sin_pixel_height_2 = int(sin(uni.time*2 + pixel_coords[0]/(float(total_pixels[0])/PI))*total_pixels[1]/2) + total_pixels[1]/2;
 
-    float sin_pixel_height_3 = int(cos(uni.time*100 + pixel_coords[0]/(float(total_pixels[0])/PI/4))*total_pixels[1]/2) + total_pixels[1]/2;
+    float sin_pixel_height_3 = int(cos(uni.time*2 + pixel_coords[0]/(float(total_pixels[0])/PI/4))*total_pixels[1]/2) + total_pixels[1]/2;
 
     pixel[0] = abs(sin_pixel_height - pixel_coords[1])/float(total_pixels[1]);
     pixel[1] = abs(sin_pixel_height_2 - pixel_coords[1])/float(total_pixels[1]);

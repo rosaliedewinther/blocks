@@ -68,27 +68,20 @@ where
             WindowEvent::CloseRequested => *control_flow = ControlFlow::Exit,
             WindowEvent::Resized(physical_size) => {
                 game.on_resize(*physical_size);
-                //personal_world.ui = UiRenderer::new(&window, &personal_world.renderer);
-                //resize(*physical_size, &mut personal_world.renderer.wgpu);
             }
             WindowEvent::ScaleFactorChanged { new_inner_size, .. } => {
                 game.on_resize(**new_inner_size);
-                //personal_world.ui = UiRenderer::new(&window, &personal_world.renderer);
-                //resize(**new_inner_size, &mut personal_world.renderer.wgpu);
             }
 
             _ => {}
         },
         Event::RedrawRequested(_) => {
-            match game.on_render(
-                &mut window_input,
-                on_render_timer.elapsed().as_secs_f64(),
-                &window,
-            ) {
+            let dt = on_render_timer.elapsed().as_secs_f64();
+            on_render_timer = Instant::now();
+            match game.on_render(&mut window_input, dt, &window) {
                 RenderResult::Continue => {}
                 RenderResult::Exit => *control_flow = ControlFlow::Exit,
             };
-            on_render_timer = Instant::now();
         }
         Event::MainEventsCleared => {
             // RedrawRequested will only trigger once, unless we manually
