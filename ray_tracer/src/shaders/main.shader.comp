@@ -15,14 +15,67 @@ layout(set=0, binding=1) uniform camera_details{
     Uniforms uni;
 };
 
+struct Cube{
+    vec3 position;
+    float radius;
+};
+
+Cube cubes[3] = Cube[](Cube(vec3(0.0,0.0,-2.0), 1.0),Cube(vec3(0.5,2.0,-2.0), 0.5),Cube(vec3(-1.0,1.0,-2.0), 0.333));
+
+vec3 rotation_x(vec3 v, float angle){
+    float s = sin(angle);
+    float c = cos(angle);
+
+    mat3 matrix = mat3(
+        1.0, 0.0, 0.0,
+        0.0, c, s,
+        0.0, -s, c
+    );
+    return matrix*v;
+}
+vec3 rotation_y(vec3 v, float angle){
+    float s = sin(angle);
+    float c = cos(angle);
+    mat3 matrix = mat3(
+        c, 0.0, -s,
+        0.0, 1.0, 0.0,
+        s, 0.0, c
+    );
+    return matrix*v;
+}
+
+bool contains(Cube cube, vec3 position){
+    return (position[0] > cube.position[0]-cube.radius && position[0] < cube.position[0] +cube.radius &&
+            position[1] > cube.position[1]-cube.radius && position[1] < cube.position[1] +cube.radius &&
+            position[2] > cube.position[2]-cube.radius && position[2] < cube.position[2] +cube.radius);
+}
+
 void main() {
     // base pixel colour for image
     vec4 pixel = vec4(0.0, 0.0, 0.0, 1.0);
     // get index in global work group i.e x,y position
     ivec2 pixel_coords = ivec2(gl_GlobalInvocationID.xy);
     ivec2 total_pixels = ivec2(gl_NumWorkGroups.xy);
+    ivec2 centre = total_pixels/2;
+    vec2 angle = abs(vec2(pixel_coords) - vec2(centre))/vec2(centre)*PI/2.0;
 
-    float sin_pixel_height = int(sin(uni.time*2 + pixel_coords[0]/(float(total_pixels[0])/PI/2))*total_pixels[1]/2) + total_pixels[1]/2;
+    pixel[0] = sin(angle[0]);
+    pixel[1] = sin(angle[1]);
+    //vec3 direction = rotation_y(rotation_x(vec3(0.0,0.0,1.0), angle[1]), angle[0]);
+    //vec3 direction = normalize(vec3(sin(), sin(), -1));
+    //pixel = vec4(direction[0],direction[1],0.0, 1.0);
+    /*for(int i = 1; i < 10; i++){
+        for(int j = 0; j< cubes.length(); j++){
+            vec3 ray_pos = uni.position + direction * i;
+            if (contains(cubes[j], ray_pos)){
+                pixel = vec4(1.0,1.0,1.0,1.0);
+            }
+        }
+    }*/
+
+
+
+    /*float sin_pixel_height = int(sin(uni.time*2 + pixel_coords[0]/(float(total_pixels[0])/PI/2))*total_pixels[1]/2) + total_pixels[1]/2;
 
     float sin_pixel_height_2 = int(sin(uni.time*2 + pixel_coords[0]/(float(total_pixels[0])/PI))*total_pixels[1]/2) + total_pixels[1]/2;
 
@@ -30,7 +83,7 @@ void main() {
 
     pixel[0] = abs(sin_pixel_height - pixel_coords[1])/float(total_pixels[1]);
     pixel[1] = abs(sin_pixel_height_2 - pixel_coords[1])/float(total_pixels[1]);
-    pixel[2] = abs(sin_pixel_height_3 - pixel_coords[1])/float(total_pixels[1]);
+    pixel[2] = abs(sin_pixel_height_3 - pixel_coords[1])/float(total_pixels[1]);*/
 
     // output to a specific pixel in the image
     imageStore(img_output, pixel_coords, pixel);

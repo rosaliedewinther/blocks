@@ -11,7 +11,7 @@ impl Uniforms {
         Self {
             position: [0.0, 0.0, 0.0],
             time: 0.0,
-            direction: [0.0, 0.0, 1.0],
+            direction: [0.0, 0.0, -1.0],
         }
     }
 
