@@ -68,6 +68,9 @@ pub fn plant_grass(chunk_generator: &ChunkGenerator, pos: &ChunkPos, chunk: &mut
             let height = get_xz_heigth(x, z, chunk_generator, pos);
             if height < (pos.y + 1) * CHUNKSIZE as i32 && height >= (pos.y) * CHUNKSIZE as i32 {
                 let y = height - pos.y * CHUNKSIZE as i32;
+                if height > (CHUNKSIZE as f32 * METACHUNKSIZE as f32 * 0.8) as i32 {
+                    continue;
+                }
                 chunk.set_block(get_blockid(BlockType::Grass), &LocalBlockPos { x, y, z });
             }
         }

@@ -12,7 +12,8 @@ use crate::structures::tree::place_tree;
 use crate::utils::{to_sign_of, wrap};
 use crate::world_gen::basic::ChunkGenerator;
 use crate::world_gen::chunk::Chunk;
-use rand::distributions::{Distribution, Uniform};
+use rand::distributions::{Distribution, Standard, Uniform};
+use rand::prelude::*;
 use serde::{Deserialize, Serialize};
 use std::borrow::BorrowMut;
 
@@ -77,21 +78,29 @@ impl MetaChunk {
 
         let mut rng = rand::thread_rng();
         let location_range = Uniform::from(5..(METACHUNKSIZE * CHUNKSIZE) - 5);
-        for _ in 0..1000 {
-            let structure_x = pos.x * METACHUNKSIZE as i32 * CHUNKSIZE as i32
-                + location_range.sample(&mut rng) as i32;
-            let structure_z = pos.z * METACHUNKSIZE as i32 * CHUNKSIZE as i32
-                + location_range.sample(&mut rng) as i32;
+        let x_offset = location_range.sample(&mut rng) as i32;
+        let z_offset = location_range.sample(&mut rng) as i32;
+        for _ in 0..100 {
+            let x_sampled = rng.sample::<f32, Standard>(Standard) as f32;
+            let z_sampled = rng.sample::<f32, Standard>(Standard) as f32;
+            let x_diff: i32 = (x_sampled * 100f32) as i32;
+            let z_diff: i32 = (z_sampled * 100f32) as i32;
+
+            let structure_x = pos.x * METACHUNKSIZE as i32 * CHUNKSIZE as i32 + x_offset + x_diff;
+            let structure_z = pos.z * METACHUNKSIZE as i32 * CHUNKSIZE as i32 + z_offset + z_diff;
             let structure_y = chunk.first_above_land_y(structure_x, structure_z);
             let tree_pos = GlobalBlockPos {
                 x: structure_x,
                 y: structure_y,
                 z: structure_z,
             };
-            if get_blocktype(chunk.get_block(&tree_pos.get_diff(0, -1, 0)).unwrap())
-                == BlockType::Grass
-            {
-                place_tree(&tree_pos, &mut chunk);
+            match chunk.get_block(&tree_pos.get_diff(0, -1, 0)) {
+                None => {}
+                Some(b) => {
+                    if get_blocktype(b) == BlockType::Grass {
+                        place_tree(&tree_pos, &mut chunk);
+                    }
+                }
             }
         }
 
