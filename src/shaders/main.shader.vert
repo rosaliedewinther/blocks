@@ -25,8 +25,9 @@ void main() {
     vec3 perm_position = a_position;
     if (type == 6){
         float perm_x = cos(perm_position[0]+time)/4;
+        float perm_y = cos(perm_position[1]+time)/4;
         float perm_z = cos(perm_position[2]+time)/4;
-        vec3 permutation = vec3(perm_x, 0, perm_z);
+        vec3 permutation = vec3(perm_x, perm_y, perm_z);
         perm_position = perm_position + permutation;
     }
     float diffuse = max(dot(normalize(a_normal), normalize(sun_dir)), 0.1);

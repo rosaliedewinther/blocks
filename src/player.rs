@@ -29,7 +29,7 @@ impl Player {
             direction: Vector3::new(0f32, 0.0f32, 1.0f32),
             up: [0f32, 1.0f32, 0f32],
             speed: 100f32,
-            camera_speed: 1f32,
+            camera_speed: 0.5f32,
             render_distance: 5000f32,
             generated_chunks_for: ChunkPos {
                 x: i32::max_value(),

@@ -40,6 +40,9 @@ pub fn should_render_against(source_block_id: BlockId, neighbor_block_id: BlockI
     if source_block_id == neighbor_block_id {
         return false;
     }
+    if source_block_id == get_blockid(BlockType::Leaf) {
+        return true;
+    }
     if COLORS[neighbor_block_id as usize][3] == 255.0 {
         return false;
     }

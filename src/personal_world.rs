@@ -253,7 +253,7 @@ impl PersonalWorld {
         main_pipeline.set_uniform_buffer(&self.renderer.wgpu.queue, main_pipeline.uniforms);
         match self
             .renderer
-            .do_render_pass(render_data, &mut self.ui, window)
+            .do_render_pass(render_data, &mut self.ui, window, &self.player)
         {
             Ok(_) => {}
             // Recreate the swap_chain if lost

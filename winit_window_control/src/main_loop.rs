@@ -1,9 +1,10 @@
 use crate::input::input::Input;
 use std::time::Instant;
-use winit::dpi::PhysicalSize;
+use winit::dpi::{PhysicalSize, Size};
 use winit::event::{Event, WindowEvent};
 use winit::event_loop::{ControlFlow, EventLoop};
-use winit::window::{Window, WindowBuilder};
+use winit::monitor::MonitorHandle;
+use winit::window::{Fullscreen, Window, WindowBuilder};
 
 #[derive(PartialEq)]
 pub enum RenderResult {
@@ -35,6 +36,7 @@ where
     let event_loop = EventLoop::new();
     let window = WindowBuilder::new()
         .with_maximized(true)
+        .with_resizable(false)
         .build(&event_loop)
         .unwrap();
     game.on_init(&window);

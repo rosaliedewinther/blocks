@@ -27,4 +27,12 @@ impl BlockSides {
         self.front = b;
         self.back = b;
     }
+    pub fn is_all(&mut self, b: bool) -> bool {
+        return self.left == b
+            && self.right == b
+            && self.back == b
+            && self.bot == b
+            && self.front == b
+            && self.top == b;
+    }
 }
