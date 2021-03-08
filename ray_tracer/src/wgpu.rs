@@ -1,8 +1,4 @@
-use crate::renderer::compute::Compute;
-use crate::renderer::depth_texture::DepthTexture;
-use fern::Panic;
 use futures::executor::block_on;
-use std::f32::consts::PI;
 use wgpu::{Device, Queue, Surface};
 use winit::dpi::PhysicalSize;
 use winit::window::Window;
@@ -14,24 +10,16 @@ pub struct WgpuState {
     pub sc_desc: wgpu::SwapChainDescriptor,
     pub swap_chain: wgpu::SwapChain,
     pub size: winit::dpi::PhysicalSize<u32>,
-    pub depth_texture: DepthTexture,
-    pub compute: Compute,
 }
 
 impl WgpuState {
-    // Creating some of the wgpu types requires async code
     pub fn new(window: &Window) -> Self {
         let size = window.inner_size();
-
-        // The instance is A handle to our GPU
-        // BackendBit::PRIMARY => Vulkan + Metal + DX12 + Browser WebGPU
 
         let (device, queue, surface) = WgpuState::get_device_queue_surface(window);
         let sc_desc = WgpuState::get_sc_desc(size);
 
         let swap_chain = device.create_swap_chain(&surface, &sc_desc);
-        let depth_texture = DepthTexture::create_depth_texture(&device, &sc_desc, "depth_texture");
-        let mut compute = Compute::new(&device, &queue, &window);
         //compute.compute_pass(&device, &queue);
         Self {
             surface,
@@ -40,8 +28,6 @@ impl WgpuState {
             sc_desc,
             swap_chain,
             size,
-            depth_texture,
-            compute,
         }
     }
     pub fn get_device_queue_surface(window: &Window) -> (Device, Queue, Surface) {
@@ -84,28 +70,5 @@ impl WgpuState {
         self.sc_desc.width = new_size.width;
         self.sc_desc.height = new_size.height;
         self.swap_chain = self.device.create_swap_chain(&self.surface, &self.sc_desc);
-        self.depth_texture = DepthTexture::create_depth_texture(
-            &self.device,
-            &WgpuState::get_sc_desc(self.size),
-            "depth_texture",
-        );
     }
-}
-
-pub fn gen_perspective_mat(size: (u32, u32)) -> [[f32; 4]; 4] {
-    let (width, height) = size;
-    let aspect_ratio = height as f32 / width as f32;
-
-    let fov: f32 = PI / 3.0;
-    let zfar = 1024.0;
-    let znear = 0.0;
-
-    let f = 1.0 / (fov / 2.0).tan();
-
-    [
-        [f * aspect_ratio, 0.0, 0.0, 0.0],
-        [0.0, f, 0.0, 0.0],
-        [0.0, 0.0, (zfar + znear) / (zfar - znear), 1.0],
-        [0.0, 0.0, -(2.0 * zfar * znear) / (zfar - znear), 1.0],
-    ]
 }

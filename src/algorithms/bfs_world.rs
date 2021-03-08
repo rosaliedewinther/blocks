@@ -1,4 +1,5 @@
-use crate::block::{Block, BlockType};
+use crate::blocks::block::{get_blocktype, BlockId};
+use crate::blocks::block_type::BlockType;
 use crate::positions::GlobalBlockPos;
 use crate::world_gen::meta_chunk::MetaChunk;
 use std::collections::{HashSet, VecDeque};
@@ -40,10 +41,10 @@ impl Blocksides {
     }
 }
 
-pub fn bfs_world_air(pos: &GlobalBlockPos, depth: u32, world: &mut MetaChunk, block: Block) {
+pub fn bfs_world_air(pos: &GlobalBlockPos, depth: u32, world: &mut MetaChunk, block: BlockId) {
     let mut visited = HashSet::new();
     let mut queue = VecDeque::new();
-    let sides = get_surrounding_blocks(world, pos, |b: &Block| b.block_type == BlockType::Air);
+    let sides = get_surrounding_blocks(world, pos, |b: BlockId| get_blocktype(b) == BlockType::Air);
     push_sides(&mut queue, &visited, &sides, pos, 0);
     visited.insert(*pos);
     while let Some((temp_pos, d)) = queue.pop_front() {
@@ -51,8 +52,9 @@ pub fn bfs_world_air(pos: &GlobalBlockPos, depth: u32, world: &mut MetaChunk, bl
             world.set_block(&temp_pos, block);
             continue;
         }
-        let sides =
-            get_surrounding_blocks(world, &temp_pos, |b: &Block| b.block_type == BlockType::Air);
+        let sides = get_surrounding_blocks(world, &temp_pos, |b: BlockId| {
+            get_blocktype(b) == BlockType::Air
+        });
         push_sides(&mut queue, &visited, &sides, &temp_pos, d + 1);
         visited.insert(temp_pos);
     }
@@ -154,7 +156,7 @@ fn push_sides(
 fn get_surrounding_blocks(
     world: &MetaChunk,
     pos: &GlobalBlockPos,
-    f: impl Fn(&Block) -> bool,
+    f: impl Fn(BlockId) -> bool,
 ) -> Blocksides {
     let mut sides = Blocksides::new();
     update_side(&world, &pos.get_diff(1, 0, 0), &f, &mut sides.right);
@@ -177,7 +179,7 @@ fn get_surrounding_blocks(
 fn update_side(
     world: &MetaChunk,
     pos: &GlobalBlockPos,
-    f: impl Fn(&Block) -> bool,
+    f: impl Fn(BlockId) -> bool,
     side: &mut bool,
 ) {
     let b = world.get_block(&pos);

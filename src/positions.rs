@@ -94,6 +94,13 @@ impl GlobalBlockPos {
             z: self.z as f32 + 0.5,
         }
     }
+    pub fn get_block_pos(&self) -> ObjectPos {
+        ObjectPos {
+            x: self.x as f32,
+            y: self.y as f32,
+            z: self.z as f32,
+        }
+    }
     pub fn get_meta_chunk_pos(&self) -> MetaChunkPos {
         MetaChunkPos {
             x: (self.x as f32 / (CHUNKSIZE as f32 * METACHUNKSIZE as f32)).floor() as i32,

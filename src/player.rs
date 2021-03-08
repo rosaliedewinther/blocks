@@ -1,11 +1,11 @@
-use crate::block::{Block, BlockType};
-use crate::input::input::Input;
+use crate::constants::COLORS;
 use crate::positions::{ChunkPos, ObjectPos};
 use crate::utils::{get_rotation_matrix_y, get_rotation_matrix_z};
-use crate::world::World;
+use crate::world::world::World;
 use nalgebra::{Matrix3, Vector3};
 use std::f32::consts::PI;
 use winit::event::VirtualKeyCode;
+use winit_window_control::input::input::Input;
 
 pub struct Player {
     pub position: ObjectPos,
@@ -22,14 +22,14 @@ impl Player {
     pub fn new() -> Player {
         Player {
             position: ObjectPos {
-                x: 10000f32,
-                y: 100f32,
-                z: 10000f32,
+                x: 0.0,
+                y: 0.0,
+                z: 0.0,
             },
             direction: Vector3::new(0f32, 0.0f32, 1.0f32),
             up: [0f32, 1.0f32, 0f32],
             speed: 100f32,
-            camera_speed: 1f32,
+            camera_speed: 0.5f32,
             render_distance: 5000f32,
             generated_chunks_for: ChunkPos {
                 x: i32::max_value(),
@@ -58,10 +58,16 @@ impl Player {
         self.change_position(input, VirtualKeyCode::W, 0f32 * PI, *dt * self.speed, world);
         self.change_position(input, VirtualKeyCode::S, 1f32 * PI, *dt * self.speed, world);
         if input.key_pressed(VirtualKeyCode::Space) {
-            self.position.y += *dt * self.speed
+            let diff = *dt * self.speed;
+            if !Player::collides(&self.position.get_diff(0.0, diff, 0.0), world) {
+                self.position.y += diff;
+            }
         }
         if input.key_pressed(VirtualKeyCode::LShift) {
-            self.position.y += -*dt * self.speed
+            let diff = -*dt * self.speed;
+            if !Player::collides(&self.position.get_diff(0.0, diff, 0.0), world) {
+                self.position.y += diff;
+            }
         }
 
         let mouse_change = input.mouse_change();
@@ -140,8 +146,8 @@ impl Player {
         let blockpos = pos.get_block();
         let faceblock = world.get_block(&blockpos);
         let feetblock = world.get_block(&blockpos.get_diff(0, -1, 0));
-        if (faceblock.is_some() && faceblock.unwrap().get_col()[3] == 255)
-            || (feetblock.is_some() && feetblock.unwrap().get_col()[3] == 255)
+        if (faceblock.is_some() && COLORS[faceblock.unwrap() as usize][3] == 255.0)
+            || (feetblock.is_some() && COLORS[feetblock.unwrap() as usize][3] == 255.0)
         {
             return true;
         } else {

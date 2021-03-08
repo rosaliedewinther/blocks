@@ -1,15 +1,19 @@
 use crate::algorithms::bfs_world::bfs_world_air;
-use crate::block::{Block, BlockType};
-use crate::constants::{CHUNKSIZE, METACHUNKSIZE};
+
+use crate::blocks::block::{get_blockid, get_blocktype, BlockId};
+use crate::blocks::block_type::BlockType;
+use crate::constants::{CHUNKSIZE, METACHUNKSIZE, METACHUNK_GEN_RANGE};
 use crate::io::file_reader::read_meta_chunk_from_file;
 use crate::io::file_writer::write_to_file;
+use crate::player::Player;
 use crate::positions::{ChunkPos, GlobalBlockPos, LocalChunkPos, MetaChunkPos};
 use crate::structures::square::place_square;
 use crate::structures::tree::place_tree;
 use crate::utils::{to_sign_of, wrap};
 use crate::world_gen::basic::ChunkGenerator;
 use crate::world_gen::chunk::Chunk;
-use rand::distributions::{Distribution, Uniform};
+use rand::distributions::{Distribution, Standard, Uniform};
+use rand::prelude::*;
 use serde::{Deserialize, Serialize};
 use std::borrow::BorrowMut;
 
@@ -59,7 +63,7 @@ impl MetaChunk {
             &global_center_pos,
             5,
             &mut chunk,
-            Block::new(BlockType::Sand),
+            get_blockid(BlockType::Sand),
         );
 
         let structure_x = pos.x * METACHUNKSIZE as i32 * CHUNKSIZE as i32 + 3;
@@ -74,24 +78,29 @@ impl MetaChunk {
 
         let mut rng = rand::thread_rng();
         let location_range = Uniform::from(5..(METACHUNKSIZE * CHUNKSIZE) - 5);
-        for _ in 0..1000 {
-            let structure_x = pos.x * METACHUNKSIZE as i32 * CHUNKSIZE as i32
-                + location_range.sample(&mut rng) as i32;
-            let structure_z = pos.z * METACHUNKSIZE as i32 * CHUNKSIZE as i32
-                + location_range.sample(&mut rng) as i32;
+        let x_offset = location_range.sample(&mut rng) as i32;
+        let z_offset = location_range.sample(&mut rng) as i32;
+        for _ in 0..100 {
+            let x_sampled = rng.sample::<f32, Standard>(Standard) as f32;
+            let z_sampled = rng.sample::<f32, Standard>(Standard) as f32;
+            let x_diff: i32 = (x_sampled * 100f32) as i32;
+            let z_diff: i32 = (z_sampled * 100f32) as i32;
+
+            let structure_x = pos.x * METACHUNKSIZE as i32 * CHUNKSIZE as i32 + x_offset + x_diff;
+            let structure_z = pos.z * METACHUNKSIZE as i32 * CHUNKSIZE as i32 + z_offset + z_diff;
             let structure_y = chunk.first_above_land_y(structure_x, structure_z);
             let tree_pos = GlobalBlockPos {
                 x: structure_x,
                 y: structure_y,
                 z: structure_z,
             };
-            if chunk
-                .get_block(&tree_pos.get_diff(0, -1, 0))
-                .unwrap()
-                .block_type
-                == BlockType::Grass
-            {
-                place_tree(&tree_pos, &mut chunk);
+            match chunk.get_block(&tree_pos.get_diff(0, -1, 0)) {
+                None => {}
+                Some(b) => {
+                    if get_blocktype(b) == BlockType::Grass {
+                        place_tree(&tree_pos, &mut chunk);
+                    }
+                }
             }
         }
 
@@ -105,7 +114,7 @@ impl MetaChunk {
                 y,
                 z: structure_z,
             };
-            chunk.set_block(&global_center_pos, Block::new(BlockType::Sand));
+            chunk.set_block(&global_center_pos, get_blockid(BlockType::Sand));
         }
 
         return chunk;
@@ -113,10 +122,11 @@ impl MetaChunk {
     pub fn first_above_land_y(&self, x: i32, z: i32) -> i32 {
         let mut y = METACHUNKSIZE as i32 * CHUNKSIZE as i32 - 1;
         while let Some(b) = self.get_block(&GlobalBlockPos { x, y, z }) {
-            if b.block_type == BlockType::Grass
-                || b.block_type == BlockType::Water
-                || b.block_type == BlockType::Dirt
-                || b.block_type == BlockType::Stone
+            let b_type = get_blocktype(b);
+            if b_type == BlockType::Grass
+                || b_type == BlockType::Water
+                || b_type == BlockType::Dirt
+                || b_type == BlockType::Stone
             {
                 return y + 1;
             }
@@ -135,7 +145,7 @@ impl MetaChunk {
         write_to_file(filename.as_str(), self)
     }
 
-    pub fn set_block(&mut self, pos: &GlobalBlockPos, block: Block) {
+    pub fn set_block(&mut self, pos: &GlobalBlockPos, block: BlockId) {
         let chunk_pos = pos.get_local_chunk();
         let chunk = self.get_chunk_mut(&chunk_pos);
         match chunk {
@@ -143,13 +153,13 @@ impl MetaChunk {
             None => {}
         }
     }
-    pub fn get_block_unsafe(&self, pos: &GlobalBlockPos) -> &Block {
+    pub fn get_block_unsafe(&self, pos: &GlobalBlockPos) -> BlockId {
         let chunk_pos = pos.get_local_chunk();
         let chunk = self.get_chunk(&chunk_pos).unwrap();
         chunk.get_block_unsafe(&pos.get_local_pos())
     }
 
-    pub fn get_block(&self, pos: &GlobalBlockPos) -> Option<&Block> {
+    pub fn get_block(&self, pos: &GlobalBlockPos) -> Option<BlockId> {
         if !(pos.x >= self.pos.x * METACHUNKSIZE as i32 * CHUNKSIZE as i32
             && pos.x < (self.pos.x + 1) * METACHUNKSIZE as i32 * CHUNKSIZE as i32
             && pos.z >= self.pos.z * METACHUNKSIZE as i32 * CHUNKSIZE as i32
@@ -178,7 +188,7 @@ impl MetaChunk {
             }
         }
     }
-    pub fn for_each(&self, f: impl Fn(&Chunk, ChunkPos)) {
+    pub fn for_each(&self, f: fn(&Chunk, ChunkPos)) {
         for x in 0..METACHUNKSIZE as i32 {
             for y in 0..METACHUNKSIZE as i32 {
                 for z in 0..METACHUNKSIZE as i32 {
@@ -207,6 +217,14 @@ impl MetaChunk {
                 + pos.z as usize * METACHUNKSIZE as usize * METACHUNKSIZE as usize],
         );
     }
+    #[inline]
+    pub fn retain_meta_chunk(player: &Player, pos: MetaChunkPos) -> bool {
+        let current_chunk = player.position.get_meta_chunk();
+        pos.x > current_chunk.x - METACHUNK_GEN_RANGE as i32 - 2
+            && pos.x < current_chunk.x + METACHUNK_GEN_RANGE as i32 + 2
+            && pos.z > current_chunk.z - METACHUNK_GEN_RANGE as i32 - 2
+            && pos.z < current_chunk.z + METACHUNK_GEN_RANGE as i32 + 2
+    }
     pub fn get_chunk_unsafe(&self, pos: &LocalChunkPos) -> &Chunk {
         &self.chunks[pos.x as usize
             + pos.y as usize * METACHUNKSIZE as usize
@@ -219,5 +237,59 @@ impl MetaChunk {
         let z = self.pos.z * METACHUNKSIZE as i32
             + wrap(to_sign_of(self.pos.z, pos.z), METACHUNKSIZE as i32);
         ChunkPos { x, y, z }
+    }
+    pub fn get_iter(&self) -> MetaChunkIterator {
+        MetaChunkIterator {
+            meta_chunk: &self,
+            x: 0,
+            y: 0,
+            z: 0,
+        }
+    }
+}
+
+pub struct MetaChunkIterator<'a> {
+    meta_chunk: &'a MetaChunk,
+    x: u32,
+    y: u32,
+    z: u32,
+}
+
+impl<'a> Iterator for MetaChunkIterator<'a> {
+    type Item = (&'a Chunk, ChunkPos);
+
+    fn next(&mut self) -> Option<(&'a Chunk, ChunkPos)> {
+        if self.x == (METACHUNKSIZE - 1) as u32
+            && self.y == (METACHUNKSIZE - 1) as u32
+            && self.z == (METACHUNKSIZE - 1) as u32
+        {
+            return None;
+        }
+        let pos = ChunkPos {
+            x: self.meta_chunk.pos.x * METACHUNKSIZE as i32 + self.x as i32,
+            y: self.y as i32,
+            z: self.meta_chunk.pos.z * METACHUNKSIZE as i32 + self.z as i32,
+        };
+        let c = self
+            .meta_chunk
+            .get_chunk(&LocalChunkPos {
+                x: self.x as i32,
+                y: self.y as i32,
+                z: self.z as i32,
+            })
+            .unwrap();
+
+        if self.x == (METACHUNKSIZE) as u32 {
+            self.x = 0;
+            self.y += 1;
+        } else {
+            self.x += 1;
+        }
+        if self.y == (METACHUNKSIZE) as u32 {
+            self.y = 0;
+            self.z += 1;
+        }
+
+        return Some((c, pos));
     }
 }

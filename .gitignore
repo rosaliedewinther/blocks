@@ -4,3 +4,5 @@
 *.ini
 *.txt
 *.spv
+*.iml
+ray_tracer/target

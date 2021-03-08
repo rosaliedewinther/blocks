@@ -1,13 +1,15 @@
-use crate::constants::{METACHUNK_GEN_RANGE, METACHUNK_UNLOAD_RADIUS};
-use crate::input::input::Input;
-use crate::main_loop::MainLoop;
+use crate::constants::{CHUNKSIZE, METACHUNKSIZE, METACHUNK_GEN_RANGE, METACHUNK_UNLOAD_RADIUS};
 use crate::player::Player;
 use crate::positions::{ChunkPos, MetaChunkPos};
 use crate::renderer::chunk_render_data::ChunkRenderData;
-use crate::renderer::renderer::Renderer;
+use crate::renderer::renderer::{resize, Renderer};
 use crate::ui::ui::UiRenderer;
-use crate::world::World;
+use crate::world::world::World;
 use crate::world_gen::chunk_gen_thread::ChunkGenThread;
+use crate::world_gen::meta_chunk::MetaChunk;
+use cgmath::{InnerSpace, Vector3};
+use rayon::iter::ParallelIterator;
+use rayon::iter::{IntoParallelIterator, IntoParallelRefIterator};
 use rayon::prelude::ParallelSliceMut;
 use std::cmp::{min, Ordering};
 use std::collections::{BinaryHeap, HashMap, HashSet};
@@ -16,6 +18,8 @@ use std::time::{Instant, SystemTime, UNIX_EPOCH};
 use winit::event::Event;
 use winit::event_loop::ControlFlow;
 use winit::window::Window;
+use winit_window_control::input::input::Input;
+use winit_window_control::main_loop::RenderResult;
 
 pub struct PersonalWorld {
     pub world: World,
@@ -52,11 +56,26 @@ impl PersonalWorld {
     }
     pub fn update(&mut self) {
         self.world.update();
+        /*let timer = Instant::now();
+        let chunk = self.world.get_chunk(&ChunkPos { x: 2, y: 2, z: 2 });
+        if chunk.is_none() {
+            return;
+        }
+        let chunk = chunk.unwrap();
+        let main: &[u8] = bytemuck::cast_slice(&chunk.blocks.d);
+
+        self.renderer.wgpu.compute.compute_pass(
+            &self.renderer.wgpu.device,
+            &self.renderer.wgpu.queue,
+            main,
+        );
+        println!("compute time: {}", timer.elapsed().as_secs_f64());*/
     }
     pub fn on_game_tick(&mut self, dt: f32) {
         self.player.update(&dt, &self.world);
         self.update();
         self.load_generated_chunks();
+        self.to_generate = self.vertex_buffers_to_generate();
         if self.player.generated_chunks_for != self.player.position.get_chunk()
             || self.reload_vertex_load_order
         {
@@ -67,20 +86,20 @@ impl PersonalWorld {
     }
 
     pub fn vertex_buffers_to_generate(&self) -> Vec<(f32, ChunkPos)> {
-        let to_render = Mutex::new(Vec::new());
+        let mut to_render = Vec::with_capacity(
+            self.world.get_all_chunks().len() * METACHUNKSIZE * METACHUNKSIZE * METACHUNKSIZE,
+        );
         for (_, meta_chunk) in self.world.get_all_chunks() {
-            meta_chunk.for_each(|_, pos| {
-                if self.should_generate_vertex_buffers(pos.clone()) {
+            for (_, pos) in meta_chunk.get_iter() {
+                let (should_gen, additional_weight) =
+                    self.should_generate_vertex_buffers(pos.clone());
+                if should_gen {
                     let distance = pos.get_distance(&self.player.position.get_chunk());
-                    to_render
-                        .lock()
-                        .unwrap()
-                        .push((distance * 10000f32, pos.clone()));
+                    to_render.push((distance - additional_weight, pos.clone()));
                 }
-            });
+            }
         }
-        let mut result = to_render.into_inner().unwrap();
-        result.par_sort_unstable_by(|val1, val2| {
+        to_render.par_sort_unstable_by(|val1, val2| {
             if val1 > val2 {
                 return Ordering::Less;
             } else if val2 > val1 {
@@ -88,26 +107,48 @@ impl PersonalWorld {
             }
             return Ordering::Equal;
         });
-        return result;
+        return to_render;
     }
-    pub fn should_generate_vertex_buffers(&self, pos: ChunkPos) -> bool {
+    pub fn should_generate_vertex_buffers(&self, pos: ChunkPos) -> (bool, f32) {
         let distance = pos.get_distance(&self.player.position.get_chunk());
         if distance > self.player.render_distance {
-            return false;
+            return (false, 0.0);
         }
+
         if self.world.get_chunk(&pos.get_diff(0, 0, 1)).is_none()
             || self.world.get_chunk(&pos.get_diff(0, 0, -1)).is_none()
-            || self.world.get_chunk(&pos.get_diff(0, 1, 0)).is_none()
-            || self.world.get_chunk(&pos.get_diff(0, -1, 0)).is_none()
+            || (self.world.get_chunk(&pos.get_diff(0, 1, 0)).is_none()
+                && pos.y + 1 != METACHUNKSIZE as i32)
+            || (self.world.get_chunk(&pos.get_diff(0, -1, 0)).is_none() && pos.y - 1 >= 0)
             || self.world.get_chunk(&pos.get_diff(1, 0, 0)).is_none()
             || self.world.get_chunk(&pos.get_diff(-1, 0, 0)).is_none()
         {
-            return false;
+            return (false, 0.0);
         }
         if self.chunk_render_data.contains_key(&pos) {
-            return false;
+            return (false, 0.0);
         }
-        return true;
+        let view_dir = Vector3::new(
+            self.player.direction.x,
+            self.player.direction.y,
+            self.player.direction.z,
+        );
+        let viewer_pos = Vector3::new(
+            self.player.position.x,
+            self.player.position.y,
+            self.player.position.z,
+        );
+        let chunk_pos = Vector3::new(
+            (pos.x * CHUNKSIZE as i32) as f32,
+            (pos.y * CHUNKSIZE as i32) as f32,
+            (pos.z * CHUNKSIZE as i32) as f32,
+        );
+        let difference = viewer_pos - chunk_pos;
+
+        if view_dir.dot(difference) / (view_dir.magnitude() * difference.magnitude()) < -0.5 {
+            return (true, 1000.0);
+        }
+        return (true, 0.0);
     }
     pub fn meta_chunk_should_be_loaded(player: &Player, pos: &MetaChunkPos) -> bool {
         let player_chunk_pos = player.position.get_meta_chunk();
@@ -129,11 +170,10 @@ impl PersonalWorld {
     }
     pub fn on_player_moved_chunks(&mut self) {
         self.check_chunks_to_generate();
-        self.to_generate = self.vertex_buffers_to_generate();
+        self.world.filter_chunks(&self.player);
         let player = &self.player;
-        /*self.world
-        .chunks
-        .retain(|pos, _| PersonalWorld::meta_chunk_should_be_loaded(&player, pos));*/
+        self.chunk_render_data
+            .retain(|pos, _| MetaChunk::retain_meta_chunk(player, pos.get_meta_chunk_pos()));
     }
     pub fn check_chunks_to_generate(&mut self) {
         let current_chunk = self.player.position.get_meta_chunk();
@@ -199,7 +239,7 @@ impl PersonalWorld {
     pub fn update_ui_input(&mut self, input: &Input) {
         self.ui.update_input(input);
     }
-    pub fn render(&mut self, control_flow: &mut ControlFlow, window: &Window, event: &Event<()>) {
+    pub fn render(&mut self, window: &Window) -> RenderResult {
         let main_pipeline = self.renderer.pipelines.get_mut("main").unwrap();
         main_pipeline.uniforms.update_view_proj(
             &self.player,
@@ -213,17 +253,19 @@ impl PersonalWorld {
         main_pipeline.set_uniform_buffer(&self.renderer.wgpu.queue, main_pipeline.uniforms);
         match self
             .renderer
-            .do_render_pass(render_data, &mut self.ui, window, event)
+            .do_render_pass(render_data, &mut self.ui, window, &self.player)
         {
             Ok(_) => {}
             // Recreate the swap_chain if lost
             Err(wgpu::SwapChainError::Lost) => {
-                MainLoop::resize(self.renderer.wgpu.size, &mut self.renderer.wgpu)
+                resize(self.renderer.wgpu.size, &mut self.renderer.wgpu)
             }
             // The system is out of memory, we should probably quit
-            Err(wgpu::SwapChainError::OutOfMemory) => *control_flow = ControlFlow::Exit,
+            Err(wgpu::SwapChainError::OutOfMemory) => return RenderResult::Exit,
             // All other errors (Outdated, Timeout) should be resolved by the next frame
             Err(e) => eprintln!("{:?}", e),
         }
+
+        return RenderResult::Continue;
     }
 }

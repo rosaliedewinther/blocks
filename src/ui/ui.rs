@@ -1,5 +1,3 @@
-use crate::input::button::ButtonState;
-use crate::input::input::Input;
 use crate::renderer::renderer::Renderer;
 use crate::renderer::wgpu::WgpuState;
 use crate::ui::debug_info::DebugInfo;
@@ -11,6 +9,8 @@ use std::time::Instant;
 use wgpu::{Device, Queue, RenderPass};
 use winit::event::Event;
 use winit::window::Window;
+use winit_window_control::input::button::ButtonState;
+use winit_window_control::input::input::Input;
 
 pub struct UiRenderer {
     pub context: imgui::Context,
@@ -81,19 +81,12 @@ impl UiRenderer {
         queue: &Queue,
         device: &Device,
         window: &Window,
-        event: &Event<()>,
     ) {
-        self.platform
-            .handle_event(self.context.io_mut(), &window, event);
         let timediff = self.last_frame.elapsed();
         self.last_frame = Instant::now();
         self.context.io_mut().update_delta_time(timediff);
-        self.platform
-            .prepare_frame(self.context.io_mut(), &window)
-            .expect("Failed to prepare frame");
         let ui = self.context.frame();
         let debug_info = &self.debug_info;
-
         {
             let window = imgui::Window::new(im_str!("Hello too"));
             window

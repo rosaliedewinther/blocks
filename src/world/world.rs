@@ -1,5 +1,5 @@
-use crate::block::Block;
-use crate::constants::METACHUNKSIZE;
+use crate::blocks::block::BlockId;
+use crate::constants::{METACHUNKSIZE, METACHUNK_GEN_RANGE};
 use crate::player::Player;
 use crate::positions::{ChunkPos, GlobalBlockPos, MetaChunkPos};
 use crate::world_gen::chunk::Chunk;
@@ -53,6 +53,16 @@ impl World {
             Err(_) => return None,
         };
     }
+    pub fn filter_chunks(&mut self, player: &Player) {
+        self.chunks.retain(|(pos, _)| {
+            if MetaChunk::retain_meta_chunk(player, *pos) {
+                return true;
+            }
+            println!("remove chunk: {:?}", pos);
+            return false;
+        });
+    }
+
     pub fn get_all_chunks(&self) -> &Vec<(MetaChunkPos, MetaChunk)> {
         return &self.chunks;
     }
@@ -62,14 +72,14 @@ impl World {
             .par_sort_unstable_by(|(p1, _), (p2, _)| p1.cmp(p2))
     }
     #[inline]
-    pub fn get_block(&self, pos: &GlobalBlockPos) -> Option<&Block> {
+    pub fn get_block(&self, pos: &GlobalBlockPos) -> Option<BlockId> {
         return match self.get_chunk(&pos.get_chunk_pos()) {
             Some(c) => c.get_block(&pos.get_local_pos()),
             None => None,
         };
     }
     #[inline]
-    pub fn get_block_unsafe(&self, pos: &GlobalBlockPos) -> &Block {
+    pub fn get_block_unsafe(&self, pos: &GlobalBlockPos) -> BlockId {
         let chunk = self.get_chunk_unsafe(&pos.get_chunk_pos());
         chunk.get_block_unsafe(&pos.get_local_pos())
     }

@@ -31,7 +31,7 @@ impl Renderer {
         render_data: &HashMap<ChunkPos, ChunkRenderData>,
         ui: &mut UiRenderer,
         window: &Window,
-        event: &Event<()>,
+        player: &Player,
     ) -> Result<(), SwapChainError> {
         let frame = self.wgpu.swap_chain.get_current_frame()?.output;
         let mut encoder =
@@ -40,7 +40,9 @@ impl Renderer {
                 .create_command_encoder(&wgpu::CommandEncoderDescriptor {
                     label: Some("Render Encoder"),
                 });
-
+        //self.wgpu
+        //     .compute
+        //    .compute_pass(&self.wgpu.device, &self.wgpu.queue, &frame);
         {
             let mut render_pass = encoder.begin_render_pass(&wgpu::RenderPassDescriptor {
                 label: Some("Render pass world"),
@@ -70,9 +72,18 @@ impl Renderer {
             let pipeline = self.pipelines.get_mut("main").unwrap();
             pipeline.setup_render_pass(&mut render_pass);
 
-            render_data.iter().for_each(|(_, data)| {
-                data.do_render_pass(&mut render_pass);
+            let mut positions: Vec<&ChunkPos> = render_data.iter().map(|(pos, data)| pos).collect();
+            positions.par_sort_unstable_by(|pos1, pos2| {
+                ((player.position.get_distance(&pos2.get_center_pos()) * 1000f32) as i32)
+                    .cmp(&((player.position.get_distance(&pos1.get_center_pos()) * 1000f32) as i32))
             });
+
+            for pos in positions {
+                render_data
+                    .get(&pos)
+                    .unwrap()
+                    .do_render_pass(&mut render_pass)
+            }
         }
         {
             let mut render_pass = encoder.begin_render_pass(&wgpu::RenderPassDescriptor {
@@ -92,11 +103,17 @@ impl Renderer {
                 &self.wgpu.queue,
                 &self.wgpu.device,
                 window,
-                event,
             );
         }
         // submit will accept anything that implements IntoIter
         self.wgpu.queue.submit(std::iter::once(encoder.finish()));
         Ok(())
     }
+}
+
+pub(crate) fn resize(new_size: winit::dpi::PhysicalSize<u32>, wgpu: &mut WgpuState) {
+    wgpu.size = new_size;
+    wgpu.sc_desc.width = new_size.width;
+    wgpu.sc_desc.height = new_size.height;
+    wgpu.swap_chain = wgpu.device.create_swap_chain(&wgpu.surface, &wgpu.sc_desc);
 }

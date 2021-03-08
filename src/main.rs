@@ -1,15 +1,17 @@
 #![allow(dead_code)]
 
+use crate::game::VoxGame;
 use crate::logger::setup_logger;
-use crate::main_loop::MainLoop;
+use crate::positions::ChunkPos;
+use crate::world::octree::{Octree, OctreeChunk, OctreeManager};
+use crate::world_gen::chunk::Chunk;
 
 mod algorithms;
-mod block;
+mod blocks;
 mod constants;
-mod input;
+mod game;
 mod io;
 mod logger;
-mod main_loop;
 mod personal_world;
 mod player;
 mod positions;
@@ -24,10 +26,10 @@ mod world_gen;
 fn main() {
     setup_logger().unwrap();
 
-    let main_loop = MainLoop::new();
-    main_loop.run();
+    let mut octree = OctreeManager::new();
+    octree.increase(OctreeChunk::LeftBottomBack);
+    println!("{:?}", octree);
 
-    //let mut main_loop = MainLoop::new();
-    //main_loop.run();
-    //start_main_loop();
+    let mut game = VoxGame::new();
+    game.run();
 }

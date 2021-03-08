@@ -1,6 +1,6 @@
 use crate::positions::ChunkPos;
 use crate::renderer::vertex::Vertex;
-use crate::world::World;
+use crate::world::world::World;
 use crate::world_gen::vertex_generation::get_chunk_vertices;
 use wgpu::util::DeviceExt;
 use wgpu::{Device, RenderPass};
