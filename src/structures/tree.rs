@@ -6,13 +6,13 @@ use rand::distributions::{Distribution, Uniform};
 
 pub fn place_tree(pos: &GlobalBlockPos, world: &mut MetaChunk) {
     let mut rng = rand::thread_rng();
-    let height_range = Uniform::from(4..10);
+    let height_range = Uniform::from(8..12);
     let height = height_range.sample(&mut rng);
     for y in 0..height {
         if y < height - 2 {
             world.set_block(&pos.get_diff(0, y, 0), get_blockid(BlockType::Sand));
         }
-        if y >= 2 {
+        if y >= 4 {
             for x in -(height - y - 1)..height - y {
                 for z in -(height - y - 1)..height - y {
                     let currect_block = world.get_block(&pos.get_diff(x, y, z));

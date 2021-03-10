@@ -14,6 +14,7 @@ use crate::world_gen::basic::ChunkGenerator;
 use crate::world_gen::chunk::Chunk;
 use rand::distributions::{Distribution, Standard, Uniform};
 use rand::prelude::*;
+use rand_distr::Normal;
 use serde::{Deserialize, Serialize};
 use std::borrow::BorrowMut;
 
@@ -78,13 +79,12 @@ impl MetaChunk {
 
         let mut rng = rand::thread_rng();
         let location_range = Uniform::from(5..(METACHUNKSIZE * CHUNKSIZE) - 5);
+        let normal_distribution = Normal::new(0f32, 50f32).unwrap();
         let x_offset = location_range.sample(&mut rng) as i32;
         let z_offset = location_range.sample(&mut rng) as i32;
-        for _ in 0..100 {
-            let x_sampled = rng.sample::<f32, Standard>(Standard) as f32;
-            let z_sampled = rng.sample::<f32, Standard>(Standard) as f32;
-            let x_diff: i32 = (x_sampled * 100f32) as i32;
-            let z_diff: i32 = (z_sampled * 100f32) as i32;
+        for _ in 0..300 {
+            let x_diff: i32 = normal_distribution.sample(&mut rng) as i32;
+            let z_diff: i32 = normal_distribution.sample(&mut rng) as i32;
 
             let structure_x = pos.x * METACHUNKSIZE as i32 * CHUNKSIZE as i32 + x_offset + x_diff;
             let structure_z = pos.z * METACHUNKSIZE as i32 * CHUNKSIZE as i32 + z_offset + z_diff;
