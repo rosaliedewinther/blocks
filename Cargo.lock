@@ -1136,6 +1136,12 @@ dependencies = [
 ]
 
 [[package]]
+name = "libm"
+version = "0.2.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "c7d73b3f436185384286bd8098d17ec07c9a7d2388a6599f824d8502b529702a"
+
+[[package]]
 name = "lock_api"
 version = "0.4.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1299,7 +1305,7 @@ dependencies = [
  "num-rational 0.2.4",
  "num-traits 0.2.12",
  "rand 0.7.3",
- "rand_distr",
+ "rand_distr 0.2.2",
  "simba",
  "typenum",
 ]
@@ -1460,6 +1466,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "ac267bcc07f48ee5f8935ab0d24f316fb722d7a1292e2913f0cc196b29ffd611"
 dependencies = [
  "autocfg",
+ "libm",
 ]
 
 [[package]]
@@ -1782,6 +1789,16 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "96977acbdd3a6576fb1d27391900035bf3863d4a16422973a409b488cf29ffb2"
 dependencies = [
  "rand 0.7.3",
+]
+
+[[package]]
+name = "rand_distr"
+version = "0.4.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "da9e8f32ad24fb80d07d2323a9a2ce8b30d68a62b8cb4df88119ff49a698f038"
+dependencies = [
+ "num-traits 0.2.12",
+ "rand 0.8.0",
 ]
 
 [[package]]
@@ -2161,6 +2178,7 @@ dependencies = [
  "noise",
  "num-traits 0.2.12",
  "rand 0.8.0",
+ "rand_distr 0.4.0",
  "rayon",
  "serde",
  "serde-big-array",

@@ -28,6 +28,7 @@ winit_window_control = {path = "./winit_window_control"}
 winit = "0.24"
 serde-big-array = "0.3"
 memcmp = "0.0.6"
+rand_distr ="0.4"
 
 [build-dependencies]
 anyhow = "1.0"
