@@ -18,9 +18,13 @@ layout(set=0, binding=1) uniform camera_details{
 struct Circle{
     vec3 position;
     float radius;
+    vec3 color;
 };
 
-Circle circles[2] = Circle[](Circle(vec3(2.0,1.0,5.0), 1.0),Circle(vec3(0.0,0.0,6.0), 2.0));
+Circle circles[4] = Circle[](Circle(vec3(3.0,1.0,8.0), 1.0, vec3(1.0,0.0,1.0)),
+                             Circle(vec3(0.0,0.0,-6.0), 2.0, vec3(0.0,0.0,1.0)),
+                             Circle(vec3(7.0,-2.0,0.0), 1.8, vec3(1.0,1.0,1.0)),
+                             Circle(vec3(-7.0,-2.0,0.0), 1.5, vec3(0.0,1.0,0.0)));
 
 vec3 rotation_x(vec3 v, float angle){
     float s = sin(angle);
@@ -50,34 +54,28 @@ float distance_to_circle(Circle circle, vec3 position){
     return max(distance-circle.radius, 0.0);
 }
 
-float sdf_(vec3 position){
-    // extract polar coordinates
-    float wr = sqrt(dot(position,position));
-    float wo = acos(position[0]/wr);
-    float wi = atan(position[1],position[2]);
-    vec3 p = vec3(0.0);
+struct SdfReturn{
+    float distance;
+    int relevantCircleIndex;
+};
 
-    // scale and rotate the point
-    wr = pow( wr, 8.0 );
-    wo = wo * 8.0;
-    wi = wi * 8.0;
-
-    // convert back to cartesian coordinates
-    p.x = wr * sin(wo)*sin(wi);
-    p.y = wr * cos(wo);
-    p.z = wr * sin(wo)*cos(wi);
-
-    vec3 diff = position-p;
-    return diff[0] + diff[1] + diff[2];
-}
-
-float sdf(vec3 position){
-    vec2 distances = vec2(0.0,0.0);
+SdfReturn sdf(vec3 position){
+    float[4] distances = {0,0,0,0};
     for(int j = 0; j< circles.length(); j++){
         distances[j] = distance_to_circle(circles[j], position);
     }
-    return min(distances[0], distances[1]);
+    int closest = 0;
+    float distance = 1000000;
+    for (int i = 0; i < distances.length(); i++){
+        if (distances[i] < distance){
+            distance = distances[i];
+            closest = i;
+        }
+    }
+    return SdfReturn(distance, closest);
 }
+
+
 
 void main() {
     // base pixel colour for image
@@ -86,41 +84,45 @@ void main() {
     ivec2 pixel_coordsi = ivec2(gl_GlobalInvocationID.xy);
     vec2 pixel_coords = vec2(pixel_coordsi);
     vec2 total_pixels = vec2(gl_NumWorkGroups.xy);
-    vec2 centre = total_pixels/2;
-    float anglex = (pixel_coords[0] - centre[0])/centre[0];
-    float angley = (pixel_coords[1] - centre[1])/centre[1];
+    //vec2 centre = total_pixels/2;
+    //float anglex = (pixel_coords[0] - centre[0])/centre[0];
+    //float angley = (pixel_coords[1] - centre[1])/centre[1];
 
 
-    pixel[0] = clamp(anglex/2.0+1.0, 0.0, 1.0);
-    pixel[1] = clamp(angley/2.0+1.0, 0.0, 1.0);
+    //pixel[0] = clamp(anglex/2.0+1.0, 0.0, 1.0);
+    //pixel[1] = clamp(angley/2.0+1.0, 0.0, 1.0);
     //vec3 direction = normalize(vec3(anglex, angley, 1));
-    float fov = 90;
+    float fov = 60;
 
     float imageAspectRatio = total_pixels[0] / total_pixels[1]; // assuming width > height
     float Px = (2 * ((pixel_coords[0] + 0.5) / total_pixels[0]) - 1) * tan(fov / 2 * PI / 180) * imageAspectRatio;
     float Py = (1 - 2 * ((pixel_coords[1] + 0.5) / total_pixels[1])) * tan(fov / 2 * PI / 180);
     vec3 rayOrigin = uni.position;
-    vec3 direction = vec3(Px, Py, -1) - rayOrigin; // note that this just equal to Vec3f(Px, Py, -1);
+    vec3 direction = vec3(Px, Py, -1); // note that this just equal to Vec3f(Px, Py, -1);
     direction = normalize(direction);
 
     //vec3 direction = rotation_y(rotation_x(vec3(0.0,0.0,1.0), angle[1]), angle[0]);
     //vec3 direction = normalize(vec3(sin(), sin(), -1));
     //pixel = vec4(direction[0],direction[1],0.0, 1.0);
+    int bounce = 0;
 
-    for(int i = 1; i < 20; i++){
-        float distance = sdf(rayOrigin);
-        if (distance < 0.1){
-            pixel[0] = float(i)/3.0;
-            pixel[1] = 1.0;
-            pixel[2] = 1.0;
-            imageStore(img_output, pixel_coordsi, pixel);
-            return;
+
+    for(int i = 1; i < 50; i++){
+        SdfReturn sdf_result = sdf(rayOrigin);
+        if (sdf_result.distance < 0.01){
+            pixel = vec4(circles[sdf_result.relevantCircleIndex].color,1.0);
+            if (bounce ==1){
+                break;
+            }
+            bounce+=1;
+            direction = reflect(direction, normalize(rayOrigin - circles[sdf_result.relevantCircleIndex].position));
+            rayOrigin = rayOrigin+sdf_result.distance*direction*100;
+        } else {
+            rayOrigin = rayOrigin+sdf_result.distance*direction;
         }
-        if (distance > 100){
-            imageStore(img_output, pixel_coordsi, pixel);
-            return;
+        if (sdf_result.distance > 100){
+            break;
         }
-        rayOrigin = rayOrigin+distance*direction;
     }
 
 
