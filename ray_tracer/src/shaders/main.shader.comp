@@ -74,6 +74,32 @@ SdfReturn sdf(vec3 position){
     }
     return SdfReturn(distance, closest);
 }
+struct RayCircleIntersects{
+    bool intersects;
+    vec3 position;
+};
+
+//https://stackoverflow.com/questions/6533856/ray-sphere-intersection
+RayCircleIntersects ray_intersects_circle(Circle circle, vec3 origin, vec3 direction){
+    vec3 second_point = origin + direction;
+    float a = dot(direction,direction);
+    float b = 2*dot(direction, origin-circle.position);
+    float c = dot(pow(origin-circle.position,vec3(2.0)), vec3(1.0))-pow(circle.radius, 2.0);
+    float delta = pow(b,2.0)-4*a*c;
+
+
+    float d1 = (-b-sqrt(delta))/(2*a);
+    float d2 = (-b+sqrt(delta))/(2*a);
+
+    vec3 position = origin + min(d1,d2)*(direction-origin);
+
+
+
+    if (delta >= 0){
+        return RayCircleIntersects(true, normalize(position - circle.position));
+    }
+    return RayCircleIntersects(false, vec3(0.0,0.0,0.0));
+}
 
 
 
@@ -107,8 +133,17 @@ void main() {
     //pixel = vec4(direction[0],direction[1],0.0, 1.0);
     int bounce = 0;
 
+    for(int j = 0; j< circles.length(); j++){
+        RayCircleIntersects r  = ray_intersects_circle(circles[j], rayOrigin, direction);
+        if (r.intersects){
+            pixel = vec4(r.position,1.0);
+        }
+        imageStore(img_output, pixel_coordsi, pixel);
 
-    for(int i = 1; i < 500; i++){
+    }
+    return;
+
+    for(int i = 1; i < 50; i++){
         SdfReturn sdf_result = sdf(rayOrigin);
         if (sdf_result.distance < 0.01){
             pixel = vec4(circles[sdf_result.relevantCircleIndex].color,1.0);
