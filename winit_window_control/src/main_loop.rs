@@ -1,5 +1,6 @@
 use crate::input::input::Input;
 use std::time::Instant;
+use winit::dpi::Size::Physical;
 use winit::dpi::{PhysicalSize, Size};
 use winit::event::{Event, WindowEvent};
 use winit::event_loop::{ControlFlow, EventLoop};
@@ -29,16 +30,23 @@ pub trait Game {
     fn on_resize(&mut self, physical_size: PhysicalSize<u32>);
 }
 
-pub fn main_loop_run<T>(mut game: T)
+pub fn main_loop_run<T>(mut game: T, window_width: Option<i32>, window_height: Option<i32>)
 where
     T: 'static + Game,
 {
     let event_loop = EventLoop::new();
-    let window = WindowBuilder::new()
-        .with_maximized(true)
-        .with_resizable(false)
-        .build(&event_loop)
-        .unwrap();
+    let mut window_builder = WindowBuilder::new();
+    if window_width.is_some() && window_height.is_some() {
+        window_builder = WindowBuilder::new()
+            .with_inner_size(PhysicalSize::new(
+                window_width.unwrap(),
+                window_height.unwrap(),
+            ))
+            .with_resizable(false);
+    } else {
+        window_builder = WindowBuilder::new().with_maximized(true);
+    }
+    let window = window_builder.build(&event_loop).unwrap();
     game.on_init(&window);
     let mut window_input = Input::new();
     let mut on_tick_timer = Instant::now();

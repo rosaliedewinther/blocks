@@ -96,14 +96,15 @@ RayCircleIntersects ray_intersects_circle(Circle circle, vec3 origin, vec3 direc
 
 
     if (delta >= 0){
-        return RayCircleIntersects(true, normalize(position - circle.position));
+        return RayCircleIntersects(true, normalize(position));
     }
-    return RayCircleIntersects(false, vec3(0.0,0.0,0.0));
+    return RayCircleIntersects(false, vec3(0.0));
 }
 
 
 
 void main() {
+    return;
     // base pixel colour for image
     vec4 pixel = vec4(0.0, 0.0, 0.0, 1.0);
     // get index in global work group i.e x,y position
@@ -136,11 +137,12 @@ void main() {
     for(int j = 0; j< circles.length(); j++){
         RayCircleIntersects r  = ray_intersects_circle(circles[j], rayOrigin, direction);
         if (r.intersects){
-            pixel = vec4(r.position,1.0);
+            pixel = vec4(r.position, 1.0);
+            imageStore(img_output, pixel_coordsi, pixel);
+            break;
         }
-        imageStore(img_output, pixel_coordsi, pixel);
-
     }
+    imageStore(img_output, pixel_coordsi, pixel);
     return;
 
     for(int i = 1; i < 50; i++){

@@ -12,6 +12,8 @@ pub struct RayTracer {
     wgpu: Option<WgpuState>,
     renderer: Option<Renderer>,
     timer: Instant,
+    summer: f32,
+    frame_id: i64,
 }
 
 impl RayTracer {
@@ -20,10 +22,12 @@ impl RayTracer {
             wgpu: None,
             renderer: None,
             timer: Instant::now(),
+            summer: 0.0,
+            frame_id: 0,
         }
     }
     pub fn run(self) {
-        main_loop_run(self);
+        main_loop_run(self, Some(1280), Some(720));
     }
 }
 
@@ -43,8 +47,14 @@ impl Game for RayTracer {
             .as_ref()
             .unwrap()
             .do_render_pass(self.wgpu.as_ref().unwrap());
-        println!("fps estimate: {}", 1.0 / self.timer.elapsed().as_secs_f32());
+        if self.frame_id % 100 == 0 {
+            println!("fps estimate: {}", 1.0 / (self.summer / 100.0));
+            self.summer = 0.0;
+        } else {
+            self.summer += self.timer.elapsed().as_secs_f32();
+        }
         self.timer = Instant::now();
+        self.frame_id += 1;
         RenderResult::Continue
     }
     fn on_init(&mut self, window: &Window) -> InitResult {

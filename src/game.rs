@@ -19,7 +19,7 @@ impl VoxGame {
         }
     }
     pub fn run(self) {
-        main_loop_run(self);
+        main_loop_run(self, None, None);
     }
 }
 
