@@ -84,7 +84,8 @@ RayCircleIntersects ray_intersects_circle(Circle circle, vec3 origin, vec3 direc
     vec3 second_point = origin + direction;
     float a = dot(direction,direction);
     float b = 2*dot(direction, origin-circle.position);
-    float c = dot(pow(origin-circle.position,vec3(2.0)), vec3(1.0))-pow(circle.radius, 2.0);
+    vec3 origin_to_circle = origin-circle.position;
+    float c = dot(origin_to_circle,origin_to_circle)-pow(circle.radius, 2.0);
     float delta = pow(b,2.0)-4*a*c;
 
 
@@ -96,7 +97,7 @@ RayCircleIntersects ray_intersects_circle(Circle circle, vec3 origin, vec3 direc
 
 
     if (delta >= 0){
-        return RayCircleIntersects(true, normalize(position));
+        return RayCircleIntersects(true, position);
     }
     return RayCircleIntersects(false, vec3(0.0));
 }
@@ -104,7 +105,6 @@ RayCircleIntersects ray_intersects_circle(Circle circle, vec3 origin, vec3 direc
 
 
 void main() {
-    return;
     // base pixel colour for image
     vec4 pixel = vec4(0.0, 0.0, 0.0, 1.0);
     // get index in global work group i.e x,y position
@@ -135,11 +135,13 @@ void main() {
     int bounce = 0;
 
     for(int j = 0; j< circles.length(); j++){
+        float depth = 100000.0;
         RayCircleIntersects r  = ray_intersects_circle(circles[j], rayOrigin, direction);
-        if (r.intersects){
-            pixel = vec4(r.position, 1.0);
-            imageStore(img_output, pixel_coordsi, pixel);
-            break;
+        vec3 ray_camera_diff = rayOrigin - r.position;
+        float distance = dot(ray_camera_diff,ray_camera_diff);
+        if (r.intersects && distance < depth){
+            depth = distance;
+            pixel = vec4(distance/10000.0,0.0,0.0, 1.0);
         }
     }
     imageStore(img_output, pixel_coordsi, pixel);
