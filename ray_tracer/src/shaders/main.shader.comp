@@ -82,24 +82,22 @@ struct RayCircleIntersects{
 //https://stackoverflow.com/questions/6533856/ray-sphere-intersection
 RayCircleIntersects ray_intersects_circle(Circle circle, vec3 origin, vec3 direction){
     vec3 second_point = origin + direction;
-    float a = dot(direction,direction);
     float b = 2*dot(direction, origin-circle.position);
     vec3 origin_to_circle = origin-circle.position;
     float c = dot(origin_to_circle,origin_to_circle)-pow(circle.radius, 2.0);
-    float delta = pow(b,2.0)-4*a*c;
+    float delta = pow(b,2.0)-4*c;
+    if (delta < 0){
+        return RayCircleIntersects(false, vec3(0.0));
+    }
 
-
-    float d1 = (-b-sqrt(delta))/(2*a);
-    float d2 = (-b+sqrt(delta))/(2*a);
+    float d1 = (-b-sqrt(delta))/(2);
+    float d2 = (-b+sqrt(delta))/(2);
 
     vec3 position = origin + min(d1,d2)*(direction-origin);
 
 
 
-    if (delta >= 0){
-        return RayCircleIntersects(true, position);
-    }
-    return RayCircleIntersects(false, vec3(0.0));
+    return RayCircleIntersects(true, position);
 }
 
 
