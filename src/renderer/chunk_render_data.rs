@@ -2,6 +2,7 @@ use crate::positions::ChunkPos;
 use crate::renderer::vertex::Vertex;
 use crate::world::world::World;
 use crate::world_gen::vertex_generation::get_chunk_vertices;
+use std::time::Instant;
 use wgpu::util::DeviceExt;
 use wgpu::{Device, RenderPass};
 
@@ -14,6 +15,7 @@ pub struct ChunkRenderData {
 
 impl ChunkRenderData {
     pub fn new(world: &World, chunk_pos: &ChunkPos, device: &Device) -> ChunkRenderData {
+        let timer = Instant::now();
         let (vertices, indices) = get_chunk_vertices(world, &chunk_pos);
         if vertices.len() == 0 {
             return ChunkRenderData {
@@ -23,6 +25,7 @@ impl ChunkRenderData {
                 num_indices: None,
             };
         }
+        println!("vertex gen time: {}", timer.elapsed().as_micros());
         let vertices: &[Vertex] = vertices.as_slice();
         let indices: &[u32] = indices.as_slice();
 

@@ -12,7 +12,6 @@ pub fn get_chunk_vertices(world: &World, chunk_pos: &ChunkPos) -> (Vec<Vertex>, 
     if chunk.is_completely_air {
         return (Vec::new(), Vec::new());
     }
-
     let mut transparant_vertices: Vec<Vertex> = Vec::with_capacity(10000);
     let mut transparant_indices: Vec<u32> = Vec::with_capacity(10000);
 

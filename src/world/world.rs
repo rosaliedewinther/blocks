@@ -81,11 +81,11 @@ impl World {
     #[inline]
     pub fn get_block_unsafe(&self, pos: &GlobalBlockPos) -> BlockId {
         let chunk = self.get_chunk_unsafe(&pos.get_chunk_pos());
-        chunk.get_block_unsafe(&pos.get_local_pos())
+        unsafe { chunk.get_block_unsafe(&pos.get_local_pos()) }
     }
     pub fn get_chunk_unsafe(&self, pos: &ChunkPos) -> &Chunk {
         let meta_chunk = self.get_meta_chunk(&pos.get_meta_chunk_pos()).unwrap();
-        meta_chunk.get_chunk_unsafe(&pos.get_local_chunk_pos())
+        unsafe { meta_chunk.get_chunk_unsafe(&pos.get_local_chunk_pos()) }
     }
     pub fn get_chunk(&self, pos: &ChunkPos) -> Option<&Chunk> {
         if pos.y >= METACHUNKSIZE as i32 {
