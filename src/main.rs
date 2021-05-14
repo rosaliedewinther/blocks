@@ -1,5 +1,4 @@
 #![allow(dead_code)]
-
 use crate::game::VoxGame;
 use crate::logger::setup_logger;
 use crate::positions::ChunkPos;
@@ -17,7 +16,6 @@ mod player;
 mod positions;
 mod renderer;
 mod structures;
-mod tests;
 mod ui;
 mod utils;
 mod world;
