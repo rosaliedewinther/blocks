@@ -11,30 +11,15 @@ rand = "0.8"
 log = "0.4"
 fern = "0.6"
 chrono = "0.4"
-nalgebra = "0.22"
 num-traits = "0.2"
 noise="0.6"
-rayon = "1.4"
-serde = { version = "1.0", features = ["derive"] }
-bincode = "1.3"
-wgpu = "0.7"
-futures = "0.3"
-bytemuck = { version = "1.4", features = [ "derive" ] }
 cgmath = "0.18"
 imgui-wgpu = "0.14"
 imgui = "0.7"
 imgui-winit-support = "0.7"
 winit_window_control = {git = "https://github.com/jasperdewinther/winit_abstraction", branch = "main"}
-winit = "0.24"
 serde-big-array = "0.3"
-memcmp = "0.0.6"
 rand_distr ="0.4"
-
-[build-dependencies]
-anyhow = "1.0"
-fs_extra = "1.1"
-glob = "0.3"
-shaderc = "0.7"
 
 [profile.dev]
 opt-level = 2

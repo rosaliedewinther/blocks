@@ -1,8 +1,8 @@
-use crate::positions::ChunkPos;
-use crate::renderer::vertex::Vertex;
-use crate::world::world::World;
-use crate::world_gen::vertex_generation::get_chunk_vertices;
 use std::time::Instant;
+use vox_world::positions::ChunkPos;
+use vox_world::renderer::vertex::Vertex;
+use vox_world::world::world::World;
+use vox_world::world_gen::vertex_generation::get_chunk_vertices;
 use wgpu::util::DeviceExt;
 use wgpu::{Device, RenderPass};
 

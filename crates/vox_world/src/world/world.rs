@@ -1,13 +1,13 @@
-use crate::blocks::block::BlockId;
 use crate::constants::{METACHUNKSIZE, METACHUNK_GEN_RANGE};
-use crate::player::Player;
-use crate::positions::{ChunkPos, GlobalBlockPos, MetaChunkPos};
 use crate::world_gen::chunk::Chunk;
 use crate::world_gen::chunk_loader::ChunkLoader;
 use crate::world_gen::meta_chunk::MetaChunk;
 use rayon::prelude::ParallelSliceMut;
 use std::collections::{HashMap, HashSet};
 use std::time::Instant;
+use vox::blocks::block::BlockId;
+use vox::player::Player;
+use vox::positions::{ChunkPos, GlobalBlockPos, MetaChunkPos};
 
 pub struct World {
     chunks: Vec<(MetaChunkPos, MetaChunk)>,

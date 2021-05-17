@@ -1,6 +1,5 @@
 use crate::renderer::compute::Compute;
 use crate::renderer::depth_texture::DepthTexture;
-use fern::Panic;
 use futures::executor::block_on;
 use std::f32::consts::PI;
 use wgpu::{Device, Queue, Surface};
