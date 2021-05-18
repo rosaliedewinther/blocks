@@ -1,8 +1,7 @@
-use crate::constants::COLORS;
-use crate::player::Player;
 use crate::renderer::wgpu::gen_perspective_mat;
-use crate::utils::get_rotation_matrix_y;
 use nalgebra::Vector3;
+use vox_core::constants::COLORS;
+use vox_core::utils::get_rotation_matrix_y;
 
 #[repr(C)]
 #[derive(Debug, Copy, Clone, bytemuck::Pod, bytemuck::Zeroable)]
@@ -39,7 +38,7 @@ impl Uniforms {
         }
     }
 
-    pub fn update_view_proj(&mut self, player: &Player, size: (u32, u32), time: f64) {
+    /*pub fn update_view_proj(&mut self, player: &Player, size: (u32, u32), time: f64) {
         let (width, height) = size;
         self.view = player.get_view_matrix();
         self.perspective = gen_perspective_mat((width, height));
@@ -47,5 +46,5 @@ impl Uniforms {
         let sun_dir = get_rotation_matrix_y(time as f32) * Vector3::new(1.0, 1.0, 0.0);
         self.sun_dir = [sun_dir[0], sun_dir[1], sun_dir[2]];
         self.time = time as f32;
-    }
+    }*/
 }

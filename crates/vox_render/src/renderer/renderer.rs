@@ -1,12 +1,8 @@
-use crate::player::Player;
-use crate::positions::ChunkPos;
-use crate::renderer::chunk_render_data::ChunkRenderData;
 use crate::renderer::wgpu::WgpuState;
 use crate::renderer::wgpu_pipeline::WgpuPipeline;
-use crate::ui::ui::UiRenderer;
-use futures::executor::block_on;
 use rayon::prelude::ParallelSliceMut;
 use std::collections::HashMap;
+use vox_core::positions::ChunkPos;
 use wgpu::SwapChainError;
 use winit::event::Event;
 use winit::window::Window;
@@ -28,10 +24,10 @@ impl Renderer {
     }
     pub fn do_render_pass(
         &mut self,
-        render_data: &HashMap<ChunkPos, ChunkRenderData>,
-        ui: &mut UiRenderer,
+        /*render_data: &HashMap<ChunkPos, ChunkRenderData>,
+        ui: &mut UiRenderer,*/
         window: &Window,
-        player: &Player,
+        /*player: &Player,*/
     ) -> Result<(), SwapChainError> {
         let frame = self.wgpu.swap_chain.get_current_frame()?.output;
         let mut encoder =
@@ -72,7 +68,7 @@ impl Renderer {
             let pipeline = self.pipelines.get_mut("main").unwrap();
             pipeline.setup_render_pass(&mut render_pass);
 
-            let mut positions: Vec<&ChunkPos> = render_data.iter().map(|(pos, data)| pos).collect();
+            /*let mut positions: Vec<&ChunkPos> = render_data.iter().map(|(pos, data)| pos).collect();
             positions.par_sort_unstable_by(|pos1, pos2| {
                 ((player.position.get_distance(&pos2.get_center_pos()) * 1000f32) as i32)
                     .cmp(&((player.position.get_distance(&pos1.get_center_pos()) * 1000f32) as i32))
@@ -83,7 +79,7 @@ impl Renderer {
                     .get(&pos)
                     .unwrap()
                     .do_render_pass(&mut render_pass)
-            }
+            }*/
         }
         {
             let mut render_pass = encoder.begin_render_pass(&wgpu::RenderPassDescriptor {
@@ -98,12 +94,12 @@ impl Renderer {
                 }],
                 depth_stencil_attachment: None,
             });
-            ui.render(
+            /*ui.render(
                 &mut render_pass,
                 &self.wgpu.queue,
                 &self.wgpu.device,
                 window,
-            );
+            );*/
         }
         // submit will accept anything that implements IntoIter
         self.wgpu.queue.submit(std::iter::once(encoder.finish()));
@@ -111,7 +107,7 @@ impl Renderer {
     }
 }
 
-pub(crate) fn resize(new_size: winit::dpi::PhysicalSize<u32>, wgpu: &mut WgpuState) {
+pub fn resize(new_size: winit::dpi::PhysicalSize<u32>, wgpu: &mut WgpuState) {
     wgpu.size = new_size;
     wgpu.sc_desc.width = new_size.width;
     wgpu.sc_desc.height = new_size.height;

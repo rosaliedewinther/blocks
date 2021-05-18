@@ -1,9 +1,9 @@
 use crate::blocks::block::{get_blocktype, BlockId};
 use crate::blocks::block_type::BlockType;
 use crate::blocks::blockside::BlockSides;
-use crate::constants::COLORS;
-use crate::positions::{GlobalBlockPos, ObjectPos};
-use crate::renderer::vertex::{vertex_typed, Vertex};
+use vox_core::constants::COLORS;
+use vox_core::positions::{GlobalBlockPos, ObjectPos};
+use vox_render::renderer::vertex::{vertex_typed, Vertex};
 
 pub fn get_mesh(
     block_id: BlockId,

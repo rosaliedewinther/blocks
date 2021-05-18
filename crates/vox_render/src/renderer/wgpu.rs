@@ -1,4 +1,3 @@
-use crate::renderer::compute::Compute;
 use crate::renderer::depth_texture::DepthTexture;
 use futures::executor::block_on;
 use std::f32::consts::PI;
@@ -14,7 +13,6 @@ pub struct WgpuState {
     pub swap_chain: wgpu::SwapChain,
     pub size: winit::dpi::PhysicalSize<u32>,
     pub depth_texture: DepthTexture,
-    pub compute: Compute,
 }
 
 impl WgpuState {
@@ -30,7 +28,6 @@ impl WgpuState {
 
         let swap_chain = device.create_swap_chain(&surface, &sc_desc);
         let depth_texture = DepthTexture::create_depth_texture(&device, &sc_desc, "depth_texture");
-        let mut compute = Compute::new(&device, &queue, &window);
         //compute.compute_pass(&device, &queue);
         Self {
             surface,
@@ -40,7 +37,6 @@ impl WgpuState {
             swap_chain,
             size,
             depth_texture,
-            compute,
         }
     }
     pub fn get_device_queue_surface(window: &Window) -> (Device, Queue, Surface) {

@@ -1,12 +1,11 @@
 use crate::blocks::block::{get_blocktype, BlockId};
 use crate::blocks::block_type::BlockType;
-use crate::constants::CHUNKSIZE;
-use crate::positions::{ChunkPos, LocalBlockPos};
 use crate::world_gen::basic::ChunkGenerator;
 use bytemuck::{Pod, Zeroable};
-use log::warn;
 use serde::{Deserialize, Serialize};
 use serde_big_array::big_array;
+use vox_core::constants::CHUNKSIZE;
+use vox_core::positions::{ChunkPos, LocalBlockPos};
 
 big_array! { BigArray;
 CHUNKSIZE * CHUNKSIZE * CHUNKSIZE}
@@ -61,7 +60,7 @@ impl Chunk {
             || pos.z < 0
             || pos.z > (CHUNKSIZE - 1) as i32
         {
-            warn!("tried to place block outside chunk with pos: {:?}", &pos);
+            println!("couldn't set block at: {:?}", &pos);
             return;
         }
         self.blocks.d[pos.x as usize
@@ -76,7 +75,7 @@ impl Chunk {
             || pos.z < 0
             || pos.z >= (CHUNKSIZE) as i32
         {
-            //println!("couldn't get block at: {:?}", &pos);
+            println!("couldn't get block at: {:?}", &pos);
             return None;
         }
         return Some(

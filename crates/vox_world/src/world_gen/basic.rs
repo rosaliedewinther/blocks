@@ -1,10 +1,10 @@
 use crate::blocks::block::{get_blockid, get_blocktype};
 use crate::blocks::block_type::BlockType;
-use crate::constants::{CHUNKSIZE, METACHUNKSIZE};
-use crate::positions::{ChunkPos, LocalBlockPos};
 use crate::world_gen::chunk::{Chunk, ChunkData};
 use noise::{Fbm, MultiFractal, NoiseFn, Seedable};
 use std::cmp::max;
+use vox_core::constants::{CHUNKSIZE, METACHUNKSIZE};
+use vox_core::positions::{ChunkPos, LocalBlockPos};
 
 pub struct ChunkGenerator {
     pub noise: Fbm,

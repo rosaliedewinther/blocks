@@ -1,12 +1,4 @@
-use crate::constants::{CHUNKSIZE, METACHUNKSIZE, METACHUNK_GEN_RANGE, METACHUNK_UNLOAD_RADIUS};
-use crate::player::Player;
-use crate::positions::{ChunkPos, MetaChunkPos};
-use crate::renderer::chunk_render_data::ChunkRenderData;
-use crate::renderer::renderer::{resize, Renderer};
 use crate::ui::ui::UiRenderer;
-use crate::world::world::World;
-use crate::world_gen::chunk_gen_thread::ChunkGenThread;
-use crate::world_gen::meta_chunk::MetaChunk;
 use cgmath::{InnerSpace, Vector3};
 use rayon::iter::ParallelIterator;
 use rayon::iter::{IntoParallelIterator, IntoParallelRefIterator};
@@ -15,6 +7,14 @@ use std::cmp::{min, Ordering};
 use std::collections::{BinaryHeap, HashMap, HashSet};
 use std::sync::{Arc, Mutex};
 use std::time::{Instant, SystemTime, UNIX_EPOCH};
+use vox_core::constants::{CHUNKSIZE, METACHUNKSIZE, METACHUNK_GEN_RANGE, METACHUNK_UNLOAD_RADIUS};
+use vox_core::positions::{ChunkPos, MetaChunkPos};
+use vox_render::renderer::renderer::{resize, Renderer};
+use vox_world::chunk_render_data::ChunkRenderData;
+use vox_world::player::Player;
+use vox_world::world::world::World;
+use vox_world::world_gen::chunk_gen_thread::ChunkGenThread;
+use vox_world::world_gen::meta_chunk::MetaChunk;
 use winit::event::Event;
 use winit::event_loop::ControlFlow;
 use winit::window::Window;
@@ -241,20 +241,17 @@ impl PersonalWorld {
     }
     pub fn render(&mut self, window: &Window) -> RenderResult {
         let main_pipeline = self.renderer.pipelines.get_mut("main").unwrap();
-        main_pipeline.uniforms.update_view_proj(
+        /*main_pipeline.uniforms.update_view_proj(
             &self.player,
             (
                 self.renderer.wgpu.size.width,
                 self.renderer.wgpu.size.height,
             ),
             self.world.time,
-        );
+        );*/
         let render_data = &self.chunk_render_data;
         main_pipeline.set_uniform_buffer(&self.renderer.wgpu.queue, main_pipeline.uniforms);
-        match self
-            .renderer
-            .do_render_pass(render_data, &mut self.ui, window, &self.player)
-        {
+        match self.renderer.do_render_pass(window) {
             Ok(_) => {}
             // Recreate the swap_chain if lost
             Err(wgpu::SwapChainError::Lost) => {

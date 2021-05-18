@@ -1,10 +1,10 @@
-use crate::positions::MetaChunkPos;
 use crate::world_gen::meta_chunk::MetaChunk;
 use std::sync::mpsc;
 use std::sync::mpsc::{Receiver, SendError, Sender, TryRecvError};
 use std::thread;
 use std::thread::JoinHandle;
 use std::time::Instant;
+use vox_core::positions::MetaChunkPos;
 
 pub struct ChunkGenThread {
     pub chunk_generator_requester: Sender<(MetaChunkPos, u32)>,

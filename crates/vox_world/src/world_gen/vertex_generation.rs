@@ -1,12 +1,12 @@
 use crate::blocks::block::{get_blocktype, get_mesh, should_render_against, BlockId};
 use crate::blocks::block_type::BlockType;
 use crate::blocks::blockside::BlockSides;
-use crate::constants::{CHUNKSIZE, METACHUNKSIZE};
-use crate::positions::{ChunkPos, GlobalBlockPos, LocalBlockPos};
-use crate::renderer::vertex::Vertex;
 use crate::world::world::World;
 use crate::world_gen::chunk::Chunk;
 use std::time::Instant;
+use vox_core::constants::{CHUNKSIZE, METACHUNKSIZE};
+use vox_core::positions::{ChunkPos, GlobalBlockPos, LocalBlockPos};
+use vox_render::renderer::vertex::Vertex;
 
 pub fn get_chunk_vertices(world: &World, chunk_pos: &ChunkPos) -> (Vec<Vertex>, Vec<u32>) {
     return match world.get_chunk(chunk_pos) {

@@ -14,8 +14,7 @@ winit = "0.24"
 rayon = "1.4"
 nalgebra = "0.22"
 bytemuck = { version = "1.4", features = [ "derive" ] }
-vox_world = {path="../vox_world"}
-vox = {path="../vox"}
+vox_core = {path="../vox_core"}
 
 [build-dependencies]
 anyhow = "1.0"

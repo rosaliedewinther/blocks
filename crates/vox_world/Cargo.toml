@@ -8,4 +8,16 @@ edition = "2018"
 
 [dependencies]
 rayon = "1.4"
-vox = {path="../vox"}
+vox_core = {path="../vox_core"}
+vox_render = {path="../vox_render"}
+vox_io = {path="../vox_io"}
+winit = "0.24"
+winit_window_control = {git = "https://github.com/jasperdewinther/winit_abstraction", branch = "main"}
+nalgebra = "0.22"
+rand = "0.8"
+serde = { version = "1.0", features = ["derive"] }
+wgpu = "0.7"
+noise="0.6"
+rand_distr ="0.4"
+bytemuck = { version = "1.4", features = [ "derive" ] }
+serde-big-array = "0.3"

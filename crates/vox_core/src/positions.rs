@@ -1,5 +1,4 @@
 use crate::constants::{CHUNKSIZE, METACHUNKSIZE};
-use crate::player::Player;
 use crate::utils::{wrap, wrapf};
 use core::ops;
 use num_traits::Pow;

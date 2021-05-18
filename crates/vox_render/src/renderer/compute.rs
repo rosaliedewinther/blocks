@@ -1,4 +1,4 @@
-use crate::constants::CHUNKSIZE;
+/*use crate::constants::CHUNKSIZE;
 use crate::renderer::vertex::Vertex;
 use crate::renderer::wgpu::WgpuState;
 use crate::world_gen::chunk::ChunkData;
@@ -221,4 +221,4 @@ impl Compute {
             println!("{}", timer.elapsed().as_secs_f64());
         });
     }
-}
+} */

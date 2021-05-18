@@ -1,11 +1,11 @@
-use crate::renderer::renderer::Renderer;
-use crate::renderer::wgpu::WgpuState;
 use crate::ui::debug_info::DebugInfo;
 use imgui::im_str;
 use imgui::{Condition, FontSource};
 use imgui_wgpu::Renderer as imgui_renderer;
 use imgui_wgpu::RendererConfig;
 use std::time::Instant;
+use vox_render::renderer::renderer::Renderer;
+use vox_render::renderer::wgpu::WgpuState;
 use wgpu::{Device, Queue, RenderPass};
 use winit::event::Event;
 use winit::window::Window;

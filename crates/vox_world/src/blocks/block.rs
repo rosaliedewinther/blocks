@@ -1,11 +1,11 @@
 use crate::blocks::block_type::BlockType;
 use crate::blocks::blockside::BlockSides;
-use crate::constants::COLORS;
-use crate::positions::{GlobalBlockPos, ObjectPos};
-use crate::renderer::vertex::{vertex, vertex_typed, Vertex};
 use rand::distributions::{Distribution, Standard};
 use rand::Rng;
 use serde::{Deserialize, Serialize};
+use vox_core::constants::COLORS;
+use vox_core::positions::{GlobalBlockPos, ObjectPos};
+use vox_render::renderer::vertex::{vertex, vertex_typed, Vertex};
 
 pub type BlockId = u8;
 

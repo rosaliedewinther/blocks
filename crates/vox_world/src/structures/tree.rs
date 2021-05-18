@@ -1,8 +1,8 @@
 use crate::blocks::block::{get_blockid, get_blocktype};
 use crate::blocks::block_type::BlockType;
-use crate::positions::GlobalBlockPos;
 use crate::world_gen::meta_chunk::MetaChunk;
 use rand::distributions::{Distribution, Uniform};
+use vox_core::positions::GlobalBlockPos;
 
 pub fn place_tree(pos: &GlobalBlockPos, world: &mut MetaChunk) {
     let mut rng = rand::thread_rng();

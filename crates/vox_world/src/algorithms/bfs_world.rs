@@ -1,8 +1,8 @@
 use crate::blocks::block::{get_blocktype, BlockId};
 use crate::blocks::block_type::BlockType;
-use crate::positions::GlobalBlockPos;
 use crate::world_gen::meta_chunk::MetaChunk;
 use std::collections::{HashSet, VecDeque};
+use vox_core::positions::GlobalBlockPos;
 
 pub struct Blocksides {
     pub top: bool,
