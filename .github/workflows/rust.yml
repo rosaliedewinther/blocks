@@ -13,18 +13,6 @@ jobs:
 
     steps:
     - uses: actions/checkout@v2
-    - name: check core
-      working-directory: ./crates/vox_core
-      run: cargo check
-    - name: check io
-      working-directory: ./crates/vox_io
-      run: cargo check
-    - name: check render
-      working-directory: ./crates/vox_render
-      run: cargo check
-    - name: check world
-      working-directory: ./crates/vox_world
-      run: cargo check
     - name: build vox
       working-directory: ./crates/vox
       run: cargo build --release

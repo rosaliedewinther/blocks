@@ -1,6 +1,7 @@
 pub mod compute;
 pub mod depth_texture;
 pub mod renderer;
+pub mod renderpassable;
 pub mod uniforms;
 pub mod vertex;
 pub mod wgpu;

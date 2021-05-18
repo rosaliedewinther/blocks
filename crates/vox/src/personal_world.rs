@@ -10,6 +10,9 @@ use std::time::{Instant, SystemTime, UNIX_EPOCH};
 use vox_core::constants::{CHUNKSIZE, METACHUNKSIZE, METACHUNK_GEN_RANGE, METACHUNK_UNLOAD_RADIUS};
 use vox_core::positions::{ChunkPos, MetaChunkPos};
 use vox_render::renderer::renderer::{resize, Renderer};
+use vox_render::renderer::renderpassable::RenderPassable;
+use vox_render::renderer::wgpu::WgpuState;
+use vox_render::renderer::wgpu_pipeline::WgpuPipeline;
 use vox_world::chunk_render_data::ChunkRenderData;
 use vox_world::player::Player;
 use vox_world::world::world::World;
@@ -27,18 +30,15 @@ pub struct PersonalWorld {
     pub player: Player,
     pub chunk_gen_thread: ChunkGenThread,
     pub loading_chunks: HashSet<MetaChunkPos>,
-    pub renderer: Renderer,
     pub reload_vertex_load_order: bool,
     pub to_generate: Vec<(f32, ChunkPos)>,
     pub ui: UiRenderer,
 }
 
 impl PersonalWorld {
-    pub fn new(window: &Window) -> PersonalWorld {
-        let renderer = Renderer::new(&window);
+    pub fn new(window: &Window, renderer: &Renderer) -> PersonalWorld {
         let ui_renderer = UiRenderer::new(window, &renderer);
         PersonalWorld {
-            renderer,
             world: World::new(
                 SystemTime::now()
                     .duration_since(UNIX_EPOCH)
@@ -56,20 +56,6 @@ impl PersonalWorld {
     }
     pub fn update(&mut self) {
         self.world.update();
-        /*let timer = Instant::now();
-        let chunk = self.world.get_chunk(&ChunkPos { x: 2, y: 2, z: 2 });
-        if chunk.is_none() {
-            return;
-        }
-        let chunk = chunk.unwrap();
-        let main: &[u8] = bytemuck::cast_slice(&chunk.blocks.d);
-
-        self.renderer.wgpu.compute.compute_pass(
-            &self.renderer.wgpu.device,
-            &self.renderer.wgpu.queue,
-            main,
-        );
-        println!("compute time: {}", timer.elapsed().as_secs_f64());*/
     }
     pub fn on_game_tick(&mut self, dt: f32) {
         self.player.update(&dt, &self.world);
@@ -202,7 +188,7 @@ impl PersonalWorld {
             self.load_chunk(to_load.pop().unwrap().1);
         }
     }
-    pub fn check_vertices_to_generate(&mut self) -> i32 {
+    pub fn check_vertices_to_generate(&mut self, renderer: &Renderer) -> i32 {
         if self.to_generate.is_empty() {
             return 0;
         }
@@ -213,7 +199,7 @@ impl PersonalWorld {
             let len = self.to_generate.len();
             if len > 0 {
                 let (_, pos) = &self.to_generate[self.to_generate.len() - 1];
-                let data = ChunkRenderData::new(&self.world, &pos, &self.renderer.wgpu.device);
+                let data = ChunkRenderData::new(&self.world, &pos, &renderer.wgpu.device);
                 self.chunk_render_data.insert(pos.clone(), data);
             }
             self.to_generate.remove(self.to_generate.len() - 1);
@@ -239,24 +225,24 @@ impl PersonalWorld {
     pub fn update_ui_input(&mut self, input: &Input) {
         self.ui.update_input(input);
     }
-    pub fn render(&mut self, window: &Window) -> RenderResult {
-        let main_pipeline = self.renderer.pipelines.get_mut("main").unwrap();
-        /*main_pipeline.uniforms.update_view_proj(
-            &self.player,
-            (
-                self.renderer.wgpu.size.width,
-                self.renderer.wgpu.size.height,
-            ),
+    pub fn render(&mut self, window: &Window, renderer: &mut Renderer) -> RenderResult {
+        let main_pipeline = renderer.pipelines.get_mut("main").unwrap();
+        main_pipeline.uniforms.update_view_proj(
+            [
+                self.player.position.x,
+                self.player.position.y,
+                self.player.position.z,
+            ],
+            self.player.get_view_matrix(),
+            (renderer.wgpu.size.width, renderer.wgpu.size.height),
             self.world.time,
-        );*/
+        );
         let render_data = &self.chunk_render_data;
-        main_pipeline.set_uniform_buffer(&self.renderer.wgpu.queue, main_pipeline.uniforms);
-        match self.renderer.do_render_pass(window) {
+        main_pipeline.set_uniform_buffer(&renderer.wgpu.queue, main_pipeline.uniforms);
+        match renderer.do_render_pass(window, self) {
             Ok(_) => {}
             // Recreate the swap_chain if lost
-            Err(wgpu::SwapChainError::Lost) => {
-                resize(self.renderer.wgpu.size, &mut self.renderer.wgpu)
-            }
+            Err(wgpu::SwapChainError::Lost) => resize(renderer.wgpu.size, &mut renderer.wgpu),
             // The system is out of memory, we should probably quit
             Err(wgpu::SwapChainError::OutOfMemory) => return RenderResult::Exit,
             // All other errors (Outdated, Timeout) should be resolved by the next frame
@@ -264,5 +250,85 @@ impl PersonalWorld {
         }
 
         return RenderResult::Continue;
+    }
+}
+
+impl RenderPassable for PersonalWorld {
+    fn do_render_pass(
+        &mut self,
+        window: &Window,
+        encoder: &mut wgpu::CommandEncoder,
+        wgpu_state: &WgpuState,
+        pipelines: &HashMap<String, WgpuPipeline>,
+        frame: &wgpu::SwapChainTexture,
+    ) {
+        {
+            let mut render_pass = encoder.begin_render_pass(&wgpu::RenderPassDescriptor {
+                label: Some("Render pass world"),
+                color_attachments: &[wgpu::RenderPassColorAttachmentDescriptor {
+                    attachment: &frame.view,
+                    resolve_target: None,
+                    ops: wgpu::Operations {
+                        load: wgpu::LoadOp::Clear(wgpu::Color {
+                            r: 0.1,
+                            g: 0.2,
+                            b: 0.6,
+                            a: 1.0,
+                        }),
+                        store: true,
+                    },
+                }],
+                depth_stencil_attachment: Some(wgpu::RenderPassDepthStencilAttachmentDescriptor {
+                    attachment: &wgpu_state.depth_texture.view,
+                    depth_ops: Some(wgpu::Operations {
+                        load: wgpu::LoadOp::Clear(1.0),
+                        store: true,
+                    }),
+                    stencil_ops: None,
+                }),
+            });
+
+            let pipeline = pipelines.get("main").unwrap();
+            pipeline.setup_render_pass(&mut render_pass);
+
+            let mut positions: Vec<&ChunkPos> = self
+                .chunk_render_data
+                .iter()
+                .map(|(pos, data)| pos)
+                .collect();
+            let player = &self.player;
+            positions.par_sort_unstable_by(|pos1, pos2| {
+                ((player.position.get_distance(&pos2.get_center_pos()) * 1000f32) as i32)
+                    .cmp(&((player.position.get_distance(&pos1.get_center_pos()) * 1000f32) as i32))
+            });
+
+            for pos in positions {
+                self.chunk_render_data
+                    .get(&pos)
+                    .unwrap()
+                    .do_render_pass(&mut render_pass)
+            }
+        }
+        {
+            let mut render_pass = encoder.begin_render_pass(&wgpu::RenderPassDescriptor {
+                label: Some("Render pass ui"),
+                color_attachments: &[wgpu::RenderPassColorAttachmentDescriptor {
+                    attachment: &frame.view,
+                    resolve_target: None,
+                    ops: wgpu::Operations {
+                        load: wgpu::LoadOp::Load,
+                        store: true,
+                    },
+                }],
+                depth_stencil_attachment: None,
+            });
+
+            self.ui.render(
+                &mut render_pass,
+                &wgpu_state.queue,
+                &wgpu_state.device,
+                window,
+            )
+        }
     }
 }

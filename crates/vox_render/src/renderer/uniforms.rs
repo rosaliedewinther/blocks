@@ -38,13 +38,19 @@ impl Uniforms {
         }
     }
 
-    /*pub fn update_view_proj(&mut self, player: &Player, size: (u32, u32), time: f64) {
+    pub fn update_view_proj(
+        &mut self,
+        viewer_pos: [f32; 3],
+        view_matrix: [[f32; 4]; 4],
+        size: (u32, u32),
+        time: f64,
+    ) {
         let (width, height) = size;
-        self.view = player.get_view_matrix();
+        self.view = view_matrix;
         self.perspective = gen_perspective_mat((width, height));
-        self.viewer_pos = [player.position.x, player.position.y, player.position.z];
+        self.viewer_pos = viewer_pos;
         let sun_dir = get_rotation_matrix_y(time as f32) * Vector3::new(1.0, 1.0, 0.0);
         self.sun_dir = [sun_dir[0], sun_dir[1], sun_dir[2]];
         self.time = time as f32;
-    }*/
+    }
 }

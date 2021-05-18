@@ -1,5 +1,6 @@
 use crate::personal_world::PersonalWorld;
 use std::time::Instant;
+use vox_render::renderer::renderer::Renderer;
 use winit::dpi::PhysicalSize;
 use winit::event::Event;
 use winit::window::Window;
@@ -10,12 +11,14 @@ use winit_window_control::main_loop::{
 
 pub struct VoxGame {
     personal_world: Option<PersonalWorld>,
+    renderer: Option<Renderer>,
 }
 
 impl VoxGame {
     pub fn new() -> VoxGame {
         VoxGame {
             personal_world: None,
+            renderer: None,
         }
     }
     pub fn run(self) {
@@ -57,7 +60,7 @@ impl Game for VoxGame {
         let timer = Instant::now();
         let pw = self.personal_world.as_mut().unwrap();
         let timer = Instant::now();
-        let number_generated = pw.check_vertices_to_generate();
+        let number_generated = pw.check_vertices_to_generate(self.renderer.as_ref().unwrap());
         if number_generated > 0 {
             pw.ui.debug_info.insert_stat(
                 "per chunk vertex time".to_string(),
@@ -67,7 +70,7 @@ impl Game for VoxGame {
 
         pw.update_ui_input(&input);
         pw.player.handle_input(&input, &(dt as f32), &pw.world);
-        if pw.render(&window) == RenderResult::Exit {
+        if pw.render(&window, self.renderer.as_mut().unwrap()) == RenderResult::Exit {
             return RenderResult::Exit;
         }
         input.update();
@@ -80,7 +83,9 @@ impl Game for VoxGame {
         RenderResult::Continue
     }
     fn on_init(&mut self, window: &Window) -> InitResult {
-        self.personal_world = Some(PersonalWorld::new(window));
+        let renderer = Renderer::new(&window);
+        self.personal_world = Some(PersonalWorld::new(window, &renderer));
+        self.renderer = Some(renderer);
         return InitResult::Continue;
     }
 }
