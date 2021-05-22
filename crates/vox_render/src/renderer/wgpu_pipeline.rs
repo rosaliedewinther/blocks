@@ -83,12 +83,6 @@ impl WgpuPipeline {
                     front: wgpu::StencilFaceState::IGNORE,
                     back: wgpu::StencilFaceState::IGNORE,
                     read_mask: 0,
-                    /*format: DepthTexture::DEPTH_FORMAT,
-                    depth_write_enabled: true,
-                    depth_compare: wgpu::CompareFunction::Less,
-                    stencil: Default::default(),
-                    bias: Default::default(),
-                    clamp_depth: false,*/
                     write_mask: 0,
                 }, // 2.
                 bias: Default::default(),

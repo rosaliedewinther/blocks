@@ -21,12 +21,6 @@ pub fn get_chunk_vertices(world: &World, chunk_pos: &ChunkPos) -> (Vec<Vertex>, 
             let mut opaque_vertices: Vec<Vertex> = Vec::with_capacity(20000);
             let mut opaque_indices: Vec<u32> = Vec::with_capacity(20000);
 
-            /*let mut block_pos = 0;
-            let mut get_block = 0;
-            let mut sides_to_render_t = 0;
-            let mut get_mesh_t = 0;
-            let mut increment_t = 0;
-            let mut appending = 0;*/
             for x in 0..CHUNKSIZE as i32 {
                 for y in 0..CHUNKSIZE as i32 {
                     for z in 0..CHUNKSIZE as i32 {
@@ -36,31 +30,16 @@ pub fn get_chunk_vertices(world: &World, chunk_pos: &ChunkPos) -> (Vec<Vertex>, 
                             y: y + (chunk_pos.y * CHUNKSIZE as i32),
                             z: z + (chunk_pos.z * CHUNKSIZE as i32),
                         };
-
-                        //block_pos += timer.elapsed().as_micros();
-                        //timer = Instant::now();
-
                         let block = chunk.get_block(&LocalBlockPos { x, y, z }).unwrap();
                         if get_blocktype(block) == BlockType::Air {
                             continue;
                         }
-
-                        //get_block += timer.elapsed().as_micros();
-                        //timer = Instant::now();
-
                         let mut sides = sides_to_render(&world, &global_pos);
                         if sides.is_all(false) {
                             continue;
                         }
-
-                        //sides_to_render_t += timer.elapsed().as_micros();
-                        //timer = Instant::now();
-
                         let (mut temp_vertices, mut temp_indices) =
                             get_mesh(block, &global_pos, &sides);
-
-                        //get_mesh_t += timer.elapsed().as_micros();
-                        //timer = Instant::now();
                         if get_blocktype(block) == BlockType::Water {
                             temp_indices = temp_indices
                                 .iter()
@@ -80,12 +59,6 @@ pub fn get_chunk_vertices(world: &World, chunk_pos: &ChunkPos) -> (Vec<Vertex>, 
                                 opaque_indices.append(&mut temp_indices);
                             }
                         }
-
-                        //increment_t += timer.elapsed().as_micros();
-                        //timer = Instant::now();
-
-                        //appending += timer.elapsed().as_micros();
-                        //timer = Instant::now();
                     }
                 }
             }
@@ -96,10 +69,6 @@ pub fn get_chunk_vertices(world: &World, chunk_pos: &ChunkPos) -> (Vec<Vertex>, 
             opaque_vertices.extend(transparant_vertices.into_iter());
 
             opaque_indices.extend(transparant_indices.into_iter());
-            /*println!(
-                "{} {} {} {} {} {}",
-                block_pos, get_block, sides_to_render_t, get_mesh_t, increment_t, appending
-            );*/
             (opaque_vertices, opaque_indices)
         }
     };

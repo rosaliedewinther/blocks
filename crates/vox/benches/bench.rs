@@ -2,11 +2,11 @@
 
 extern crate test;
 
-use crate::positions::MetaChunkPos;
-use crate::world::world::World;
-use crate::world_gen::meta_chunk::MetaChunk;
-use crate::world_gen::vertex_generation::get_chunk_vertices;
 use test::Bencher;
+use vox_core::positions::MetaChunkPos;
+use vox_world::world::world::World;
+use vox_world::world_gen::meta_chunk::MetaChunk;
+use vox_world::world_gen::vertex_generation::get_chunk_vertices;
 
 #[bench]
 fn bench_meta_chunk_generation(b: &mut Bencher) {

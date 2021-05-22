@@ -37,7 +37,6 @@ impl Renderer {
                     label: Some("Render Encoder"),
                 });
         obj.do_render_pass(window, &mut encoder, &self.wgpu, &self.pipelines, &frame);
-        // submit will accept anything that implements IntoIter
         self.wgpu.queue.submit(std::iter::once(encoder.finish()));
         Ok(())
     }

@@ -1,7 +1,6 @@
 use crate::blocks::block::BlockId;
 use crate::player::Player;
 use crate::world_gen::chunk::Chunk;
-use crate::world_gen::chunk_loader::ChunkLoader;
 use crate::world_gen::meta_chunk::MetaChunk;
 use rayon::prelude::ParallelSliceMut;
 use std::collections::{HashMap, HashSet};
@@ -13,7 +12,6 @@ pub struct World {
     chunks: Vec<(MetaChunkPos, MetaChunk)>,
     pub loading_chunks: HashSet<MetaChunkPos>,
     pub world_seed: u32,
-    pub chunk_loader: ChunkLoader,
     pub players: HashMap<String, Player>,
     pub time: f64,
     start_time: Instant,
@@ -25,7 +23,6 @@ impl World {
             chunks: Vec::new(),
             loading_chunks: HashSet::new(),
             world_seed: seed,
-            chunk_loader: ChunkLoader::new(),
             players: HashMap::new(),
             time: 0.0,
             start_time: Instant::now(),
