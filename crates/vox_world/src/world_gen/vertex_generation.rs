@@ -2,14 +2,13 @@ use crate::blocks::block::{get_blocktype, get_mesh, should_render_against, Block
 use crate::blocks::block_type::BlockType;
 use crate::blocks::blockside::BlockSides;
 use crate::world::small_world::SmallWorld;
-use crate::world::world_trait::World;
 use crate::world_gen::chunk::Chunk;
 use std::time::Instant;
 use vox_core::constants::{CHUNKSIZE, METACHUNKSIZE};
 use vox_core::positions::{ChunkPos, GlobalBlockPos, LocalBlockPos};
 use vox_render::renderer::vertex::Vertex;
 
-pub fn get_chunk_vertices<T: World>(world: &T, chunk_pos: &ChunkPos) -> (Vec<Vertex>, Vec<u32>) {
+pub fn get_chunk_vertices(world: &SmallWorld, chunk_pos: &ChunkPos) -> (Vec<Vertex>, Vec<u32>) {
     return match world.get_chunk(chunk_pos) {
         None => (Vec::new(), Vec::new()),
         Some(chunk) => {
@@ -74,7 +73,7 @@ pub fn get_chunk_vertices<T: World>(world: &T, chunk_pos: &ChunkPos) -> (Vec<Ver
         }
     };
 }
-pub fn sides_to_render<T: World>(world: &T, global_pos: &GlobalBlockPos) -> BlockSides {
+pub fn sides_to_render(world: &SmallWorld, global_pos: &GlobalBlockPos) -> BlockSides {
     let mut sides = BlockSides::new();
     let mut reference_block = world.get_block(*global_pos).unwrap();
     if should_render_against_block(world, &global_pos.get_diff(1, 0, 0), reference_block) {
@@ -98,8 +97,8 @@ pub fn sides_to_render<T: World>(world: &T, global_pos: &GlobalBlockPos) -> Bloc
     return sides;
 }
 #[inline]
-pub fn should_render_against_block<T: World>(
-    world: &T,
+pub fn should_render_against_block(
+    world: &SmallWorld,
     pos: &GlobalBlockPos,
     reference_block: BlockId,
 ) -> bool {

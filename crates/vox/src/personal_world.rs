@@ -18,7 +18,6 @@ use vox_render::renderer::wgpu_pipeline::WgpuPipeline;
 use vox_world::chunk_render_data::ChunkRenderData;
 use vox_world::player::Player;
 use vox_world::world::small_world::SmallWorld;
-use vox_world::world::world_trait::World;
 use vox_world::world_gen::chunk_gen_thread::ChunkGenThread;
 use vox_world::world_gen::meta_chunk::MetaChunk;
 use winit::event::Event;
@@ -27,8 +26,8 @@ use winit::window::Window;
 use winit_window_control::input::input::Input;
 use winit_window_control::main_loop::RenderResult;
 
-pub struct PersonalWorld<T: World> {
-    pub world: T,
+pub struct PersonalWorld {
+    pub world: SmallWorld,
     pub chunk_render_data: HashMap<ChunkPos, ChunkRenderData>,
     pub player: Player,
     pub chunk_gen_thread: ChunkGenThread,
@@ -38,11 +37,11 @@ pub struct PersonalWorld<T: World> {
     pub ui: UiRenderer,
 }
 
-impl<T: World> PersonalWorld<T> {
-    pub fn new(window: &Window, renderer: &Renderer) -> PersonalWorld<T> {
+impl PersonalWorld {
+    pub fn new(window: &Window, renderer: &Renderer) -> PersonalWorld {
         let ui_renderer = UiRenderer::new(window, &renderer);
         PersonalWorld {
-            world: T::new(
+            world: SmallWorld::new(
                 SystemTime::now()
                     .duration_since(UNIX_EPOCH)
                     .unwrap()
@@ -171,10 +170,8 @@ impl<T: World> PersonalWorld<T> {
             for z in current_chunk.z - METACHUNK_GEN_RANGE as i32 - 1
                 ..current_chunk.z + METACHUNK_GEN_RANGE as i32 + 1
             {
-                if PersonalWorld::<T>::meta_chunk_should_be_loaded(
-                    &self.player,
-                    &MetaChunkPos { x, z },
-                ) && !self.loading_chunks.contains(&MetaChunkPos { x, z })
+                if PersonalWorld::meta_chunk_should_be_loaded(&self.player, &MetaChunkPos { x, z })
+                    && !self.loading_chunks.contains(&MetaChunkPos { x, z })
                     && !self
                         .chunk_render_data
                         .contains_key(&MetaChunkPos { x, z }.get_center_pos().get_chunk())
@@ -256,7 +253,7 @@ impl<T: World> PersonalWorld<T> {
     }
 }
 
-impl<T: World> RenderPassable for PersonalWorld<T> {
+impl RenderPassable for PersonalWorld {
     fn do_render_pass(
         &mut self,
         window: &Window,
@@ -268,8 +265,8 @@ impl<T: World> RenderPassable for PersonalWorld<T> {
         {
             let mut render_pass = encoder.begin_render_pass(&wgpu::RenderPassDescriptor {
                 label: Some("Render pass world"),
-                color_attachments: &[wgpu::RenderPassColorAttachmentDescriptor {
-                    attachment: &frame.view,
+                color_attachments: &[wgpu::RenderPassColorAttachment {
+                    view: &frame.view,
                     resolve_target: None,
                     ops: wgpu::Operations {
                         load: wgpu::LoadOp::Clear(wgpu::Color {
@@ -281,8 +278,8 @@ impl<T: World> RenderPassable for PersonalWorld<T> {
                         store: true,
                     },
                 }],
-                depth_stencil_attachment: Some(wgpu::RenderPassDepthStencilAttachmentDescriptor {
-                    attachment: &wgpu_state.depth_texture.view,
+                depth_stencil_attachment: Some(wgpu::RenderPassDepthStencilAttachment {
+                    view: &wgpu_state.depth_texture.view,
                     depth_ops: Some(wgpu::Operations {
                         load: wgpu::LoadOp::Clear(1.0),
                         store: true,
@@ -315,8 +312,8 @@ impl<T: World> RenderPassable for PersonalWorld<T> {
         {
             let mut render_pass = encoder.begin_render_pass(&wgpu::RenderPassDescriptor {
                 label: Some("Render pass ui"),
-                color_attachments: &[wgpu::RenderPassColorAttachmentDescriptor {
-                    attachment: &frame.view,
+                color_attachments: &[wgpu::RenderPassColorAttachment {
+                    view: &frame.view,
                     resolve_target: None,
                     ops: wgpu::Operations {
                         load: wgpu::LoadOp::Load,

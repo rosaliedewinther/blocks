@@ -11,7 +11,7 @@ use winit_window_control::main_loop::{
 };
 
 pub struct VoxGame {
-    personal_world: Option<PersonalWorld<SmallWorld>>,
+    personal_world: Option<PersonalWorld>,
     renderer: Option<Renderer>,
 }
 

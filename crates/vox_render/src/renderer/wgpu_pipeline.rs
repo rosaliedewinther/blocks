@@ -3,7 +3,8 @@ use crate::renderer::uniforms::Uniforms;
 use crate::renderer::vertex::Vertex;
 use wgpu::util::DeviceExt;
 use wgpu::{
-    BlendFactor, BlendOperation, Device, Queue, RenderPass, SwapChainDescriptor, VertexState,
+    BlendFactor, BlendOperation, BufferBinding, Device, Queue, RenderPass, SwapChainDescriptor,
+    VertexState,
 };
 
 pub struct WgpuPipeline {
@@ -41,9 +42,11 @@ impl WgpuPipeline {
             entries: &[wgpu::BindGroupEntry {
                 binding: 0,
                 resource: wgpu::BindingResource::Buffer {
-                    buffer: &(uniform_buffer),
-                    offset: 0,
-                    size: None,
+                    0: BufferBinding {
+                        buffer: &(uniform_buffer),
+                        offset: 0,
+                        size: None,
+                    },
                 },
             }],
             label: Some("uniform_bind_group"),
@@ -70,10 +73,12 @@ impl WgpuPipeline {
             },
             primitive: wgpu::PrimitiveState {
                 topology: wgpu::PrimitiveTopology::TriangleList,
-                strip_index_format: Some(wgpu::IndexFormat::Uint32),
+                strip_index_format: None,
                 front_face: wgpu::FrontFace::Ccw,
-                cull_mode: wgpu::CullMode::Back,
+                cull_mode: Some(wgpu::Face::Back),
+                clamp_depth: false,
                 polygon_mode: wgpu::PolygonMode::Fill,
+                conservative: false,
             },
             depth_stencil: Some(wgpu::DepthStencilState {
                 format: DepthTexture::DEPTH_FORMAT,
@@ -86,7 +91,6 @@ impl WgpuPipeline {
                     write_mask: 0,
                 }, // 2.
                 bias: Default::default(),
-                clamp_depth: false,
             }),
             multisample: Default::default(),
             fragment: Some(wgpu::FragmentState {
@@ -95,13 +99,19 @@ impl WgpuPipeline {
                 entry_point: "main",
                 targets: &[wgpu::ColorTargetState {
                     format: sc_desc.format,
-                    alpha_blend: wgpu::BlendState::REPLACE,
-                    color_blend: wgpu::BlendState {
-                        src_factor: BlendFactor::SrcAlpha,
-                        dst_factor: BlendFactor::OneMinusSrcAlpha,
-                        operation: BlendOperation::Add,
-                    },
                     write_mask: wgpu::ColorWrite::ALL,
+                    blend: Some(wgpu::BlendState {
+                        color: wgpu::BlendComponent {
+                            src_factor: BlendFactor::SrcAlpha,
+                            dst_factor: BlendFactor::OneMinusSrcAlpha,
+                            operation: BlendOperation::Add,
+                        },
+                        alpha: wgpu::BlendComponent {
+                            src_factor: BlendFactor::One,
+                            dst_factor: BlendFactor::One,
+                            operation: BlendOperation::Max,
+                        },
+                    }),
                 }],
             }),
         });

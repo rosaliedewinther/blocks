@@ -14,7 +14,7 @@ chrono = "0.4"
 num-traits = "0.2"
 noise="0.6"
 cgmath = "0.18"
-imgui-wgpu = "0.14"
+imgui-wgpu = "0.15"
 imgui = "0.7"
 imgui-winit-support = "0.7"
 winit_window_control = {git = "https://github.com/jasperdewinther/winit_abstraction", branch = "main"}
@@ -26,7 +26,7 @@ vox_io = {path="../vox_io"}
 vox_world = {path="../vox_world"}
 winit = "0.24"
 rayon = "1.4"
-wgpu = "0.7"
+wgpu = "0.8"
 
 [profile.dev]
 opt-level = 2

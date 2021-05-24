@@ -1,4 +1,4 @@
-use crate::world::world_trait::World;
+use crate::world::small_world::SmallWorld;
 use nalgebra::{Matrix3, Vector3};
 use std::f32::consts::PI;
 use vox_core::constants::COLORS;
@@ -40,7 +40,7 @@ impl Player {
         }
     }
 
-    pub fn handle_input<T: World>(&mut self, input: &Input, dt: &f32, world: &T) {
+    pub fn handle_input(&mut self, input: &Input, dt: &f32, world: &SmallWorld) {
         self.change_position(
             input,
             VirtualKeyCode::A,
@@ -86,13 +86,13 @@ impl Player {
         }
     }
 
-    pub fn change_position<T: World>(
+    pub fn change_position(
         &mut self,
         input: &Input,
         key: VirtualKeyCode,
         rotation_degree: f32,
         change: f32,
-        world: &T,
+        world: &SmallWorld,
     ) {
         if input.key_pressed(key) {
             let move_vec = get_rotation_matrix_y(rotation_degree) * &self.direction;
@@ -132,7 +132,7 @@ impl Player {
         }
     }
 
-    pub fn update<T: World>(&mut self, _dt: &f32, world: &T) {
+    pub fn update(&mut self, _dt: &f32, world: &SmallWorld) {
         loop {
             if Player::collides(&self.position, world) {
                 self.position.y += 1.0;
@@ -142,7 +142,7 @@ impl Player {
         }
     }
     //pub fn get_collision_points() -> [ObjectPos; 8] {}
-    pub fn collides<T: World>(pos: &ObjectPos, world: &T) -> bool {
+    pub fn collides(pos: &ObjectPos, world: &SmallWorld) -> bool {
         let blockpos = pos.get_block();
         let faceblock = world.get_block(blockpos);
         let feetblock = world.get_block(blockpos.get_diff(0, -1, 0));

@@ -1,6 +1,5 @@
 use crate::blocks::block::BlockId;
 use crate::player::Player;
-use crate::world::world_trait::World;
 use crate::world_gen::chunk::Chunk;
 use crate::world_gen::meta_chunk::MetaChunk;
 use rayon::prelude::ParallelSliceMut;
@@ -55,7 +54,7 @@ impl SmallWorld {
             .par_sort_unstable_by(|(p1, _), (p2, _)| p1.cmp(p2))
     }
     #[inline]
-    pub fn get_block(&self, pos: &GlobalBlockPos) -> Option<BlockId> {
+    pub fn get_block(&self, pos: GlobalBlockPos) -> Option<BlockId> {
         return match self.get_chunk(&pos.get_chunk_pos()) {
             Some(c) => c.get_block(&pos.get_local_pos()),
             None => None,
@@ -72,9 +71,7 @@ impl SmallWorld {
             None => None,
         };
     }
-}
-impl crate::world::world_trait::World for SmallWorld {
-    fn new(seed: u32) -> SmallWorld {
+    pub fn new(seed: u32) -> SmallWorld {
         SmallWorld {
             chunks: Vec::new(),
             loading_chunks: HashSet::new(),
@@ -83,21 +80,14 @@ impl crate::world::world_trait::World for SmallWorld {
             start_time: Instant::now(),
         }
     }
-    fn set_block(&mut self, block: u8, pos: GlobalBlockPos) {
+    pub fn set_block(&mut self, block: u8, pos: GlobalBlockPos) {
         match self.get_chunk_mut(&pos.get_chunk_pos()) {
             Some(c) => c.set_block(block, &pos.get_local_pos()),
             None => (),
         };
     }
 
-    fn get_block(&self, pos: GlobalBlockPos) -> Option<BlockId> {
-        return match self.get_chunk(&pos.get_chunk_pos()) {
-            Some(c) => c.get_block(&pos.get_local_pos()),
-            None => None,
-        };
-    }
-
-    fn filter_chunks(&mut self, player: &Player) {
+    pub fn filter_chunks(&mut self, player: &Player) {
         self.chunks.retain(|(pos, _)| {
             if MetaChunk::retain_meta_chunk(player, *pos) {
                 return true;
@@ -107,13 +97,13 @@ impl crate::world::world_trait::World for SmallWorld {
         });
     }
 
-    fn update(&mut self) {
+    pub fn update(&mut self) {
         self.time = self.start_time.elapsed().as_secs_f64();
     }
-    fn get_all_chunks(&self) -> &Vec<(MetaChunkPos, MetaChunk)> {
+    pub fn get_all_chunks(&self) -> &Vec<(MetaChunkPos, MetaChunk)> {
         return &self.chunks;
     }
-    fn get_chunk(&self, pos: &ChunkPos) -> Option<&Chunk> {
+    pub fn get_chunk(&self, pos: &ChunkPos) -> Option<&Chunk> {
         if pos.y >= METACHUNKSIZE as i32 {
             return None;
         }
@@ -123,7 +113,7 @@ impl crate::world::world_trait::World for SmallWorld {
             None => None,
         };
     }
-    fn chunk_exists_or_generating(&self, pos: &MetaChunkPos) -> bool {
+    pub fn chunk_exists_or_generating(&self, pos: &MetaChunkPos) -> bool {
         if self.get_meta_chunk(pos).is_none() && !self.loading_chunks.contains(pos) {
             return false;
         }

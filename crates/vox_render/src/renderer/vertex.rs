@@ -32,20 +32,20 @@ impl Vertex {
             attributes: &[
                 // 3.
                 wgpu::VertexAttribute {
-                    offset: 0,                          // 4.
-                    shader_location: 0,                 // 5.
-                    format: wgpu::VertexFormat::Float3, // 6.
+                    offset: 0,                             // 4.
+                    shader_location: 0,                    // 5.
+                    format: wgpu::VertexFormat::Float32x3, // 6.
                 },
                 wgpu::VertexAttribute {
                     offset: std::mem::size_of::<[f32; 3]>() as wgpu::BufferAddress,
                     shader_location: 1,
-                    format: wgpu::VertexFormat::Uint,
+                    format: wgpu::VertexFormat::Uint32,
                 },
                 wgpu::VertexAttribute {
                     offset: (std::mem::size_of::<[f32; 3]>() + std::mem::size_of::<u32>())
                         as wgpu::BufferAddress,
                     shader_location: 2,
-                    format: wgpu::VertexFormat::Float3,
+                    format: wgpu::VertexFormat::Float32x3,
                 },
                 wgpu::VertexAttribute {
                     offset: (std::mem::size_of::<[f32; 3]>()
@@ -53,7 +53,7 @@ impl Vertex {
                         + std::mem::size_of::<[f32; 3]>())
                         as wgpu::BufferAddress,
                     shader_location: 3,
-                    format: wgpu::VertexFormat::Uint,
+                    format: wgpu::VertexFormat::Uint32,
                 },
             ],
         }
