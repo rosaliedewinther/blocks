@@ -1,6 +1,7 @@
 use crate::personal_world::PersonalWorld;
 use std::time::Instant;
 use vox_render::renderer::renderer::Renderer;
+use vox_world::world::small_world::SmallWorld;
 use winit::dpi::PhysicalSize;
 use winit::event::Event;
 use winit::window::Window;
@@ -10,7 +11,7 @@ use winit_window_control::main_loop::{
 };
 
 pub struct VoxGame {
-    personal_world: Option<PersonalWorld>,
+    personal_world: Option<PersonalWorld<SmallWorld>>,
     renderer: Option<Renderer>,
 }
 

@@ -1,14 +1,15 @@
 use crate::blocks::block::{get_blocktype, get_mesh, should_render_against, BlockId};
 use crate::blocks::block_type::BlockType;
 use crate::blocks::blockside::BlockSides;
-use crate::world::world::World;
+use crate::world::small_world::SmallWorld;
+use crate::world::world_trait::World;
 use crate::world_gen::chunk::Chunk;
 use std::time::Instant;
 use vox_core::constants::{CHUNKSIZE, METACHUNKSIZE};
 use vox_core::positions::{ChunkPos, GlobalBlockPos, LocalBlockPos};
 use vox_render::renderer::vertex::Vertex;
 
-pub fn get_chunk_vertices(world: &World, chunk_pos: &ChunkPos) -> (Vec<Vertex>, Vec<u32>) {
+pub fn get_chunk_vertices<T: World>(world: &T, chunk_pos: &ChunkPos) -> (Vec<Vertex>, Vec<u32>) {
     return match world.get_chunk(chunk_pos) {
         None => (Vec::new(), Vec::new()),
         Some(chunk) => {
@@ -34,7 +35,7 @@ pub fn get_chunk_vertices(world: &World, chunk_pos: &ChunkPos) -> (Vec<Vertex>, 
                         if get_blocktype(block) == BlockType::Air {
                             continue;
                         }
-                        let mut sides = sides_to_render(&world, &global_pos);
+                        let mut sides = sides_to_render(world, &global_pos);
                         if sides.is_all(false) {
                             continue;
                         }
@@ -73,9 +74,9 @@ pub fn get_chunk_vertices(world: &World, chunk_pos: &ChunkPos) -> (Vec<Vertex>, 
         }
     };
 }
-pub fn sides_to_render(world: &World, global_pos: &GlobalBlockPos) -> BlockSides {
+pub fn sides_to_render<T: World>(world: &T, global_pos: &GlobalBlockPos) -> BlockSides {
     let mut sides = BlockSides::new();
-    let mut reference_block = world.get_block(global_pos).unwrap();
+    let mut reference_block = world.get_block(*global_pos).unwrap();
     if should_render_against_block(world, &global_pos.get_diff(1, 0, 0), reference_block) {
         sides.right = true;
     }
@@ -97,15 +98,15 @@ pub fn sides_to_render(world: &World, global_pos: &GlobalBlockPos) -> BlockSides
     return sides;
 }
 #[inline]
-pub fn should_render_against_block(
-    world: &World,
+pub fn should_render_against_block<T: World>(
+    world: &T,
     pos: &GlobalBlockPos,
     reference_block: BlockId,
 ) -> bool {
     if pos.y == (METACHUNKSIZE * CHUNKSIZE) as i32 || pos.y < 0 {
         return true;
     }
-    return match world.get_block(&pos) {
+    return match world.get_block(*pos) {
         None => true,
         Some(b) => should_render_against(reference_block, b),
     };

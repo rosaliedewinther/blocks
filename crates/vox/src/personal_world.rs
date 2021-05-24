@@ -7,7 +7,9 @@ use std::cmp::{min, Ordering};
 use std::collections::{BinaryHeap, HashMap, HashSet};
 use std::sync::{Arc, Mutex};
 use std::time::{Instant, SystemTime, UNIX_EPOCH};
-use vox_core::constants::{CHUNKSIZE, METACHUNKSIZE, METACHUNK_GEN_RANGE, METACHUNK_UNLOAD_RADIUS};
+use vox_core::constants::{
+    CHUNKSIZE, METACHUNKSIZE, METACHUNK_GEN_RANGE, METACHUNK_UNLOAD_RADIUS, SEED,
+};
 use vox_core::positions::{ChunkPos, MetaChunkPos};
 use vox_render::renderer::renderer::{resize, Renderer};
 use vox_render::renderer::renderpassable::RenderPassable;
@@ -15,7 +17,8 @@ use vox_render::renderer::wgpu::WgpuState;
 use vox_render::renderer::wgpu_pipeline::WgpuPipeline;
 use vox_world::chunk_render_data::ChunkRenderData;
 use vox_world::player::Player;
-use vox_world::world::world::World;
+use vox_world::world::small_world::SmallWorld;
+use vox_world::world::world_trait::World;
 use vox_world::world_gen::chunk_gen_thread::ChunkGenThread;
 use vox_world::world_gen::meta_chunk::MetaChunk;
 use winit::event::Event;
@@ -24,8 +27,8 @@ use winit::window::Window;
 use winit_window_control::input::input::Input;
 use winit_window_control::main_loop::RenderResult;
 
-pub struct PersonalWorld {
-    pub world: World,
+pub struct PersonalWorld<T: World> {
+    pub world: T,
     pub chunk_render_data: HashMap<ChunkPos, ChunkRenderData>,
     pub player: Player,
     pub chunk_gen_thread: ChunkGenThread,
@@ -35,11 +38,11 @@ pub struct PersonalWorld {
     pub ui: UiRenderer,
 }
 
-impl PersonalWorld {
-    pub fn new(window: &Window, renderer: &Renderer) -> PersonalWorld {
+impl<T: World> PersonalWorld<T> {
+    pub fn new(window: &Window, renderer: &Renderer) -> PersonalWorld<T> {
         let ui_renderer = UiRenderer::new(window, &renderer);
         PersonalWorld {
-            world: World::new(
+            world: T::new(
                 SystemTime::now()
                     .duration_since(UNIX_EPOCH)
                     .unwrap()
@@ -72,9 +75,7 @@ impl PersonalWorld {
     }
 
     pub fn vertex_buffers_to_generate(&self) -> Vec<(f32, ChunkPos)> {
-        let mut to_render = Vec::with_capacity(
-            self.world.get_all_chunks().len() * METACHUNKSIZE * METACHUNKSIZE * METACHUNKSIZE,
-        );
+        let mut to_render = Vec::with_capacity(9 * METACHUNKSIZE * METACHUNKSIZE * METACHUNKSIZE);
         for (_, meta_chunk) in self.world.get_all_chunks() {
             for (_, pos) in meta_chunk.get_iter() {
                 let (should_gen, additional_weight) =
@@ -148,7 +149,7 @@ impl PersonalWorld {
             return;
         }
         self.loading_chunks.insert(pos.clone());
-        let chunk_request_result = self.chunk_gen_thread.request(pos, self.world.world_seed);
+        let chunk_request_result = self.chunk_gen_thread.request(pos, SEED);
         match chunk_request_result {
             Ok(_) => (),
             Err(e) => println!("error while trying to load A chunk: {}", e),
@@ -170,8 +171,10 @@ impl PersonalWorld {
             for z in current_chunk.z - METACHUNK_GEN_RANGE as i32 - 1
                 ..current_chunk.z + METACHUNK_GEN_RANGE as i32 + 1
             {
-                if PersonalWorld::meta_chunk_should_be_loaded(&self.player, &MetaChunkPos { x, z })
-                    && !self.loading_chunks.contains(&MetaChunkPos { x, z })
+                if PersonalWorld::<T>::meta_chunk_should_be_loaded(
+                    &self.player,
+                    &MetaChunkPos { x, z },
+                ) && !self.loading_chunks.contains(&MetaChunkPos { x, z })
                     && !self
                         .chunk_render_data
                         .contains_key(&MetaChunkPos { x, z }.get_center_pos().get_chunk())
@@ -253,7 +256,7 @@ impl PersonalWorld {
     }
 }
 
-impl RenderPassable for PersonalWorld {
+impl<T: World> RenderPassable for PersonalWorld<T> {
     fn do_render_pass(
         &mut self,
         window: &Window,

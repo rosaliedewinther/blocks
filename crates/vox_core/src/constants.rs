@@ -4,6 +4,7 @@ pub const HEIGHT: usize = 720;
 pub const METACHUNK_GEN_RANGE: usize = 2;
 pub const METACHUNK_UNLOAD_RADIUS: usize = 3;
 pub const METACHUNKSIZE: usize = 8;
+pub const SEED: u32 = 0;
 pub const COLORS: [[f32; 4]; 16] = [
     [0.0, 255.0, 0.0, 255.0],
     [0.0, 0.0, 255.0, 128.0],

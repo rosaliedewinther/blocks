@@ -1,4 +1,5 @@
-use crate::world::world::World;
+use crate::world::small_world::SmallWorld;
+use crate::world::world_trait::World;
 use crate::world_gen::vertex_generation::get_chunk_vertices;
 use std::time::Instant;
 use vox_core::positions::ChunkPos;
@@ -14,7 +15,7 @@ pub struct ChunkRenderData {
 }
 
 impl ChunkRenderData {
-    pub fn new(world: &World, chunk_pos: &ChunkPos, device: &Device) -> ChunkRenderData {
+    pub fn new<T: World>(world: &T, chunk_pos: &ChunkPos, device: &Device) -> ChunkRenderData {
         let timer = Instant::now();
         let (vertices, indices) = get_chunk_vertices(world, &chunk_pos);
         if vertices.len() == 0 {
