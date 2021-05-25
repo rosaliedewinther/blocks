@@ -1,12 +1,12 @@
-/*use crate::constants::CHUNKSIZE;
-use crate::renderer::vertex::Vertex;
-use crate::renderer::wgpu::WgpuState;
+/*use crate::renderer::wgpu::WgpuState;
 use crate::world_gen::chunk::ChunkData;
 use futures::executor::block_on;
 use memcmp::Memcmp;
 use std::borrow::Cow;
 use std::convert::TryInto;
 use std::time::Instant;
+use vox_core::constants::CHUNKSIZE;
+use vox_render::renderer::vertex::Vertex;
 use wgpu::util::DeviceExt;
 use wgpu::{BindGroup, Buffer, ComputePipeline, Device, Instance, Queue, SwapChainTexture};
 use winit::window::Window;
@@ -221,4 +221,5 @@ impl Compute {
             println!("{}", timer.elapsed().as_secs_f64());
         });
     }
-} */
+}
+*/

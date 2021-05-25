@@ -4,8 +4,8 @@ use imgui::{Condition, FontSource};
 use imgui_wgpu::Renderer as imgui_renderer;
 use imgui_wgpu::RendererConfig;
 use std::time::Instant;
-use vox_render::renderer::renderer::Renderer;
-use vox_render::renderer::wgpu::WgpuState;
+use vox_render::compute_renderer::renderer::Renderer;
+use vox_render::compute_renderer::wgpu_state::WgpuState;
 use wgpu::{Device, Queue, RenderPass};
 use winit::event::Event;
 use winit::window::Window;
@@ -21,7 +21,7 @@ pub struct UiRenderer {
     pub debug_info: DebugInfo,
 }
 impl UiRenderer {
-    pub fn new(window: &Window, renderer: &Renderer) -> UiRenderer {
+    pub fn new(window: &Window, renderer: &Renderer, wgpu_state: &WgpuState) -> UiRenderer {
         let hidpi_factor = window.scale_factor();
         let mut context = imgui::Context::create();
         let mut platform = imgui_winit_support::WinitPlatform::init(&mut context);
@@ -55,8 +55,8 @@ impl UiRenderer {
 
         let renderer = imgui_renderer::new(
             &mut context,
-            &renderer.wgpu.device,
-            &renderer.wgpu.queue,
+            &wgpu_state.device,
+            &wgpu_state.queue,
             renderer_config,
         );
         let last_frame = Instant::now();
