@@ -108,9 +108,8 @@ impl Renderer {
                 bind_group_layouts: &[&compute_bind_group_layout],
                 push_constant_ranges: &[],
             });
-        let cs_module = wgpu
-            .device
-            .create_shader_module(&wgpu::include_spirv!("../shaders/compute.shader.comp.spv"));
+        let cs_module_desc = &wgpu::include_spirv!("../shaders/compute.shader.comp.spv");
+        let cs_module = wgpu.device.create_shader_module(cs_module_desc);
         let compute_pipeline =
             wgpu.device
                 .create_compute_pipeline(&wgpu::ComputePipelineDescriptor {
