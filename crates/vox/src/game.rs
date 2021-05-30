@@ -71,7 +71,7 @@ impl Game for VoxGame {
         }
 
         pw.update_ui_input(&input);
-        pw.player.handle_input(&input, &(dt as f32), &pw.world);
+        //pw.player.handle_input(&input, &(dt as f32), &pw.world);
         if pw.render(&window, self.renderer.as_mut().unwrap()) == RenderResult::Exit {
             return RenderResult::Exit;
         }
