@@ -1,6 +1,7 @@
+use crate::compute_renderer::uniforms::Uniforms;
 use crate::compute_renderer::vertex::Vertex;
 use crate::compute_renderer::wgpu_state::WgpuState;
-use crate::renderer::uniforms::Uniforms;
+use crate::renderer::shader_modules::shader_module_init;
 use wgpu::util::DeviceExt;
 use wgpu::{
     BindGroup, BindGroupLayout, BlendFactor, BlendOperation, BufferBinding, ComputePipeline,
@@ -95,7 +96,8 @@ impl Renderer {
         Ok(())
     }
     pub fn update(&mut self, dt: f64) {
-        //self.uniforms.update(dt as f32);
+        self.uniforms
+            .update_view_proj([0.0; 3], dt, [0.0, 1.0, 0.0]);
     }
     pub fn init_compute_pipeline(
         wgpu: &mut WgpuState,
@@ -108,8 +110,7 @@ impl Renderer {
                 bind_group_layouts: &[&compute_bind_group_layout],
                 push_constant_ranges: &[],
             });
-        let cs_module_desc = &wgpu::include_spirv!("../shaders/compute.shader.comp.spv");
-        let cs_module = wgpu.device.create_shader_module(cs_module_desc);
+        let cs_module = shader_module_init("./shaders/compute.shader.comp.spv", &wgpu.device);
         let compute_pipeline =
             wgpu.device
                 .create_compute_pipeline(&wgpu::ComputePipelineDescriptor {
@@ -124,12 +125,8 @@ impl Renderer {
         wgpu: &mut WgpuState,
         texture_bind_group_layout: BindGroupLayout,
     ) -> RenderPipeline {
-        let vs_module = wgpu
-            .device
-            .create_shader_module(&wgpu::include_spirv!("../shaders/compute.shader.vert.spv"));
-        let fs_module = wgpu
-            .device
-            .create_shader_module(&wgpu::include_spirv!("../shaders/compute.shader.frag.spv"));
+        let vs_module = shader_module_init("./shaders/compute.shader.vert.spv", &wgpu.device);
+        let fs_module = shader_module_init("./shaders/compute.shader.frag.spv", &wgpu.device);
 
         let render_pipeline_layout =
             wgpu.device
@@ -241,7 +238,7 @@ impl Renderer {
             mip_level_count: 1,
             sample_count: 1,
             dimension: wgpu::TextureDimension::D2,
-            format: wgpu::TextureFormat::Rgba8UnormSrgb,
+            format: wgpu::TextureFormat::Rgba8Uint,
             usage: wgpu::TextureUsage::SAMPLED | wgpu::TextureUsage::COPY_DST,
             label: Some("diffuse_texture"),
         });
@@ -290,7 +287,7 @@ impl Renderer {
                             ty: wgpu::BindingType::Texture {
                                 multisampled: false,
                                 view_dimension: wgpu::TextureViewDimension::D2,
-                                sample_type: wgpu::TextureSampleType::Float { filterable: false },
+                                sample_type: wgpu::TextureSampleType::Uint,
                             },
                             count: None,
                         },
@@ -330,7 +327,7 @@ impl Renderer {
                             binding: 0,
                             visibility: wgpu::ShaderStage::COMPUTE,
                             ty: wgpu::BindingType::Texture {
-                                sample_type: wgpu::TextureSampleType::Float { filterable: false },
+                                sample_type: wgpu::TextureSampleType::Uint,
                                 view_dimension: TextureViewDimension::D2,
                                 multisampled: false,
                             },

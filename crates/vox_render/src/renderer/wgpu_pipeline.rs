@@ -1,4 +1,5 @@
 use crate::renderer::depth_texture::DepthTexture;
+use crate::renderer::shader_modules::shader_module_init;
 use crate::renderer::uniforms::Uniforms;
 use crate::renderer::vertex::Vertex;
 use wgpu::util::DeviceExt;
@@ -52,11 +53,8 @@ impl WgpuPipeline {
             label: Some("uniform_bind_group"),
         });
 
-        let vs_module =
-            device.create_shader_module(&wgpu::include_spirv!("../shaders/main.shader.vert.spv"));
-        let fs_module =
-            device.create_shader_module(&wgpu::include_spirv!("../shaders/main.shader.frag.spv"));
-
+        let vs_module = shader_module_init("./shaders/main.shader.vert.spv", &device);
+        let fs_module = shader_module_init("./shaders/main.shader.frag.spv", &device);
         let render_pipeline_layout =
             device.create_pipeline_layout(&wgpu::PipelineLayoutDescriptor {
                 label: Some("Render Pipeline Layout"),

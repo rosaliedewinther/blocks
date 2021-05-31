@@ -8,7 +8,7 @@ edition = "2018"
 
 [dependencies]
 memcmp = "0.0.6"
-wgpu = "0.8"
+wgpu = {version="0.8", features = ["cross"]}
 futures = "0.3"
 winit = "0.25"
 rayon = "1.4"
@@ -16,11 +16,7 @@ nalgebra = "0.26"
 bytemuck = { version = "1.4", features = [ "derive" ] }
 vox_core = {path="../vox_core"}
 
-[build-dependencies]
-anyhow = "1.0"
-fs_extra = "1.1"
-glob = "0.3"
-shaderc = "0.7"
+
 
 [profile.dev]
 opt-level = 2
