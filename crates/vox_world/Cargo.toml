@@ -17,7 +17,7 @@ winit_window_control = {path="../../../winit_abstraction"}
 nalgebra = "0.26"
 rand = "0.8"
 serde = { version = "1.0", features = ["derive"] }
-wgpu = "0.8"
+wgpu = {version="0.8", features = ["cross"]}
 noise="0.7"
 rand_distr ="0.4"
 bytemuck = { version = "1.4", features = [ "derive" ] }

@@ -27,10 +27,16 @@ vox_io = {path="../vox_io"}
 vox_world = {path="../vox_world"}
 winit = "0.25"
 rayon = "1.4"
-wgpu = "0.8"
+wgpu = {version="0.8", features = ["cross"]}
 
 [profile.dev]
 opt-level = 2
 
 [profile.test]
 opt-level = 2
+
+[build-dependencies]
+anyhow = "1.0"
+fs_extra = "1.1"
+glob = "0.3"
+shaderc = "0.7"
