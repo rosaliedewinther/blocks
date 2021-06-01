@@ -68,7 +68,7 @@ impl Renderer {
                 encoder.begin_compute_pass(&wgpu::ComputePassDescriptor { label: None });
             cpass.set_pipeline(&self.compute_pipeline);
             cpass.set_bind_group(0, &self.compute_bind_group, &[]);
-            cpass.insert_debug_marker("compute collatz iterations");
+            cpass.insert_debug_marker("compute screen pixels");
             cpass.dispatch(wgpu.size.width, wgpu.size.height, 1);
         }
         {
@@ -227,7 +227,7 @@ impl Renderer {
         let num_vertices = vertices.len() as u32;
         return (vertex_buffer, index_buffer, num_indices, num_vertices);
     }
-    pub fn remake_texture(wgpu: &mut WgpuState) -> (Texture, TextureView, Sampler) {
+    pub fn remake_texture(wgpu: &mut WgpuState) -> (Texture, TextureView) {
         let texture_size = wgpu::Extent3d {
             width: wgpu.size.width,
             height: wgpu.size.height,
@@ -239,21 +239,20 @@ impl Renderer {
             sample_count: 1,
             dimension: wgpu::TextureDimension::D2,
             format: wgpu::TextureFormat::Rgba8Uint,
-            usage: wgpu::TextureUsage::SAMPLED | wgpu::TextureUsage::COPY_DST,
+            usage: wgpu::TextureUsage::STORAGE,
             label: Some("diffuse_texture"),
         });
-        let diffuse_texture_view =
-            diffuse_texture.create_view(&wgpu::TextureViewDescriptor::default());
-        let diffuse_sampler = wgpu.device.create_sampler(&wgpu::SamplerDescriptor {
-            address_mode_u: wgpu::AddressMode::Repeat,
-            address_mode_v: wgpu::AddressMode::Repeat,
-            address_mode_w: wgpu::AddressMode::Repeat,
-            mag_filter: wgpu::FilterMode::Linear,
-            min_filter: wgpu::FilterMode::Nearest,
-            mipmap_filter: wgpu::FilterMode::Nearest,
-            ..Default::default()
+        let diffuse_texture_view = diffuse_texture.create_view(&wgpu::TextureViewDescriptor {
+            label: Some("diffuse_texture_view"),
+            format: Some(wgpu::TextureFormat::Rgba8Uint),
+            dimension: Some(wgpu::TextureViewDimension::D2),
+            aspect: Default::default(),
+            base_mip_level: 0,
+            mip_level_count: None,
+            base_array_layer: 0,
+            array_layer_count: None,
         });
-        return (diffuse_texture, diffuse_texture_view, diffuse_sampler);
+        return (diffuse_texture, diffuse_texture_view);
     }
     pub fn init_uniforms(wgpu: &mut WgpuState) -> (wgpu::Buffer, Uniforms) {
         let uniforms = Uniforms::new();
@@ -276,45 +275,28 @@ impl Renderer {
         Uniforms,
         wgpu::Buffer,
     ) {
-        let (texture, diffuse_texture_view, diffuse_sampler) = Renderer::remake_texture(wgpu);
+        let (texture, diffuse_texture_view) = Renderer::remake_texture(wgpu);
         let texture_bind_group_layout =
             wgpu.device
                 .create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
-                    entries: &[
-                        wgpu::BindGroupLayoutEntry {
-                            binding: 0,
-                            visibility: wgpu::ShaderStage::FRAGMENT,
-                            ty: wgpu::BindingType::Texture {
-                                multisampled: false,
-                                view_dimension: wgpu::TextureViewDimension::D2,
-                                sample_type: wgpu::TextureSampleType::Uint,
-                            },
-                            count: None,
+                    entries: &[wgpu::BindGroupLayoutEntry {
+                        binding: 0,
+                        visibility: wgpu::ShaderStage::FRAGMENT,
+                        ty: wgpu::BindingType::StorageTexture {
+                            access: wgpu::StorageTextureAccess::ReadOnly,
+                            view_dimension: wgpu::TextureViewDimension::D2,
+                            format: wgpu::TextureFormat::Rgba8Uint,
                         },
-                        wgpu::BindGroupLayoutEntry {
-                            binding: 1,
-                            visibility: wgpu::ShaderStage::FRAGMENT,
-                            ty: wgpu::BindingType::Sampler {
-                                comparison: false,
-                                filtering: true,
-                            },
-                            count: None,
-                        },
-                    ],
+                        count: None,
+                    }],
                     label: Some("texture_bind_group_layout"),
                 });
         let diffuse_bind_group = wgpu.device.create_bind_group(&wgpu::BindGroupDescriptor {
             layout: &texture_bind_group_layout,
-            entries: &[
-                wgpu::BindGroupEntry {
-                    binding: 0,
-                    resource: wgpu::BindingResource::TextureView(&diffuse_texture_view),
-                },
-                wgpu::BindGroupEntry {
-                    binding: 1,
-                    resource: wgpu::BindingResource::Sampler(&diffuse_sampler),
-                },
-            ],
+            entries: &[wgpu::BindGroupEntry {
+                binding: 0,
+                resource: wgpu::BindingResource::TextureView(&diffuse_texture_view),
+            }],
             label: Some("diffuse_bind_group"),
         });
         let (uniform_buffer, uniforms) = Renderer::init_uniforms(wgpu);
@@ -326,10 +308,10 @@ impl Renderer {
                         wgpu::BindGroupLayoutEntry {
                             binding: 0,
                             visibility: wgpu::ShaderStage::COMPUTE,
-                            ty: wgpu::BindingType::Texture {
-                                sample_type: wgpu::TextureSampleType::Uint,
+                            ty: wgpu::BindingType::StorageTexture {
+                                access: wgpu::StorageTextureAccess::WriteOnly,
                                 view_dimension: TextureViewDimension::D2,
-                                multisampled: false,
+                                format: wgpu::TextureFormat::Rgba8Uint,
                             },
                             count: None,
                         },
