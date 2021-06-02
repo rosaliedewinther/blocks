@@ -52,6 +52,7 @@ impl Game for VoxGame {
         return UpdateResult::Continue;
     }
     fn on_render(&mut self, input: &mut Input, dt: f64, window: &Window) -> RenderResult {
+        println!("{}", 1.0 / dt);
         let pw = self.personal_world.as_mut().unwrap();
 
         pw.update_ui_input(&input);
@@ -75,13 +76,13 @@ impl Game for VoxGame {
             .as_mut()
             .unwrap()
             .do_render_pass(&self.wgpu_state.as_ref().unwrap());
-
+        input.update();
         return RenderResult::Continue;
         /*
         if pw.render(&window, self.renderer.as_mut().unwrap()) == RenderResult::Exit {
             return RenderResult::Exit;
         }
-        input.update();
+
 
         self.personal_world
             .as_mut()

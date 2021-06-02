@@ -6,7 +6,7 @@ use vox_core::positions::{ChunkPos, ObjectPos};
 use vox_core::utils::{get_rotation_matrix_y, get_rotation_matrix_z};
 use winit::event::VirtualKeyCode;
 use winit_window_control::input::input::Input;
-
+#[derive(Debug)]
 pub struct Player {
     pub position: ObjectPos,
     pub direction: Vector3<f32>,
@@ -28,8 +28,8 @@ impl Player {
             },
             direction: Vector3::new(0f32, 0.0f32, 1.0f32),
             up: [0f32, 1.0f32, 0f32],
-            speed: 100f32,
-            camera_speed: 0.5f32,
+            speed: 10f32,
+            camera_speed: 2.0f32,
             render_distance: 5000f32,
             generated_chunks_for: ChunkPos {
                 x: i32::max_value(),
@@ -84,8 +84,8 @@ impl Player {
         } else {
             self.change_direction_horizontal(&get_rotation_matrix_y(xdiff));
         }
+        self.direction = self.direction.normalize();
     }
-
     pub fn change_position(
         &mut self,
         input: &Input,
@@ -110,8 +110,7 @@ impl Player {
         self.direction = mat * &self.direction;
     }
     pub fn change_direction_vertical(&mut self, change: f32) {
-        let mut backup_dir = self.direction.clone();
-        backup_dir[1] = 0f32;
+        let backup_dir = self.direction.clone();
         let angle = (backup_dir[2] / backup_dir[0]).atan();
         if backup_dir[0].is_sign_negative() {
             self.direction = get_rotation_matrix_y(-angle)

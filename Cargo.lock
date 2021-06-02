@@ -2443,6 +2443,7 @@ dependencies = [
 [[package]]
 name = "winit_window_control"
 version = "0.1.0"
+source = "git+https://github.com/jasperdewinther/winit_abstraction?branch=main#999355391a616241e90ae5701dbe47018702b2be"
 dependencies = [
  "winit",
 ]

@@ -49,6 +49,16 @@ vec3 rotation_y(vec3 v, float angle){
     );
     return matrix*v;
 }
+vec3 rotation_z(vec3 v, float angle){
+    float s = sin(angle);
+    float c = cos(angle);
+    mat3 matrix = mat3(
+        c, -s, 0.0,
+        s, c, 0.0,
+        0.0, 0.0, 1.0
+    );
+    return matrix*v;
+}
 
 float distance_to_circle(Circle circle, vec3 position){
     vec3 diff = abs(circle.position - position);
@@ -96,57 +106,56 @@ RayCircleIntersects ray_intersects_circle(Circle circle, vec3 origin, vec3 direc
     float d2 = (-b+sqrt(delta))/(2);
 
     vec3 position = origin + min(d1,d2)*(direction-origin);
-
+    if (min(d1,d2) < 0){
+        return RayCircleIntersects(false, vec3(0.0));
+    }
 
 
     return RayCircleIntersects(true, position);
 }
 
+struct Raydata{
+    vec3 origin;
+    vec3 direction;
+};
 
-
-void main() {
-    vec2 pixel_coordsi = gl_GlobalInvocationID.xy; //real pixel location
+Raydata generateRay(){
+    vec2 pixel_coords = gl_GlobalInvocationID.xy; //real pixel location
     vec2 total_pixels = vec2(imageSize(img_output)); //total screen size
-    uvec4 pixel = uvec4(0, 255.0*pixel_coordsi[0]/total_pixels[0], 255.0*pixel_coordsi[1]/total_pixels[1], 255);
 
-    vec2 pixel_coords = vec2(pixel_coordsi);
-
-    float fov = 90;
+    float fov = 60;
 
     float imageAspectRatio = total_pixels[0] / total_pixels[1]; // roughly 1.778 on normal resolution
     float Px = (2 * ((pixel_coords[0]) / total_pixels[0]) - 0.5) * tan(fov / 2 * PI / 180) * imageAspectRatio; // -1.778 to 1.778
-    float Py = (2 * ((pixel_coords[1]) / total_pixels[1])-0.5) * tan(fov / 2 * PI / 180); // -1 to 1
+    float Py = (2 * ((pixel_coords[1]) / total_pixels[1]) - 0.5) * tan(fov / 2 * PI / 180); // -1 to 1
 
-    float direction_rotation_y = sin(uni.direction[1]);
-    float direction_rotation_x = sin(uni.direction[0]);
-    vec3 ray_direction_modifier = normalize(vec3(Px, 0, 0));
+    vec3 direction; //do some rotations to fix all directions
+    float angle = atan(uni.direction[2]/uni.direction[0]);
+    if (uni.direction[0] < 0.0){
+        direction = rotation_y(rotation_z(rotation_y(uni.direction, angle), -Py), - angle + Px - PI/8);
+    } else {
+        direction = rotation_y(rotation_z(rotation_y(uni.direction, angle), Py), - angle + Px - PI/8);
+    }
+    return Raydata(uni.position, direction);
+}
 
+void main() {
+    Raydata r_data = generateRay();
+    vec3 origin = r_data.origin;
+    vec3 direction = r_data.direction;
 
-    vec3 rayOrigin = uni.position;
-    vec3 direction = rotation_y(uni.direction, Px); // note that this just equal to Vec3f(Px, Py, -1);
     vec3 fpixel = vec3((1-direction[1])*vec3(200,200,200) + direction[1] * vec3(51,102,204));
-    pixel = uvec4(uint(fpixel[0]),uint(fpixel[1]),uint(fpixel[2]),255);
+    uvec4 pixel = uvec4(uint(fpixel[0]),uint(fpixel[1]),uint(fpixel[2]),255);
 
 
-    direction = normalize(rotation_y(direction, uni.time/2.0));
     if (dot(direction, uni.sun_dir) < -0.999 ){
         pixel = uvec4(dot(direction, uni.sun_dir)*-1 * vec4(255, 245, 127,255));
     }
 
-
-    //vec3 direction = rotation_y(rotation_x(vec3(0.0,0.0,1.0), angle[1]), angle[0]);
-    //vec3 direction = normalize(vec3(sin(), sin(), -1));
-    //pixel = vec4(direction[0],direction[1],0.0, 1.0);
-    int bounce = 0;
-
-
-    float depth = 100000.0;
+    float depth = 1000000000.0;
     for(int j = 0; j< circles.length(); j++){
-        RayCircleIntersects r  = ray_intersects_circle(circles[j], rayOrigin, direction);
-        vec3 ray_camera_diff = rayOrigin - r.position;
-
-
-
+        RayCircleIntersects r  = ray_intersects_circle(circles[j], origin, direction);
+        vec3 ray_camera_diff = origin - r.position;
         float distance = dot(ray_camera_diff,ray_camera_diff);
         if (r.intersects && distance < depth){
             depth = distance;
@@ -154,7 +163,7 @@ void main() {
             pixel = uvec4(0,0,(sqrt(distance)-60)*1.4285, 255);
         }
     }
-    imageStore(img_output, ivec2(pixel_coordsi), pixel);
+    imageStore(img_output, ivec2(gl_GlobalInvocationID.xy), pixel);
     return;
 
 }
