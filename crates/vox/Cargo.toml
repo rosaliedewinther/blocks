@@ -17,8 +17,8 @@ cgmath = "0.18"
 imgui-wgpu = "0.15"
 imgui = "0.7"
 imgui-winit-support = {version="0.7", default-features = false, features = ["winit-25"]}
-#winit_window_control = {git = "https://github.com/jasperdewinther/winit_abstraction", branch = "main"}
-winit_window_control = {path="../../../winit_abstraction"}
+winit_window_control = {git = "https://github.com/jasperdewinther/winit_abstraction", branch = "main"}
+#winit_window_control = {path="../../../winit_abstraction"}
 serde-big-array = "0.3"
 rand_distr ="0.4"
 vox_core = {path="../vox_core"}
