@@ -228,7 +228,6 @@ impl PersonalWorld {
         self.ui.update_input(input);
     }
     pub fn render(&mut self, window: &Window, renderer: &mut Renderer) -> RenderResult {
-        renderer.update(0.1);
         return RenderResult::Continue;
         /*
         let main_pipeline = renderer.pipelines.get_mut("main").unwrap();

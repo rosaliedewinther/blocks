@@ -95,9 +95,9 @@ impl Renderer {
         wgpu.queue.submit(std::iter::once(encoder.finish()));
         Ok(())
     }
-    pub fn update(&mut self, dt: f64) {
+    pub fn update(&mut self, viewer_pos: [f32; 3], time_diff: f64, viewing_dir: [f32; 3]) {
         self.uniforms
-            .update_view_proj([0.0; 3], dt, [0.0, 1.0, 0.0]);
+            .update_view_proj(viewer_pos, time_diff, viewing_dir);
     }
     pub fn init_compute_pipeline(
         wgpu: &mut WgpuState,

@@ -52,37 +52,44 @@ impl Game for VoxGame {
         return UpdateResult::Continue;
     }
     fn on_render(&mut self, input: &mut Input, dt: f64, window: &Window) -> RenderResult {
-        self.renderer.as_mut().unwrap().update(dt);
+        let pw = self.personal_world.as_mut().unwrap();
+
+        pw.update_ui_input(&input);
+        pw.player.handle_input(&input, &(dt as f32), &pw.world);
+
+        let location = [
+            pw.player.position.x,
+            pw.player.position.y,
+            pw.player.position.z,
+        ];
+        let direction = [
+            pw.player.direction[0],
+            pw.player.direction[1],
+            pw.player.direction[2],
+        ];
+        self.renderer
+            .as_mut()
+            .unwrap()
+            .update(location, dt, direction);
         self.renderer
             .as_mut()
             .unwrap()
             .do_render_pass(&self.wgpu_state.as_ref().unwrap());
 
         return RenderResult::Continue;
-        let timer = Instant::now();
-        let pw = self.personal_world.as_mut().unwrap();
-        let timer = Instant::now();
-        let number_generated = pw.check_vertices_to_generate(self.renderer.as_ref().unwrap());
-        if number_generated > 0 {
-            pw.ui.debug_info.insert_stat(
-                "per chunk vertex time".to_string(),
-                timer.elapsed().as_secs_f32() / number_generated as f32,
-            );
-        }
-
-        pw.update_ui_input(&input);
-        //pw.player.handle_input(&input, &(dt as f32), &pw.world);
+        /*
         if pw.render(&window, self.renderer.as_mut().unwrap()) == RenderResult::Exit {
             return RenderResult::Exit;
         }
         input.update();
+
         self.personal_world
             .as_mut()
             .unwrap()
             .ui
             .debug_info
             .insert_stat("render time".to_string(), timer.elapsed().as_secs_f32());
-        RenderResult::Continue
+        RenderResult::Continue*/
     }
     fn on_init(&mut self, window: &Window) -> InitResult {
         self.wgpu_state = Some(WgpuState::new(&window));
