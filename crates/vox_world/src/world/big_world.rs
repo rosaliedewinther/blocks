@@ -1,3 +1,4 @@
+use crate::big_world_renderer::BigWorldRenderer;
 use crate::blocks::block::{get_blockid, BlockId};
 use crate::blocks::block_type::BlockType;
 use crate::player::Player;
@@ -7,13 +8,14 @@ use nalgebra::Vector3;
 use rayon::prelude::ParallelSliceMut;
 use std::collections::{HashMap, HashSet};
 use std::time::Instant;
-use vox_core::constants::{METACHUNKSIZE, METACHUNK_GEN_RANGE};
+use vox_core::constants::{BRICKMAPSIZE, BRICKSIZE, METACHUNKSIZE, METACHUNK_GEN_RANGE};
 use vox_core::positions::{ChunkPos, GlobalBlockPos, MetaChunkPos};
+use vox_render::compute_renderer::wgpu_state::WgpuState;
 
 pub struct BigWorld {
     //meta_chunk_locations: [[i32; 3]; 27], //one brickmap which the playes is currently in and all around the player
-    brickmap: Box<[u32; 64]>, //assumes brickmaps with size 4^3
-    bricks: Vec<[u8; 512]>,   //brick with size 8^3
+    brickmap: Box<[u32; BRICKMAPSIZE.pow(3)]>, //assumes brickmaps with size 4^3
+    bricks: Vec<[u8; BRICKSIZE.pow(3)]>,       //brick with size 8^3
     pub loading_chunks: HashSet<MetaChunkPos>,
     pub world_seed: u32,
     pub time: f64,
@@ -26,11 +28,11 @@ impl BigWorld {
         return None;
     }
     pub fn new(seed: u32) -> BigWorld {
-        let mut brickmap = Box::new([u32::MAX; 64]);
+        let mut brickmap = Box::new([u32::MAX; BRICKMAPSIZE.pow(3)]);
         let mut bricks = vec![];
         for i in 0..brickmap.len() {
             brickmap[i] = i as u32;
-            let mut temp_brick = [0u8; 512];
+            let mut temp_brick = [0u8; BRICKSIZE.pow(3)];
             temp_brick[i] = get_blockid(BlockType::Grass);
             bricks.push(temp_brick)
         }
@@ -51,6 +53,14 @@ impl BigWorld {
         todo!()
     }
 
+    pub fn upload_all_brickmaps(&self, wgpu_state: &WgpuState, world_renderer: &BigWorldRenderer) {
+        for i in 0..self.bricks.len() {
+            world_renderer.set_brick(i as u32, &self.bricks[i], wgpu_state);
+        }
+        for i in 0..27 {
+            world_renderer.set_brickmap(i, &self.brickmap, wgpu_state);
+        }
+    }
     pub fn update(&mut self) {
         self.time = self.start_time.elapsed().as_secs_f64();
     }

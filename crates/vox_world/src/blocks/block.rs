@@ -5,7 +5,6 @@ use rand::Rng;
 use serde::{Deserialize, Serialize};
 use vox_core::constants::COLORS;
 use vox_core::positions::{GlobalBlockPos, ObjectPos};
-use vox_render::renderer::vertex::{vertex, vertex_typed, Vertex};
 
 pub type BlockId = u8;
 
@@ -47,11 +46,4 @@ pub fn should_render_against(source_block_id: BlockId, neighbor_block_id: BlockI
         return false;
     }
     return true;
-}
-pub fn get_mesh(
-    block_id: BlockId,
-    pos: &GlobalBlockPos,
-    sides: &BlockSides,
-) -> (Vec<Vertex>, Vec<u32>) {
-    crate::blocks::block_mesh::get_mesh(block_id, pos, sides)
 }

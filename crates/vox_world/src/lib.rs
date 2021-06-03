@@ -1,6 +1,6 @@
 mod algorithms;
+pub mod big_world_renderer;
 mod blocks;
-pub mod chunk_render_data;
 pub mod player;
 mod structures;
 pub mod world;

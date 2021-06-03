@@ -32,42 +32,32 @@ impl Player {
             camera_speed: 2.0f32,
             render_distance: 5000f32,
             generated_chunks_for: ChunkPos {
-                x: i32::max_value(),
-                y: i32::max_value(),
-                z: i32::max_value(),
+                x: i32::MAX,
+                y: i32::MAX,
+                z: i32::MAX,
             },
             gravity: 0.0,
         }
     }
 
-    pub fn handle_input(&mut self, input: &Input, dt: &f32, world: &SmallWorld) {
-        self.change_position(
-            input,
-            VirtualKeyCode::A,
-            1.5f32 * PI,
-            *dt * self.speed,
-            world,
-        );
-        self.change_position(
-            input,
-            VirtualKeyCode::D,
-            0.5f32 * PI,
-            *dt * self.speed,
-            world,
-        );
-        self.change_position(input, VirtualKeyCode::W, 0f32 * PI, *dt * self.speed, world);
-        self.change_position(input, VirtualKeyCode::S, 1f32 * PI, *dt * self.speed, world);
+    pub fn handle_input(&mut self, input: &Input, dt: &f32) {
+        self.change_position(input, VirtualKeyCode::A, 1.5f32 * PI, *dt * self.speed);
+        self.change_position(input, VirtualKeyCode::D, 0.5f32 * PI, *dt * self.speed);
+        self.change_position(input, VirtualKeyCode::W, 0f32 * PI, *dt * self.speed);
+        self.change_position(input, VirtualKeyCode::S, 1f32 * PI, *dt * self.speed);
         if input.key_pressed(VirtualKeyCode::Space) {
             let diff = *dt * self.speed;
-            if !Player::collides(&self.position.get_diff(0.0, diff, 0.0), world) {
+            self.position.y += diff;
+            /*if !Player::collides(&self.position.get_diff(0.0, diff, 0.0), world) {
                 self.position.y += diff;
-            }
+            }*/
         }
         if input.key_pressed(VirtualKeyCode::LShift) {
             let diff = -*dt * self.speed;
-            if !Player::collides(&self.position.get_diff(0.0, diff, 0.0), world) {
-                self.position.y += diff;
-            }
+            self.position.y += diff;
+            /*if !Player::collides(&self.position.get_diff(0.0, diff, 0.0), world) {
+
+            }*/
         }
 
         let mouse_change = input.mouse_change();
@@ -92,7 +82,6 @@ impl Player {
         key: VirtualKeyCode,
         rotation_degree: f32,
         change: f32,
-        world: &SmallWorld,
     ) {
         if input.key_pressed(key) {
             let move_vec = get_rotation_matrix_y(rotation_degree) * &self.direction;
@@ -100,10 +89,11 @@ impl Player {
                 1f32 / (move_vec[0].powf(2f32).abs() + move_vec[2].powf(2f32).abs()).sqrt();
             let x_change = change * move_vec.x * to_extend;
             let z_change = change * move_vec.z * to_extend;
-            if !Player::collides(&self.position.get_diff(x_change, 0.0, z_change), world) {
-                self.position.x += x_change;
-                self.position.z += z_change;
-            }
+            self.position.x += x_change;
+            self.position.z += z_change;
+            /*if !Player::collides(&self.position.get_diff(x_change, 0.0, z_change), world) {
+
+            }*/
         }
     }
     pub fn change_direction_horizontal(&mut self, mat: &Matrix3<f32>) {

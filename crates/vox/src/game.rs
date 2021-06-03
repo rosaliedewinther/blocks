@@ -56,41 +56,16 @@ impl Game for VoxGame {
         let pw = self.personal_world.as_mut().unwrap();
 
         pw.update_ui_input(&input);
-        pw.player.handle_input(&input, &(dt as f32), &pw.world);
+        pw.player.handle_input(&input, &(dt as f32));
 
-        let location = [
-            pw.player.position.x,
-            pw.player.position.y,
-            pw.player.position.z,
-        ];
-        let direction = [
-            pw.player.direction[0],
-            pw.player.direction[1],
-            pw.player.direction[2],
-        ];
-        self.renderer
-            .as_mut()
-            .unwrap()
-            .update(location, dt, direction);
-        self.renderer
-            .as_mut()
-            .unwrap()
-            .do_render_pass(&self.wgpu_state.as_ref().unwrap());
+        let renderer = self.renderer.as_mut().unwrap();
+
+        let wgpu_state = self.wgpu_state.as_ref().unwrap();
+        pw.world_render_data
+            .update_all_buffers(&wgpu_state, &pw.player, dt);
+        renderer.do_render_pass(&wgpu_state, window, vec![&mut pw.world_render_data]);
         input.update();
         return RenderResult::Continue;
-        /*
-        if pw.render(&window, self.renderer.as_mut().unwrap()) == RenderResult::Exit {
-            return RenderResult::Exit;
-        }
-
-
-        self.personal_world
-            .as_mut()
-            .unwrap()
-            .ui
-            .debug_info
-            .insert_stat("render time".to_string(), timer.elapsed().as_secs_f32());
-        RenderResult::Continue*/
     }
     fn on_init(&mut self, window: &Window) -> InitResult {
         self.wgpu_state = Some(WgpuState::new(&window));

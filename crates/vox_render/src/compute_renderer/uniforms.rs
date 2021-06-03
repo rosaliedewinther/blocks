@@ -1,4 +1,3 @@
-use crate::renderer::wgpu::gen_perspective_mat;
 use nalgebra::Vector3;
 use vox_core::constants::COLORS;
 use vox_core::utils::get_rotation_matrix_y;
@@ -13,6 +12,7 @@ pub struct Uniforms {
     sun_dir: [f32; 3],
     _padding2: f32,
     colors: [[f32; 4]; 16],
+    chunk_locations: [[i32; 3]; 27],
 }
 
 impl Uniforms {
@@ -25,6 +25,7 @@ impl Uniforms {
             _padding2: 0.0,
             time: 0.0,
             colors: COLORS,
+            chunk_locations: [[0; 3]; 27],
         }
     }
 

@@ -9,11 +9,18 @@ struct Uniforms{
     float _padding;
     vec3 sun_dir;
     vec4[16] colors;
+    vec3[27] brickmap_locations;
 };
 
 layout(local_size_x = 1, local_size_y = 1) in;
 layout(rgba8ui, binding = 0) uniform uimage2D img_output;
-layout(binding=1) uniform camera_details{
+layout(binding = 1) readonly buffer brickmaps{
+    uint[] brick_index;
+};
+layout(binding = 2) readonly buffer bricks{
+    uint[] encoded_voxels;
+};
+layout(binding=3) uniform camera_details{
     Uniforms uni;
 };
 
@@ -144,12 +151,10 @@ void main() {
     vec3 origin = r_data.origin;
     vec3 direction = r_data.direction;
 
-    vec3 fpixel = vec3((1-direction[1])*vec3(200,200,200) + direction[1] * vec3(51,102,204));
-    uvec4 pixel = uvec4(uint(fpixel[0]),uint(fpixel[1]),uint(fpixel[2]),255);
+    uvec4 pixel = uvec4(mix(vec3(200,200,200), vec3(51,102,204), direction[1]), 255);
 
-
-    if (dot(direction, uni.sun_dir) < -0.999 ){
-        pixel = uvec4(dot(direction, uni.sun_dir)*-1 * vec4(255, 245, 127,255));
+    if (dot(direction, uni.sun_dir) < -0.99 ){
+        pixel = pixel + uvec4(pow(dot(direction, uni.sun_dir)*-1,1000) * vec4(255, 245, 127,255));
     }
 
     float depth = 1000000000.0;

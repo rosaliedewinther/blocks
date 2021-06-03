@@ -23,3 +23,5 @@ pub const COLORS: [[f32; 4]; 16] = [
     [0.0; 4],
     [0.0; 4],
 ];
+pub const BRICKSIZE: usize = 8;
+pub const BRICKMAPSIZE: usize = 4;
