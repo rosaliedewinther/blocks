@@ -29,11 +29,6 @@ winit = "0.25"
 rayon = "1.4"
 wgpu = {version="0.8", features = ["cross"]}
 
-[profile.dev]
-opt-level = 2
-
-[profile.test]
-opt-level = 2
 
 [build-dependencies]
 anyhow = "1.0"

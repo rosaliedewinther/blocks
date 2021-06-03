@@ -17,9 +17,3 @@ bytemuck = { version = "1.4", features = [ "derive" ] }
 vox_core = {path="../vox_core"}
 
 
-
-[profile.dev]
-opt-level = 2
-
-[profile.test]
-opt-level = 2

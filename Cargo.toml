@@ -7,9 +7,3 @@ members = [
     "crates/vox_world",
 ]
 
-[profile.dev]
-opt-level = 2
-
-[profile.test]
-opt-level = 2
-
