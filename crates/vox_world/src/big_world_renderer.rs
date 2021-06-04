@@ -265,8 +265,12 @@ impl BigWorldRenderer {
             player.direction[1],
             player.direction[2],
         ];
-        self.uniforms
-            .update_view_proj(location, time_diff, direction);
+        self.uniforms.update_view_proj(
+            location,
+            time_diff,
+            direction,
+            [wgpu_state.size.width, wgpu_state.size.height],
+        );
         wgpu_state.queue.write_buffer(
             &self.uniform_buffer,
             0,

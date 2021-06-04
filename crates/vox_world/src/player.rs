@@ -41,8 +41,8 @@ impl Player {
     }
 
     pub fn handle_input(&mut self, input: &Input, dt: &f32) {
-        self.change_position(input, VirtualKeyCode::A, 1.5f32 * PI, *dt * self.speed);
-        self.change_position(input, VirtualKeyCode::D, 0.5f32 * PI, *dt * self.speed);
+        self.change_position(input, VirtualKeyCode::A, 0.5f32 * PI, *dt * self.speed);
+        self.change_position(input, VirtualKeyCode::D, 1.5f32 * PI, *dt * self.speed);
         self.change_position(input, VirtualKeyCode::W, 0f32 * PI, *dt * self.speed);
         self.change_position(input, VirtualKeyCode::S, 1f32 * PI, *dt * self.speed);
         if input.key_pressed(VirtualKeyCode::Space) {
@@ -61,19 +61,12 @@ impl Player {
         }
 
         let mouse_change = input.mouse_change();
-        let xdiff = mouse_change[0] * dt * self.camera_speed;
+        let xdiff = -mouse_change[0] * dt * self.camera_speed;
         let ydiff = -mouse_change[1] * dt * self.camera_speed;
 
-        if ydiff < 0f32 {
-            self.change_direction_vertical(ydiff);
-        } else {
-            self.change_direction_vertical(ydiff);
-        }
-        if xdiff < 0f32 {
-            self.change_direction_horizontal(&get_rotation_matrix_y(xdiff));
-        } else {
-            self.change_direction_horizontal(&get_rotation_matrix_y(xdiff));
-        }
+        self.change_direction_vertical(ydiff);
+        self.change_direction_horizontal(&get_rotation_matrix_y(xdiff));
+
         self.direction = self.direction.normalize();
     }
     pub fn change_position(
