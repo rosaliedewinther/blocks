@@ -74,57 +74,6 @@ vec3 rotation_z(vec3 v, float angle){
     return matrix*v;
 }
 
-float distance_to_circle(Circle circle, vec3 position){
-    vec3 diff = abs(circle.position - position);
-    float distance = sqrt(pow(diff[0],2) + pow(diff[1],2) + pow(diff[2],2));
-    return max(distance-circle.radius, 0.0);
-}
-
-
-
-SdfReturn sdf(vec3 position){
-    float[4] distances = {0,0,0,0};
-    for(int j = 0; j< circles.length(); j++){
-        distances[j] = distance_to_circle(circles[j], position);
-    }
-    int closest = 0;
-    float distance = 1000000;
-    for (int i = 0; i < distances.length(); i++){
-        if (distances[i] < distance){
-            distance = distances[i];
-            closest = i;
-        }
-    }
-    return SdfReturn(distance, closest);
-}
-struct RayCircleIntersects{
-    bool intersects;
-    vec3 position;
-};
-
-//https://stackoverflow.com/questions/6533856/ray-sphere-intersection
-RayCircleIntersects ray_intersects_circle(Circle circle, vec3 origin, vec3 direction){
-    vec3 second_point = origin + direction;
-    float b = 2*dot(direction, origin-circle.position);
-    vec3 origin_to_circle = origin-circle.position;
-    float c = dot(origin_to_circle,origin_to_circle)-pow(circle.radius, 2.0);
-    float delta = pow(b,2.0)-4*c;
-    if (delta < 0){
-        return RayCircleIntersects(false, vec3(0.0));
-    }
-
-    float d1 = (-b-sqrt(delta))/(2);
-    float d2 = (-b+sqrt(delta))/(2);
-
-    vec3 position = origin + min(d1,d2)*(direction-origin);
-    if (min(d1,d2) < 0){
-        return RayCircleIntersects(false, vec3(0.0));
-    }
-
-
-    return RayCircleIntersects(true, position);
-}
-
 vec3 generateRayDirection(){
     vec2 pixel_coords = gl_GlobalInvocationID.xy; //real pixel location
     vec2 total_pixels = vec2(imageSize(img_output)); //total screen size
@@ -136,29 +85,26 @@ vec3 generateRayDirection(){
     return rij;
 }
 
+uvec4 draw_sun(vec3 direction, uvec4 pixel){
+    if (dot(direction, uni.sun_dir) < -0.99 ){
+        return pixel + uvec4(pow(dot(direction, uni.sun_dir)*-1,1000) * vec4(255, 245, 127,255));
+    }
+    return pixel;
+}
+
+uvec4 draw_skyline(vec3 direction, uvec4 pixel){
+    return uvec4(mix(vec3(200,200,200), vec3(51,102,204), direction[1]), 255);
+}
+
 void main() {
     vec3 origin = uni.position;
     vec3 direction = generateRayDirection();
+    uvec4 pixel = uvec4(0,0,0,255);
 
-    uvec4 pixel = uvec4((direction+1)*127, 255);
-    //uvec4 pixel = uvec4(mix(vec3(200,200,200), vec3(51,102,204), direction[1]), 255);
+    pixel = draw_skyline(direction, pixel);
+    pixel = draw_sun(direction, pixel);
 
-    if (dot(direction, uni.sun_dir) < -0.99 ){
-        pixel = pixel + uvec4(pow(dot(direction, uni.sun_dir)*-1,1000) * vec4(255, 245, 127,255));
-    }
 
-    float depth = 1000000000.0;
-    for(int j = 0; j< circles.length(); j++){
-        RayCircleIntersects r  = ray_intersects_circle(circles[j], origin, direction);
-        vec3 ray_camera_diff = origin - r.position;
-        float distance = dot(ray_camera_diff,ray_camera_diff);
-        if (r.intersects && distance < depth){
-            depth = distance;
-            vec3 refracted_direction = reflect(direction, normalize(circles[j].position - r.position))*255;
-            pixel = uvec4(0,0,(sqrt(distance)-60)*1.4285, 255);
-        }
-    }
     imageStore(img_output, ivec2(gl_GlobalInvocationID.xy), pixel);
     return;
-
 }

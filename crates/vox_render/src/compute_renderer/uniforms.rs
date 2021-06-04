@@ -62,7 +62,6 @@ impl Uniforms {
         let qx = ((2.0 * gx) / (screensize[0] as f64 - 1.0)) * &bn;
         let qy = ((2.0 * gy) / (screensize[1] as f64 - 1.0)) * &vn;
         let p1m = tn - gx * bn - gy * vn;
-        println!("shape: {:?}", screensize);
         self.ray_cast_data = [
             [qx[0] as f32, qx[1] as f32, qx[2] as f32, 0.0],
             [qy[0] as f32, qy[1] as f32, qy[2] as f32, 0.0],
