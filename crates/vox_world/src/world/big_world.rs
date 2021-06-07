@@ -14,8 +14,8 @@ use vox_render::compute_renderer::wgpu_state::WgpuState;
 
 pub struct BigWorld {
     //meta_chunk_locations: [[i32; 3]; 27], //one brickmap which the playes is currently in and all around the player
-    brickmap: Box<[u32; BRICKMAPSIZE.pow(3)]>, //assumes brickmaps with size 4^3
-    bricks: Vec<[u8; BRICKSIZE.pow(3)]>,       //brick with size 8^3
+    brickmap: Box<[u32; BRICKMAPSIZE.pow(3) * 27]>, //assumes brickmaps with size 4^3
+    bricks: Vec<[u8; BRICKSIZE.pow(3)]>,            //brick with size 8^3
     pub loading_chunks: HashSet<MetaChunkPos>,
     pub world_seed: u32,
     pub time: f64,
@@ -28,12 +28,17 @@ impl BigWorld {
         return None;
     }
     pub fn new(seed: u32) -> BigWorld {
-        let mut brickmap = Box::new([u32::MAX; BRICKMAPSIZE.pow(3)]);
+        let mut brickmap = Box::new([u32::MAX; BRICKMAPSIZE.pow(3) * 27]);
         let mut bricks = vec![];
         for i in 0..brickmap.len() {
+            if i != 0 {
+                continue;
+            }
             brickmap[i] = i as u32;
             let mut temp_brick = [0u8; BRICKSIZE.pow(3)];
-            temp_brick[i] = get_blockid(BlockType::Grass);
+            for j in 0..20 {
+                temp_brick[j] = get_blockid(BlockType::Grass);
+            }
             bricks.push(temp_brick)
         }
         BigWorld {

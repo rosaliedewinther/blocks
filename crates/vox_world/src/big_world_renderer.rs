@@ -85,9 +85,7 @@ impl BigWorldRenderer {
         let buffer_descriptor = wgpu::BufferDescriptor {
             label: Some("brickmap buffer"),
             size: amount_of_bricks as u64 * std::mem::size_of::<u32>() as u64,
-            usage: wgpu::BufferUsage::COPY_DST
-                | wgpu::BufferUsage::STORAGE
-                | wgpu::BufferUsage::COPY_SRC,
+            usage: wgpu::BufferUsage::COPY_DST | wgpu::BufferUsage::STORAGE,
             mapped_at_creation: false,
         };
         let brick_map_buffer = wgpu_state.device.create_buffer(&buffer_descriptor);
@@ -98,9 +96,7 @@ impl BigWorldRenderer {
         let buffer_descriptor = wgpu::BufferDescriptor {
             label: Some("bricks buffer"),
             size: max_amount_of_bricks as u64 * std::mem::size_of::<u8>() as u64,
-            usage: wgpu::BufferUsage::COPY_DST
-                | wgpu::BufferUsage::STORAGE
-                | wgpu::BufferUsage::COPY_SRC,
+            usage: wgpu::BufferUsage::COPY_DST | wgpu::BufferUsage::STORAGE,
             mapped_at_creation: false,
         };
         let bricks_buffer = wgpu_state.device.create_buffer(&buffer_descriptor);
@@ -136,7 +132,7 @@ impl BigWorldRenderer {
     pub fn set_brickmap(
         &self,
         brickmap_index: u32,
-        data: &[u32; BRICKMAPSIZE.pow(3)],
+        data: &Box<[u32; BRICKMAPSIZE.pow(3) * 27]>,
         wgpu_state: &WgpuState,
     ) {
         let uploading_buffer =
@@ -144,7 +140,7 @@ impl BigWorldRenderer {
                 .device
                 .create_buffer_init(&wgpu::util::BufferInitDescriptor {
                     label: Some("brickmap uploading Buffer"),
-                    contents: bytemuck::cast_slice(data),
+                    contents: bytemuck::cast_slice(data.as_ref()),
                     usage: wgpu::BufferUsage::COPY_SRC,
                 });
         let mut encoder = wgpu_state
