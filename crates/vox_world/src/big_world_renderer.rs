@@ -287,6 +287,10 @@ impl RenderPassable for BigWorldRenderer {
         cpass.set_pipeline(&self.compute_pipeline);
         cpass.set_bind_group(0, &self.compute_bind_group, &[]);
         cpass.insert_debug_marker("compute screen pixels");
-        cpass.dispatch(wgpu_state.size.width, wgpu_state.size.height, 1);
+        cpass.dispatch(
+            (wgpu_state.size.width as f32 / 8.0).ceil() as u32,
+            (wgpu_state.size.height as f32 / 8.0).ceil() as u32,
+            1,
+        );
     }
 }

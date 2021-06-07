@@ -54,7 +54,6 @@ fn main() -> Result<()> {
         .collect::<Result<Vec<_>>>()?;
 
     let mut compiler = shaderc::Compiler::new().context("Unable to create shader compiler")?;
-
     // This can't be parallelized. The [shaderc::Compiler] is not
     // thread safe. Also, it creates A lot of resources. You could
     // spawn multiple processes to handle this, but it would probably
@@ -66,13 +65,15 @@ fn main() -> Result<()> {
             "cargo:rerun-if-changed={}",
             shader.src_path.as_os_str().to_str().unwrap()
         );
+        let mut options = shaderc::CompileOptions::new().unwrap();
+        options.set_optimization_level(shaderc::OptimizationLevel::Zero);
 
         let compiled = compiler.compile_into_spirv(
             &shader.src,
             shader.kind,
             &shader.src_path.to_str().unwrap(),
             "main",
-            None,
+            Some(&options),
         )?;
         write(shader.spv_path, compiled.as_binary_u8())?;
     }
