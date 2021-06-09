@@ -80,21 +80,24 @@ const uint VoxelFilled = 0;
 const uint VoxelEmpty = 1;
 const uint VoxelOutOfBounds = 2;
 
-uint isFilled(ivec3 location) {
+vec3 isFilled(ivec3 location) {
     //validate indices
     ivec3 which_brickmap = ivec3((location - uni.position)/(uni.brick_size * uni.brickmap_size))+1;
-    uint brickmap_offset = uint(which_brickmap[0] * pow(uni.brickmap_size, 3) + which_brickmap[1] * pow(uni.brickmap_size, 3) * 3 + which_brickmap[2] * pow(uni.brickmap_size, 3)*9);
+    which_brickmap = ivec3(which_brickmap * pow(uni.brickmap_size, 3));
+    uint brickmap_offset = uint(which_brickmap[0] + which_brickmap[1] * 3 + which_brickmap[2] * 9);
     ivec3 which_brick = ivec3(mod((location - uni.position)/(uni.brick_size), uni.brickmap_size));
     uint brick_offset = uint(which_brick[0] + which_brick[1] * uni.brickmap_size + which_brick[2] * pow(uni.brickmap_size, 2));
     uint brick_i = brick_index[brick_offset + brickmap_offset];
     if (brick_i > pow(4,3)*27){
-        return VoxelOutOfBounds;
+        return vec3(0,0,0);
+        //return VoxelOutOfBounds;
     } else {
         ivec3 which_voxel = ivec3(mod((location - uni.position)/(uni.brick_size), uni.brickmap_size));
         uint voxel_index = uint(which_voxel[0] + which_voxel[1] * uni.brick_size + which_voxel[2] * pow(uni.brick_size, 2));
-        uint voxel_data = encoded_voxels[brick_i/4];
-        uint voxel = voxel_data >> uint(8 * (mod(brick_i,4)*-1+3));
-        return voxel == 0? VoxelEmpty : VoxelFilled;
+        uint voxel_data = encoded_voxels[brick_i + voxel_index/4];
+        uint voxel = voxel_data << uint(8 * (mod(voxel_index,4)*-1+3));
+        return vec3(encoded_voxels[brick_i + voxel_index/4]);
+        //return voxel == 0? VoxelEmpty : VoxelFilled;
     }
 }
 
@@ -106,31 +109,34 @@ uint isFilled(ivec3 location) {
 
 //https://www.researchgate.net/profile/Kai-Xiao-9/publication/233899848_Efficient_implementation_of_the_3D-DDA_ray_traversal_algorithm_on_GPU_and_its_application_in_radiation_dose_calculation/links/5acfaa9b4585154f3f47bf20/Efficient-implementation-of-the-3D-DDA-ray-traversal-algorithm-on-GPU-and-its-application-in-radiation-dose-calculation.pdf?origin=publication_detail
 uvec4 trace_ray(vec3 direction, vec3 origin){
-    vec3 current_voxel = origin;
+    ivec3 current_voxel = ivec3(origin);
     int iter = 0;
 
+    vec3 deltaDist = abs(vec3(length(direction))/direction);
+    vec3 step = ivec3(sign(direction));
+    vec3 sideDist = (sign(direction) * (vec3(current_voxel) - origin) + (sign(direction) * 0.5) + 0.5) * deltaDist;
 
-    vec3 step = abs(direction)/direction;
-    vec3 invDir = 1/direction;
-    vec3 T = vec3(bool(step[0]) ? mod(origin[0], 1) : 1-direction[0],bool(step[1]) ? mod(origin[1], 1) : 1-direction[1],bool(step[2]) ? mod(origin[2], 1) : 1-direction[2]);
-    vec3 DeltaT = invDir;
-    vec3 VoxelIncr = vec3(0);
+
+    //vec3 invDir = 1/direction;
+    //vec3 T = vec3(bool(step[0]) ? mod(origin[0], 1) : 1-direction[0],bool(step[1]) ? mod(origin[1], 1) : 1-direction[1],bool(step[2]) ? mod(origin[2], 1) : 1-direction[2]);
+    //vec3 DeltaT = invDir;
+    //vec3 VoxelIncr = vec3(0);
+    bvec3 mask;
     bool inside_map = true;
+    vec3 voxel;
     while(iter < 100){
-        VoxelIncr[0] = float((T[0]<=T[1]) && (T[0]<=T[2]));
-        VoxelIncr[1] = float((T[1]<=T[0]) && (T[1]<=T[2]));
-        VoxelIncr[2] = float((T[2]<=T[0]) && (T[2]<=T[1]));
-        T = VoxelIncr * DeltaT;
-        current_voxel += VoxelIncr*step;
-        uint voxel = isFilled(ivec3(current_voxel));
-        if (voxel == VoxelFilled){
-            return uvec4(255,255,0,255);
+        mask = lessThanEqual(sideDist.xyz, min(sideDist.yzx, sideDist.zxy));
+        sideDist += vec3(mask) * deltaDist;
+        current_voxel += ivec3(vec3(mask)*step);
+        voxel = isFilled(current_voxel);
+        /*if (voxel == VoxelFilled){
+            return uvec4(255,0,0,255);
         } else if (voxel == VoxelOutOfBounds){
-            return uvec4(0,0,0,255);
-        }
+            return uvec4(0,0,255,255);
+        }*/
         iter+=1;
     }
-    return uvec4(0,0,0,255);
+    return uvec4(voxel,255);
 }
 
 

@@ -23,8 +23,10 @@ impl BigWorldRenderer {
         let (uniform_buffer, uniforms) = BigWorldRenderer::init_uniforms(wgpu_state);
         let brick_map_buffer =
             BigWorldRenderer::init_brickmaps(wgpu_state, BRICKSIZE.pow(3) as u32);
-        let bricks_buffer =
-            BigWorldRenderer::init_bricks(wgpu_state, (512 * BRICKSIZE.pow(3)) as u32);
+        let bricks_buffer = BigWorldRenderer::init_bricks(
+            wgpu_state,
+            (27 * (BRICKMAPSIZE * BRICKSIZE).pow(3)) as u32,
+        );
         let (compute_bind_group_layout, compute_bind_group) =
             BigWorldRenderer::init_compute_bind_group(
                 wgpu_state,
@@ -93,13 +95,23 @@ impl BigWorldRenderer {
         return brick_map_buffer;
     }
     fn init_bricks(wgpu_state: &WgpuState, max_amount_of_bricks: u32) -> wgpu::Buffer {
-        let buffer_descriptor = wgpu::BufferDescriptor {
+        let bricks_buffer =
+            wgpu_state
+                .device
+                .create_buffer_init(&wgpu::util::BufferInitDescriptor {
+                    label: Some("brick Buffer"),
+                    contents: bytemuck::cast_slice(
+                        vec![255u8; max_amount_of_bricks as usize].as_slice(),
+                    ),
+                    usage: wgpu::BufferUsage::COPY_DST | wgpu::BufferUsage::STORAGE,
+                });
+        /*let buffer_descriptor = wgpu::BufferDescriptor {
             label: Some("bricks buffer"),
             size: max_amount_of_bricks as u64 * std::mem::size_of::<u8>() as u64,
             usage: wgpu::BufferUsage::COPY_DST | wgpu::BufferUsage::STORAGE,
             mapped_at_creation: false,
         };
-        let bricks_buffer = wgpu_state.device.create_buffer(&buffer_descriptor);
+        let bricks_buffer = wgpu_state.device.create_buffer(&buffer_descriptor);*/
 
         return bricks_buffer;
     }
