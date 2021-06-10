@@ -80,30 +80,43 @@ const uint VoxelFilled = 0;
 const uint VoxelEmpty = 1;
 const uint VoxelOutOfBounds = 2;
 
-vec3 isFilled(ivec3 location) {
+uint isFilled(ivec3 location) {
     //validate indices
-    ivec3 which_brickmap = ivec3((location - uni.position)/(uni.brick_size * uni.brickmap_size))+1;
+    ivec3 which_brickmap = ivec3((location)/(uni.brick_size * uni.brickmap_size))+1;
     which_brickmap = ivec3(which_brickmap * pow(uni.brickmap_size, 3));
     uint brickmap_offset = uint(which_brickmap[0] + which_brickmap[1] * 3 + which_brickmap[2] * 9);
-    ivec3 which_brick = ivec3(mod((location - uni.position)/(uni.brick_size), uni.brickmap_size));
+    ivec3 which_brick = ivec3(mod((location)/(uni.brick_size), uni.brickmap_size));
     uint brick_offset = uint(which_brick[0] + which_brick[1] * uni.brickmap_size + which_brick[2] * pow(uni.brickmap_size, 2));
     uint brick_i = brick_index[brick_offset + brickmap_offset];
     if (brick_i > pow(4,3)*27){
-        return vec3(0,0,0);
-        //return VoxelOutOfBounds;
+        return VoxelOutOfBounds;
     } else {
-        ivec3 which_voxel = ivec3(mod((location - uni.position)/(uni.brick_size), uni.brickmap_size));
+        ivec3 which_voxel = ivec3(mod((location)/(uni.brick_size), uni.brickmap_size));
         uint voxel_index = uint(which_voxel[0] + which_voxel[1] * uni.brick_size + which_voxel[2] * pow(uni.brick_size, 2));
-        uint voxel_data = encoded_voxels[brick_i + voxel_index/4];
-        uint voxel = voxel_data << uint(8 * (mod(voxel_index,4)*-1+3));
-        return vec3(encoded_voxels[brick_i + voxel_index/4]);
-        //return voxel == 0? VoxelEmpty : VoxelFilled;
+        uint voxel_data = encoded_voxels[int(pow(brick_i, 3)) + voxel_index];
+        uint voxel = voxel_data >> uint(8 * (mod(voxel_index,4)*-1+3));
+        return voxel == 0? VoxelEmpty : VoxelFilled;
     }
 }
 
-//uvec4 get_voxel_color(ivec3 location){
-
-//}
+uvec4 get_voxel_color(ivec3 location){
+    //validate indices
+    ivec3 which_brickmap = ivec3((location)/(uni.brick_size * uni.brickmap_size))+1;
+    which_brickmap = ivec3(which_brickmap * pow(uni.brickmap_size, 3));
+    uint brickmap_offset = uint(which_brickmap[0] + which_brickmap[1] * 3 + which_brickmap[2] * 9);
+    ivec3 which_brick = ivec3(mod((location)/(uni.brick_size), uni.brickmap_size));
+    uint brick_offset = uint(which_brick[0] + which_brick[1] * uni.brickmap_size + which_brick[2] * pow(uni.brickmap_size, 2));
+    uint brick_i = brick_index[brick_offset + brickmap_offset];
+    if (brick_i > pow(4,3)*27){
+        return uvec4(0,0,0,255);
+    } else {
+        ivec3 which_voxel = ivec3(mod((location)/(uni.brick_size), uni.brickmap_size));
+        uint voxel_index = uint(which_voxel[0] + which_voxel[1] * uni.brick_size + which_voxel[2] * pow(uni.brick_size, 2));
+        uint voxel_data = encoded_voxels[int(pow(brick_i, 3))  + voxel_index];
+        uint voxel = voxel_data >> uint(8 * (mod(voxel_index,4)*-1+3));
+        return uvec4(uni.colors[uint(mod(voxel, 16))]);
+    }
+}
 
 
 
@@ -123,20 +136,19 @@ uvec4 trace_ray(vec3 direction, vec3 origin){
     //vec3 VoxelIncr = vec3(0);
     bvec3 mask;
     bool inside_map = true;
-    vec3 voxel;
     while(iter < 100){
         mask = lessThanEqual(sideDist.xyz, min(sideDist.yzx, sideDist.zxy));
         sideDist += vec3(mask) * deltaDist;
         current_voxel += ivec3(vec3(mask)*step);
-        voxel = isFilled(current_voxel);
-        /*if (voxel == VoxelFilled){
-            return uvec4(255,0,0,255);
+        uint voxel = isFilled(current_voxel);
+        if (voxel == VoxelFilled){
+            return get_voxel_color(current_voxel);
         } else if (voxel == VoxelOutOfBounds){
             return uvec4(0,0,255,255);
-        }*/
+        }
         iter+=1;
     }
-    return uvec4(voxel,255);
+    return uvec4(0,0,0,255);
 }
 
 

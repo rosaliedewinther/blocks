@@ -78,11 +78,6 @@ impl Game for VoxGame {
         ));
         self.renderer = Some(renderer);
 
-        let pw = self.personal_world.as_mut().unwrap();
-        let wgpu_state = self.wgpu_state.as_mut().unwrap();
-        pw.world
-            .upload_all_brickmaps(wgpu_state, &pw.world_render_data);
-
         return InitResult::Continue;
     }
     fn on_resize(&mut self, physical_size: PhysicalSize<u32>) {}

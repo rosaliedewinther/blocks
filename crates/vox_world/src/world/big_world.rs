@@ -30,15 +30,10 @@ impl BigWorld {
     pub fn new(seed: u32) -> BigWorld {
         let mut brickmap = Box::new([0; BRICKMAPSIZE.pow(3) * 27]);
         let mut bricks = vec![];
-        for _ in 0..brickmap.len() {
-            let mut temp_brick = [255u8; BRICKSIZE.pow(3)];
-            for j in 0..BRICKSIZE.pow(3) {
-                if j % 2 == 0 {
-                    temp_brick[j] = get_blockid(BlockType::Stone);
-                } else {
-                    temp_brick[j] = get_blockid(BlockType::Water);
-                }
-            }
+        for i in 0..brickmap.len() {
+            brickmap[i] = i as u32;
+            let mut temp_brick = [0u8; BRICKSIZE.pow(3)];
+            temp_brick[0] = 1;
             bricks.push(temp_brick)
         }
         BigWorld {
@@ -66,7 +61,6 @@ impl BigWorld {
             world_renderer.set_brickmap(i, &self.brickmap, wgpu_state);
         }
         println!("{:?}", self.bricks);
-        println!("{:?}", self.brickmap);
     }
     pub fn update(&mut self) {
         self.time = self.start_time.elapsed().as_secs_f64();
