@@ -75,30 +75,6 @@ uvec4 draw_skyline(vec3 direction, uvec4 pixel){
     return uvec4(mix(vec3(200,200,200), vec3(51,102,204), direction[1]), 255);
 }
 
-
-const uint VoxelFilled = 0;
-const uint VoxelEmpty = 1;
-const uint VoxelOutOfBounds = 2;
-
-uint isFilled(ivec3 location) {
-    //validate indices
-    ivec3 which_brickmap = ivec3((location)/(uni.brick_size * uni.brickmap_size))+1;
-    which_brickmap = ivec3(which_brickmap * pow(uni.brickmap_size, 3));
-    uint brickmap_offset = uint(which_brickmap[0] + which_brickmap[1] * 3 + which_brickmap[2] * 9);
-    ivec3 which_brick = ivec3(mod((location)/(uni.brick_size), uni.brickmap_size));
-    uint brick_offset = uint(which_brick[0] + which_brick[1] * uni.brickmap_size + which_brick[2] * pow(uni.brickmap_size, 2));
-    uint brick_i = brick_index[brick_offset + brickmap_offset];
-    if (brick_i > pow(4,3)*27){
-        return VoxelOutOfBounds;
-    } else {
-        ivec3 which_voxel = ivec3(mod((location)/(uni.brick_size), uni.brickmap_size));
-        uint voxel_index = uint(which_voxel[0] + which_voxel[1] * uni.brick_size + which_voxel[2] * pow(uni.brick_size, 2));
-        uint voxel_data = encoded_voxels[int(pow(brick_i, 3)) + voxel_index];
-        uint voxel = voxel_data >> uint(8 * (mod(voxel_index,4)*-1+3));
-        return voxel == 0? VoxelEmpty : VoxelFilled;
-    }
-}
-
 uvec4 get_voxel_color(ivec3 location){
     //validate indices
     ivec3 which_brickmap = ivec3((location)/(uni.brick_size * uni.brickmap_size))+1;
@@ -106,9 +82,9 @@ uvec4 get_voxel_color(ivec3 location){
     uint brickmap_offset = uint(which_brickmap[0] + which_brickmap[1] * 3 + which_brickmap[2] * 9);
     ivec3 which_brick = ivec3(mod((location)/(uni.brick_size), uni.brickmap_size));
     uint brick_offset = uint(which_brick[0] + which_brick[1] * uni.brickmap_size + which_brick[2] * pow(uni.brickmap_size, 2));
-    uint brick_i = brick_index[brick_offset + brickmap_offset];
+    uint brick_i = brick_index[brick_offset + brickmap_offset * uni.brickmap_size];
     if (brick_i > pow(4,3)*27){
-        return uvec4(0,0,0,255);
+        return uvec4(0,0,0,0);
     } else {
         ivec3 which_voxel = ivec3(mod((location)/(uni.brick_size), uni.brickmap_size));
         uint voxel_index = uint(which_voxel[0] + which_voxel[1] * uni.brick_size + which_voxel[2] * pow(uni.brick_size, 2));
@@ -129,22 +105,17 @@ uvec4 trace_ray(vec3 direction, vec3 origin){
     vec3 step = ivec3(sign(direction));
     vec3 sideDist = (sign(direction) * (vec3(current_voxel) - origin) + (sign(direction) * 0.5) + 0.5) * deltaDist;
 
-
-    //vec3 invDir = 1/direction;
-    //vec3 T = vec3(bool(step[0]) ? mod(origin[0], 1) : 1-direction[0],bool(step[1]) ? mod(origin[1], 1) : 1-direction[1],bool(step[2]) ? mod(origin[2], 1) : 1-direction[2]);
-    //vec3 DeltaT = invDir;
-    //vec3 VoxelIncr = vec3(0);
     bvec3 mask;
     bool inside_map = true;
     while(iter < 100){
         mask = lessThanEqual(sideDist.xyz, min(sideDist.yzx, sideDist.zxy));
         sideDist += vec3(mask) * deltaDist;
         current_voxel += ivec3(vec3(mask)*step);
-        uint voxel = isFilled(current_voxel);
-        if (voxel == VoxelFilled){
-            return get_voxel_color(current_voxel);
-        } else if (voxel == VoxelOutOfBounds){
+        uvec4 voxel = get_voxel_color(current_voxel);
+        if (voxel[3] == 0){
             return uvec4(0,0,255,255);
+        } else if (voxel != uvec4(0,0,0,255)){
+            return voxel;
         }
         iter+=1;
     }
