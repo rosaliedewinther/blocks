@@ -22,7 +22,7 @@ impl BigWorldRenderer {
     pub fn new(wgpu_state: &WgpuState, texture_to_draw_to: &wgpu::TextureView) -> BigWorldRenderer {
         let (uniform_buffer, uniforms) = BigWorldRenderer::init_uniforms(wgpu_state);
         let brick_map_buffer =
-            BigWorldRenderer::init_brickmaps(wgpu_state, BRICKSIZE.pow(3) as u32);
+            BigWorldRenderer::init_brickmaps(wgpu_state, BRICKMAPSIZE.pow(3) as u32 * 27);
         let bricks_buffer = BigWorldRenderer::init_bricks(
             wgpu_state,
             (27 * (BRICKMAPSIZE * BRICKSIZE).pow(3)) as u32,
@@ -161,7 +161,7 @@ impl BigWorldRenderer {
         encoder.copy_buffer_to_buffer(
             &uploading_buffer,
             0,
-            &self.bricks_buffer,
+            &self.brick_map_buffer,
             (std::mem::size_of::<u32>() * brickmap_index as usize * BRICKMAPSIZE.pow(3)) as u64,
             (std::mem::size_of::<u32>() * BRICKMAPSIZE.pow(3)) as u64,
         );

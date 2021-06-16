@@ -75,24 +75,30 @@ uvec4 draw_skyline(vec3 direction, uvec4 pixel){
     return uvec4(mix(vec3(200,200,200), vec3(51,102,204), direction[1]), 255);
 }
 
-uvec4 get_voxel_color(ivec3 location){
-    //validate indices
+
+
+uint get_brick_index(ivec3 location){
     uvec3 which_brickmap = uvec3(((location +(uni.brick_size * uni.brickmap_size) - uni.position)/(uni.brick_size * uni.brickmap_size))) ;
     uint brickmap_offset = uint(which_brickmap[0] + which_brickmap[1] * 3 + which_brickmap[2] * 9);
     if (which_brickmap[0] > 2 || which_brickmap[1] > 2 || which_brickmap[2] > 2){
-        return uvec4(1,1,1,255);
+        return 4294967295; //max uint
     }
     ivec3 which_brick = ivec3(mod((location)/(uni.brick_size), uni.brickmap_size));
     uint brick_offset = uint(which_brick[0] + which_brick[1] * uni.brickmap_size + which_brick[2] * pow(uni.brickmap_size, 2));
-    uint brick_i = brick_index[brick_offset + int(brickmap_offset * pow(uni.brickmap_size,3))];
+    return brick_index[brick_offset + int(brickmap_offset * pow(uni.brickmap_size,3))];
+}
+
+uvec4 get_voxel_color(ivec3 location){
+    //validate indices
+    uint brick_i = get_brick_index(location);
     if (brick_i > pow(4,3)*27){
-        return uvec4(0,0,0,255);
+        return uvec4(0,0,0,254);
     } else {
         ivec3 which_voxel = ivec3(mod(location, uni.brick_size));
         uint voxel_index = uint(which_voxel[0] + which_voxel[1] * uni.brick_size + which_voxel[2] * pow(uni.brick_size, 2));
         uint voxel_data = encoded_voxels[int((brick_i * pow(uni.brick_size, 3))/4) + uint(ceil(float(voxel_index)/4.0))];
         uint voxel = uint(0xFF) & uint(voxel_data >> uint(8 * uint(mod(voxel_index,4) * -1+3)));
-        return uvec4(uni.colors[voxel]) + brick_i;
+        return uvec4(uni.colors[voxel]);
     }
 }
 
@@ -107,17 +113,27 @@ uvec4 trace_ray(vec3 direction, vec3 origin){
     vec3 step = ivec3(sign(direction));
     vec3 sideDist = (sign(direction) * (vec3(current_voxel) - origin) + (sign(direction) * 0.5) + 0.5) * deltaDist;
 
+    bool big_step = false;
     bvec3 mask;
 
-    while(iter < 100){
-        mask = lessThanEqual(sideDist.xyz, min(sideDist.yzx, sideDist.zxy));
-        sideDist += vec3(mask) * deltaDist;
-        current_voxel += ivec3(vec3(mask)*step);
+    while(iter < 1000){
+        if (big_step){
+            mask = lessThanEqual(sideDist.xyz, min(sideDist.yzx, sideDist.zxy));
+            sideDist += vec3(mask) * deltaDist;
+            current_voxel += ivec3(vec3(mask)*step);
+        } else {
+            mask = lessThanEqual(sideDist.xyz, min(sideDist.yzx, sideDist.zxy));
+            sideDist += vec3(mask) * deltaDist;
+            current_voxel += ivec3(vec3(mask)*step);
+        }
+
         uvec4 voxel = get_voxel_color(current_voxel);
 
-        if (voxel[3] == 0){
-            return uvec4(0,255,255,255);
-        } else if (voxel != uvec4(0,0,0,255)){
+        if (voxel[3] == 0){                     // out of visible world
+            return uvec4(0,0,0,255);
+        } else if (voxel[3] == 254){            // brick is empty, can accelerate
+            big_step = true;
+        } else if (voxel != uvec4(0,0,0,255)){  // voxel hit
             return voxel;
         }
         iter+=1;

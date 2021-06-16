@@ -31,7 +31,7 @@ impl BigWorld {
         let mut brickmap = Box::new([0xFFFFFFFF; BRICKMAPSIZE.pow(3) * 27]);
         let mut bricks = vec![];
         for i in 0..brickmap.len() {
-            if i % 10 != 0 {
+            if i % 100 != 0 {
                 continue;
             }
             brickmap[i] = i as u32 / 10;
@@ -63,8 +63,8 @@ impl BigWorld {
         for i in 0..27 {
             world_renderer.set_brickmap(i, &self.brickmap, wgpu_state);
         }
-        println!("{:?}", self.bricks);
-        println!("{:?}", self.brickmap);
+        //println!("{:?}", self.bricks);
+        //println!("{:?}", self.brickmap);
         println!("bricks len: {:?}", self.bricks.len());
         println!("brickmap len: {:?}", self.brickmap.len());
     }
