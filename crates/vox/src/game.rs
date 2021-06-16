@@ -42,6 +42,15 @@ impl Game for VoxGame {
         pw.ui
             .debug_info
             .set_numbers("player z".to_string(), pw.player.position.z as f64);
+        pw.ui
+            .debug_info
+            .set_numbers("player view x".to_string(), pw.player.direction[0] as f64);
+        pw.ui
+            .debug_info
+            .set_numbers("player view y".to_string(), pw.player.direction[1] as f64);
+        pw.ui
+            .debug_info
+            .set_numbers("player view z".to_string(), pw.player.direction[2] as f64);
 
         let timer = Instant::now();
 
@@ -53,8 +62,10 @@ impl Game for VoxGame {
         return UpdateResult::Continue;
     }
     fn on_render(&mut self, input: &mut Input, dt: f64, window: &Window) -> RenderResult {
-        println!("{}", 1.0 / dt);
         let pw = self.personal_world.as_mut().unwrap();
+        pw.ui
+            .debug_info
+            .insert_stat("fps".to_string(), (1.0 / dt) as f32);
         pw.update_ui_input(&input);
         pw.player.handle_input(&input, &(dt as f32));
 
@@ -64,7 +75,11 @@ impl Game for VoxGame {
 
         pw.world_render_data
             .update_all_buffers(&wgpu_state, &pw.player, dt);
-        renderer.do_render_pass(&wgpu_state, window, vec![&mut pw.world_render_data]);
+        renderer.do_render_pass(
+            &wgpu_state,
+            window,
+            vec![&mut pw.world_render_data, &mut pw.ui],
+        );
         input.update();
         return RenderResult::Continue;
     }

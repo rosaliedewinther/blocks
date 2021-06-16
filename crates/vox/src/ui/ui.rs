@@ -5,8 +5,9 @@ use imgui_wgpu::Renderer as imgui_renderer;
 use imgui_wgpu::RendererConfig;
 use std::time::Instant;
 use vox_render::compute_renderer::renderer::Renderer;
+use vox_render::compute_renderer::renderpassable::RenderPassable;
 use vox_render::compute_renderer::wgpu_state::WgpuState;
-use wgpu::{Device, Queue, RenderPass};
+use wgpu::{CommandEncoder, Device, Queue, RenderPass, SwapChainTexture};
 use winit::event::Event;
 use winit::window::Window;
 use winit_window_control::input::button::ButtonState;
@@ -66,7 +67,7 @@ impl UiRenderer {
             renderer,
             clear_color,
             last_frame,
-            debug_info: DebugInfo::new(100),
+            debug_info: DebugInfo::new(1000),
         };
     }
     pub fn update_input(&mut self, input: &Input) {
@@ -75,12 +76,15 @@ impl UiRenderer {
             == ButtonState::Down
             || input.mouse_state.get_left_button() == ButtonState::Pressed;
     }
-    pub fn render<'a>(
-        &'a mut self,
-        render_pass: &mut RenderPass<'a>,
-        queue: &Queue,
-        device: &Device,
+}
+
+impl RenderPassable for UiRenderer {
+    fn do_render_pass(
+        &mut self,
         window: &Window,
+        encoder: &mut CommandEncoder,
+        wgpu_state: &WgpuState,
+        frame: &SwapChainTexture,
     ) {
         let timediff = self.last_frame.elapsed();
         self.last_frame = Instant::now();
@@ -95,8 +99,27 @@ impl UiRenderer {
                 .build(&ui, || debug_info.add_to_ui(&ui));
         }
         self.platform.prepare_render(&ui, &window);
-        self.renderer
-            .render(ui.render(), queue, device, render_pass)
-            .unwrap();
+        {
+            let mut render_pass = encoder.begin_render_pass(&wgpu::RenderPassDescriptor {
+                label: Some("Render pass ui"),
+                color_attachments: &[wgpu::RenderPassColorAttachment {
+                    view: &frame.view,
+                    resolve_target: None,
+                    ops: wgpu::Operations {
+                        load: wgpu::LoadOp::Load,
+                        store: true,
+                    },
+                }],
+                depth_stencil_attachment: None,
+            });
+            self.renderer
+                .render(
+                    ui.render(),
+                    &wgpu_state.queue,
+                    &wgpu_state.device,
+                    &mut render_pass,
+                )
+                .unwrap();
+        }
     }
 }

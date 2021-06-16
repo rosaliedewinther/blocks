@@ -1,5 +1,6 @@
 use imgui::im_str;
 use imgui::{Condition, Ui, Window};
+use num_traits::Float;
 use std::collections::HashMap;
 
 pub struct DebugInfo {
@@ -52,6 +53,12 @@ impl DebugInfo {
                     *i += 1;
                     if *i == self.size {
                         *i = 0;
+                        *max = 0.0;
+                        *min = f32::max_value();
+                        for val in realvec {
+                            *max = max.max(*val);
+                            *min = min.min(*val);
+                        }
                     }
                 }
             }
