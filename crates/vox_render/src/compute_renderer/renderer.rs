@@ -36,11 +36,11 @@ impl Renderer {
             texture_view,
         }
     }
-    pub fn do_render_pass<T: RenderPassable>(
+    pub fn do_render_pass(
         &self,
         wgpu: &WgpuState,
         window: &winit::window::Window,
-        renderpassables: Vec<&mut T>,
+        renderpassables: Vec<&mut dyn RenderPassable>,
     ) -> Result<(), SwapChainError> {
         let frame = wgpu.swap_chain.get_current_frame()?.output;
         let mut encoder = wgpu
@@ -49,9 +49,6 @@ impl Renderer {
                 label: Some("Render Encoder"),
             });
 
-        for obj in renderpassables {
-            obj.do_render_pass(window, &mut encoder, wgpu, &frame);
-        }
         {
             let mut render_pass = encoder.begin_render_pass(&wgpu::RenderPassDescriptor {
                 label: Some("Render pass world"),
@@ -71,6 +68,9 @@ impl Renderer {
             render_pass.set_vertex_buffer(0, self.vertex_buffer.slice(..));
             render_pass.set_index_buffer(self.index_buffer.slice(..), wgpu::IndexFormat::Uint16);
             render_pass.draw_indexed(0..self.num_indices, 0, 0..1);
+        }
+        for obj in renderpassables {
+            obj.do_render_pass(window, &mut encoder, wgpu, &frame);
         }
         // submit will accept anything that implements IntoIter
         wgpu.queue.submit(std::iter::once(encoder.finish()));

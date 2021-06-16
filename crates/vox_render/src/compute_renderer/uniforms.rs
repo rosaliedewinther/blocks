@@ -15,8 +15,8 @@ pub struct Uniforms {
     brick_size: u32,
     _padding2: [f32; 3],
     ray_cast_data: [[f32; 4]; 3],
-    _padding3: f32,
-    colors: [[f32; 4]; 16],
+    //_padding3: f32,
+    colors: [[f32; 4]; 256],
 }
 
 impl Uniforms {
@@ -31,7 +31,7 @@ impl Uniforms {
             brick_size: BRICKSIZE as u32,
             _padding2: [0.0; 3],
             ray_cast_data: [[0.0; 4]; 3],
-            _padding3: 0.0,
+            //_padding3: 0.0,
             colors: COLORS,
         }
     }
