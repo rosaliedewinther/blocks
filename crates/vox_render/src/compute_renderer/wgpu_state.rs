@@ -32,7 +32,7 @@ impl WgpuState {
     }
     pub fn get_device_queue_surface(window: &Window) -> (Device, Queue, Surface) {
         block_on(async {
-            let instance = wgpu::Instance::new(wgpu::BackendBit::PRIMARY);
+            let instance = wgpu::Instance::new(wgpu::BackendBit::VULKAN);
             let surface = unsafe { instance.create_surface(window) };
             let adapter = instance
                 .request_adapter(&wgpu::RequestAdapterOptions {

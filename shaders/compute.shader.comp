@@ -116,7 +116,7 @@ uvec4 trace_ray(vec3 direction, vec3 origin){
     bool big_step = false;
     bvec3 mask;
 
-    while(iter < 1000){
+    while(iter < 100){
         if (big_step){
             mask = lessThanEqual(sideDist.xyz, min(sideDist.yzx, sideDist.zxy));
             sideDist += vec3(mask) * deltaDist;

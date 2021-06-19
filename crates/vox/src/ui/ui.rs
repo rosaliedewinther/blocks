@@ -67,7 +67,7 @@ impl UiRenderer {
             renderer,
             clear_color,
             last_frame,
-            debug_info: DebugInfo::new(1000),
+            debug_info: DebugInfo::new(100),
         };
     }
     pub fn update_input(&mut self, input: &Input) {
