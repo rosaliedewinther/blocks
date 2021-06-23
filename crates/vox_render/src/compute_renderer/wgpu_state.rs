@@ -41,12 +41,14 @@ impl WgpuState {
                 })
                 .await
                 .unwrap();
+            let mut limits = wgpu::Limits::default();
+            limits.max_storage_buffer_binding_size = 1073741824;
             let (device, queue) = adapter
                 .request_device(
                     &wgpu::DeviceDescriptor {
                         label: Some("requested device"),
                         features: wgpu::Features::empty(),
-                        limits: wgpu::Limits::default(),
+                        limits,
                     },
                     None,
                 )

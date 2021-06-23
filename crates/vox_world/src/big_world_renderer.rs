@@ -25,8 +25,8 @@ impl BigWorldRenderer {
             BigWorldRenderer::init_brickmaps(wgpu_state, BRICKMAPSIZE.pow(3) as u32 * 27);
         let bricks_buffer = BigWorldRenderer::init_bricks(
             wgpu_state,
-            (27 * (BRICKMAPSIZE * BRICKSIZE).pow(3)) as u32,
-        );
+            (1073741824u64 / ((BRICKSIZE as u64).pow(3))) as u32,
+        ); //allocate 1gb of data for the buffer
         let (compute_bind_group_layout, compute_bind_group) =
             BigWorldRenderer::init_compute_bind_group(
                 wgpu_state,
@@ -91,28 +91,23 @@ impl BigWorldRenderer {
             mapped_at_creation: false,
         };
         let brick_map_buffer = wgpu_state.device.create_buffer(&buffer_descriptor);
-
+        println!(
+            "initialized brickmap which can contain {} bricks",
+            amount_of_bricks
+        );
         return brick_map_buffer;
     }
     fn init_bricks(wgpu_state: &WgpuState, max_amount_of_bricks: u32) -> wgpu::Buffer {
-        let bricks_buffer =
-            wgpu_state
-                .device
-                .create_buffer_init(&wgpu::util::BufferInitDescriptor {
-                    label: Some("brick Buffer"),
-                    contents: bytemuck::cast_slice(
-                        vec![255u8; max_amount_of_bricks as usize].as_slice(),
-                    ),
-                    usage: wgpu::BufferUsage::COPY_DST | wgpu::BufferUsage::STORAGE,
-                });
-        /*let buffer_descriptor = wgpu::BufferDescriptor {
+        let buffer_descriptor = wgpu::BufferDescriptor {
             label: Some("bricks buffer"),
-            size: max_amount_of_bricks as u64 * std::mem::size_of::<u8>() as u64,
+            size: max_amount_of_bricks as u64
+                * std::mem::size_of::<u8>() as u64
+                * BRICKSIZE.pow(3) as u64,
             usage: wgpu::BufferUsage::COPY_DST | wgpu::BufferUsage::STORAGE,
             mapped_at_creation: false,
         };
-        let bricks_buffer = wgpu_state.device.create_buffer(&buffer_descriptor);*/
-
+        let bricks_buffer = wgpu_state.device.create_buffer(&buffer_descriptor);
+        println!("initialized space for {} bricks", max_amount_of_bricks);
         return bricks_buffer;
     }
     pub fn set_brick(
