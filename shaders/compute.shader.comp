@@ -72,20 +72,20 @@ uvec4 draw_sun(vec3 direction, uvec4 pixel){
 }
 
 uvec4 draw_skyline(vec3 direction, uvec4 pixel){
-    return uvec4(mix(vec3(200,200,200), vec3(51,102,204), direction[1]), 255);
+    return uvec4(mix(vec3(200,200,200), vec3(51,102,244), direction[1]), 255);
 }
 
 
 
 uint get_brick_index(ivec3 location){
-    uvec3 which_brickmap = uvec3(((location)/(uni.brick_size * uni.brickmap_size))) ;
+    uvec3 which_brickmap = uvec3(location/(uni.brick_size * uni.brickmap_size));
     if (which_brickmap[0] > 2 || which_brickmap[1] > 2 || which_brickmap[2] > 2){
         return 4294967295; //max uint
     }
-    uint brickmap_offset = uint(which_brickmap[0] + which_brickmap[1] * 3 + which_brickmap[2] * 9);
-    ivec3 which_brick = ivec3(location/(uni.brick_size));
+    uint brickmap_offset = uint((which_brickmap[0] + which_brickmap[1] * 3 + which_brickmap[2] * 9) * pow(uni.brickmap_size,3));
+    ivec3 which_brick = ivec3(mod(location/uni.brick_size, (uni.brickmap_size)));
     uint brick_offset = uint(which_brick[0] + which_brick[1] * uni.brickmap_size + which_brick[2] * uni.brickmap_size * uni.brickmap_size);
-    return brick_index[brick_offset + int(brickmap_offset * pow(uni.brickmap_size,3))];
+    return brick_index[brick_offset + brickmap_offset];
 }
 
 uvec4 get_voxel_color(ivec3 location){
@@ -93,13 +93,11 @@ uvec4 get_voxel_color(ivec3 location){
     uint brick_i = get_brick_index(location);
     if (4294967295 == brick_i){
         return  uvec4(0,0,0,255);
-    } else if (brick_i > pow(4,3)*27){
-        return uvec4(0,0,0,254);
     } else {
-        ivec3 which_voxel = ivec3(location);
-        uint voxel_index = uint(which_voxel[0] + which_voxel[1] * uni.brick_size + which_voxel[2] * pow(uni.brick_size, 2));
-        uint voxel_data = encoded_voxels[int((brick_i * pow(uni.brick_size, 3))/4) + uint(ceil(float(voxel_index)/4.0))];
-        uint voxel = uint(0xFF) & uint(voxel_data >> uint(8 * uint(mod(voxel_index,4) * -1+3)));
+        ivec3 which_voxel = ivec3(mod(location, uni.brick_size));
+        uint voxel_index = uint(which_voxel[0] + which_voxel[1] * uni.brick_size + which_voxel[2] * uni.brick_size * uni.brick_size);
+        uint voxel_data = encoded_voxels[int((brick_i * pow(uni.brick_size, 3))/4) + voxel_index/4];
+        uint voxel = uint(0xFF) & uint(voxel_data >> uint(8 * uint(mod(voxel_index,4))));
         return uvec4(uni.colors[voxel]);
     }
 }
@@ -138,7 +136,7 @@ uvec4 trace_ray(vec3 direction, vec3 origin){
         } else if (voxel[3] == 254){            // brick is empty, can accelerate
             //return uvec4(max(iter,1),0,0,255);
         } else if (voxel != uvec4(0,0,0,255)){  // voxel hit
-            return uvec4(max(iter,1),0,0,255);//voxel;
+            return uvec4(voxel.xyz * ((min(float(iter), 200)/200.0)*-1+1), 255);//voxel;
         }
         iter+=1;
         mask = lessThanEqual(sideDist.xyz, min(sideDist.yzx, sideDist.zxy));

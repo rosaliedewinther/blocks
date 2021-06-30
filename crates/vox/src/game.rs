@@ -63,12 +63,13 @@ impl Game for VoxGame {
     }
     fn on_render(&mut self, input: &mut Input, dt: f64, window: &Window) -> RenderResult {
         let pw = self.personal_world.as_mut().unwrap();
+        println!("{}", (1.0 / dt) as f32);
+
         pw.ui
             .debug_info
             .insert_stat("fps".to_string(), (1.0 / dt) as f32);
         pw.update_ui_input(&input);
         pw.player.handle_input(&input, &(dt as f32));
-
         let renderer = self.renderer.as_mut().unwrap();
 
         let wgpu_state = self.wgpu_state.as_ref().unwrap();
@@ -80,6 +81,7 @@ impl Game for VoxGame {
             window,
             vec![&mut pw.world_render_data, &mut pw.ui],
         );
+
         input.update();
         return RenderResult::Continue;
     }

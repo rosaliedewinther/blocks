@@ -6,6 +6,7 @@ use crate::world_gen::chunk::Chunk;
 use crate::world_gen::meta_chunk::MetaChunk;
 use nalgebra::Vector3;
 use noise::{MultiFractal, NoiseFn, Seedable};
+use rand::Rng;
 use rayon::prelude::ParallelSliceMut;
 use std::collections::{HashMap, HashSet};
 use std::convert::TryInto;
@@ -30,10 +31,8 @@ impl BigWorld {
         return None;
     }
     pub fn new(seed: u32) -> BigWorld {
-        let noise = noise::Fbm::new()
-            .set_seed(0)
-            .set_octaves(0)
-            .set_persistence(0.6f64);
+        let noise = noise::Fbm::new().set_seed(0).set_octaves(1);
+        let mut rng = rand::thread_rng();
 
         let mut brickmap: Box<[u32; BRICKMAPSIZE.pow(3) * 27]> =
             vec![0xFFFFFFFFu32; BRICKMAPSIZE.pow(3) * 27]
@@ -56,29 +55,31 @@ impl BigWorld {
                                                     + brick_x * BRICKSIZE
                                                     + x)
                                                     as f64
-                                                    / (BRICKMAPSIZE * BRICKSIZE) as f64,
+                                                    / (BRICKMAPSIZE * BRICKSIZE * 3) as f64,
                                                 (meta_y * BRICKMAPSIZE * BRICKSIZE
                                                     + brick_y * BRICKSIZE
                                                     + y)
                                                     as f64
-                                                    / (BRICKMAPSIZE * BRICKSIZE) as f64,
+                                                    / (BRICKMAPSIZE * BRICKSIZE * 3) as f64,
                                                 (meta_z * BRICKMAPSIZE * BRICKSIZE
                                                     + brick_z * BRICKSIZE
                                                     + z)
                                                     as f64
-                                                    / (BRICKMAPSIZE * BRICKSIZE) as f64,
+                                                    / (BRICKMAPSIZE * BRICKSIZE * 3) as f64,
                                             ];
                                             if noise.get(noise_index) > 0.5 {
                                                 match &mut temp_brick {
                                                     None => {
                                                         let mut b = [0u8; BRICKSIZE.pow(3)];
                                                         b[x + y * BRICKSIZE
-                                                            + z * BRICKSIZE * BRICKSIZE] = 4;
+                                                            + z * BRICKSIZE * BRICKSIZE] =
+                                                            ((z % 8) + 1) as u8;
                                                         temp_brick = Some(b);
                                                     }
                                                     Some(b) => {
                                                         b[x + y * BRICKSIZE
-                                                            + z * BRICKSIZE * BRICKSIZE] = 4;
+                                                            + z * BRICKSIZE * BRICKSIZE] =
+                                                            ((z % 8) + 1) as u8;
                                                     }
                                                 }
                                             }
@@ -86,7 +87,6 @@ impl BigWorld {
                                     }
                                 }
                                 if temp_brick.is_some() {
-                                    bricks.push(temp_brick.unwrap());
                                     brickmap[meta_x * BRICKMAPSIZE.pow(3)
                                         + meta_y * BRICKMAPSIZE.pow(3) * 3
                                         + meta_z * BRICKMAPSIZE.pow(3) * 9
@@ -94,6 +94,7 @@ impl BigWorld {
                                         + brick_y * BRICKMAPSIZE
                                         + brick_z * BRICKMAPSIZE * BRICKMAPSIZE] =
                                         bricks.len() as u32;
+                                    bricks.push(temp_brick.unwrap());
                                 }
                             }
                         }
@@ -119,8 +120,8 @@ impl BigWorld {
     }
 
     pub fn upload_all_brickmaps(&self, wgpu_state: &WgpuState, world_renderer: &BigWorldRenderer) {
-        //println!("{:?}", self.bricks);
-        //println!("{:?}", self.brickmap);
+        println!("bricks: {:?}", self.bricks);
+        println!("brickmap: {:?}", self.brickmap);
         println!("bricks len: {:?}", self.bricks.len());
         println!("brickmap len: {:?}", self.brickmap.len());
         for i in 0..self.bricks.len() {
