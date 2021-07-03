@@ -83,7 +83,7 @@ uint get_brick_index(ivec3 location){
         return 4294967295; //max uint
     }
     uint brickmap_offset = uint((which_brickmap[0] + which_brickmap[1] * 3 + which_brickmap[2] * 9) * pow(uni.brickmap_size,3));
-    ivec3 which_brick = ivec3(mod(location/uni.brick_size, (uni.brickmap_size)));
+    ivec3 which_brick = ivec3(mod(location/uni.brick_size, uni.brickmap_size));
     uint brick_offset = uint(which_brick[0] + which_brick[1] * uni.brickmap_size + which_brick[2] * uni.brickmap_size * uni.brickmap_size);
     return brick_index[brick_offset + brickmap_offset];
 }
@@ -96,7 +96,7 @@ uvec4 get_voxel_color(ivec3 location){
     } else {
         ivec3 which_voxel = ivec3(mod(location, uni.brick_size));
         uint voxel_index = uint(which_voxel[0] + which_voxel[1] * uni.brick_size + which_voxel[2] * uni.brick_size * uni.brick_size);
-        uint voxel_data = encoded_voxels[int((brick_i * pow(uni.brick_size, 3))/4) + voxel_index/4];
+        uint voxel_data = encoded_voxels[(int(brick_i * pow(uni.brick_size, 3)) + voxel_index)/4];
         uint voxel = uint(0xFF) & uint(voxel_data >> uint(8 * uint(mod(voxel_index,4))));
         return uvec4(uni.colors[voxel]);
     }
@@ -119,7 +119,7 @@ uvec4 trace_ray(vec3 direction, vec3 origin){
     bool big_step = false;
     bvec3 mask;
 
-    while(iter < 200){
+    while(iter < 100){
         /*if (big_step){
             sideDist += deltaDistBig;
             brickSideDist += deltaDistBig;
@@ -136,7 +136,20 @@ uvec4 trace_ray(vec3 direction, vec3 origin){
         } else if (voxel[3] == 254){            // brick is empty, can accelerate
             //return uvec4(max(iter,1),0,0,255);
         } else if (voxel != uvec4(0,0,0,255)){  // voxel hit
-            return uvec4(voxel.xyz * ((min(float(iter), 200)/200.0)*-1+1), 255);//voxel;
+
+            //ty iMplode nZ
+            float shadow;
+            if (mask.x) {
+                shadow = 0.5;
+            }
+            if (mask.y) {
+                shadow = 1.0;
+            }
+            if (mask.z) {
+                shadow = 0.75;
+            }
+
+            return uvec4(shadow * voxel.xyz * ((min(float(iter), 200)/200.0)*-1+1), 255);//voxel;
         }
         iter+=1;
         mask = lessThanEqual(sideDist.xyz, min(sideDist.yzx, sideDist.zxy));

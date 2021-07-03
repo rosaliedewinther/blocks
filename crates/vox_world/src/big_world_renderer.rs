@@ -136,12 +136,7 @@ impl BigWorldRenderer {
         );
         wgpu_state.queue.submit(std::iter::once(encoder.finish()));
     }
-    pub fn set_brickmap(
-        &self,
-        brickmap_index: u32,
-        data: &Box<[u32; BRICKMAPSIZE.pow(3) * 27]>,
-        wgpu_state: &WgpuState,
-    ) {
+    pub fn set_brickmap(&self, brickmap_index: u32, data: &[u32], wgpu_state: &WgpuState) {
         let uploading_buffer =
             wgpu_state
                 .device

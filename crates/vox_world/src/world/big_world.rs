@@ -10,6 +10,7 @@ use rand::Rng;
 use rayon::prelude::ParallelSliceMut;
 use std::collections::{HashMap, HashSet};
 use std::convert::TryInto;
+use std::ops::Range;
 use std::time::Instant;
 use vox_core::constants::{BRICKMAPSIZE, BRICKSIZE, METACHUNKSIZE, METACHUNK_GEN_RANGE};
 use vox_core::positions::{ChunkPos, GlobalBlockPos, MetaChunkPos};
@@ -31,7 +32,10 @@ impl BigWorld {
         return None;
     }
     pub fn new(seed: u32) -> BigWorld {
-        let noise = noise::Fbm::new().set_seed(0).set_octaves(1);
+        let noise = noise::Fbm::new()
+            .set_seed(0)
+            .set_octaves(4)
+            .set_frequency(6.0);
         let mut rng = rand::thread_rng();
 
         let mut brickmap: Box<[u32; BRICKMAPSIZE.pow(3) * 27]> =
@@ -67,7 +71,7 @@ impl BigWorld {
                                                     as f64
                                                     / (BRICKMAPSIZE * BRICKSIZE * 3) as f64,
                                             ];
-                                            if noise.get(noise_index) > 0.5 {
+                                            if noise.get(noise_index) > 0.3 {
                                                 match &mut temp_brick {
                                                     None => {
                                                         let mut b = [0u8; BRICKSIZE.pow(3)];
@@ -128,8 +132,13 @@ impl BigWorld {
             world_renderer.set_brick(i as u32, &self.bricks[i], wgpu_state);
         }
         for i in 0..27 {
-            world_renderer.set_brickmap(i, &self.brickmap, wgpu_state);
+            world_renderer.set_brickmap(i, self.get_slice_of_brickmap(i), wgpu_state);
         }
+    }
+    fn get_slice_of_brickmap(&self, i: u32) -> &[u32] {
+        let s: &[u32] = &self.brickmap
+            [(i as usize * BRICKMAPSIZE.pow(3))..((i + 1) as usize * BRICKMAPSIZE.pow(3))];
+        return s;
     }
     pub fn update(&mut self) {
         self.time = self.start_time.elapsed().as_secs_f64();
