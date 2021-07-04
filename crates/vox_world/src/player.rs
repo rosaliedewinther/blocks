@@ -81,8 +81,8 @@ impl Player {
         }
 
         let mouse_change = input.mouse_change();
-        let xdiff = -mouse_change[0] as f64 * dt * self.camera_speed as f64;
-        let ydiff = -mouse_change[1] as f64 * dt * self.camera_speed as f64;
+        let xdiff = -mouse_change[0] as f64 * 0.01/*dt*/ * self.camera_speed as f64;
+        let ydiff = -mouse_change[1] as f64 * 0.01/*dt*/ * self.camera_speed as f64;
 
         self.change_direction_vertical(ydiff);
         self.change_direction_horizontal(&get_rotation_matrix_y(xdiff));

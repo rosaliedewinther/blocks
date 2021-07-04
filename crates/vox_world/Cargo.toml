@@ -9,6 +9,7 @@ edition = "2018"
 [dependencies]
 rayon = "1.4"
 vox_core = {path="../vox_core"}
+log = "0.4"
 vox_render = {path="../vox_render"}
 vox_io = {path="../vox_io"}
 winit = "0.25"

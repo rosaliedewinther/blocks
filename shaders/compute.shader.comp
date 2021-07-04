@@ -115,28 +115,19 @@ uvec4 trace_ray(vec3 direction, vec3 origin){
     vec3 deltaDistBig = abs(vec3(uni.brick_size)/direction);
     vec3 step = ivec3(sign(direction));
     vec3 sideDist = (sign(direction) * (vec3(current_voxel) - origin) + (sign(direction) * 0.5) + 0.5) * deltaDist;
-    vec3 brickSideDist = (sign(direction) * (ivec3(current_voxel/uni.brick_size) - origin) + (sign(direction) * 0.5) + 0.5) * deltaDist;
+    //vec3 brickSideDist = (sign(direction) * (ivec3(current_voxel/uni.brick_size) - origin) + (sign(direction) * 0.5) + 0.5) * deltaDist;
 
 
     bool big_step = false;
     bvec3 mask;
 
     while(iter < 1000){
-        /*if (big_step){
-            sideDist += deltaDistBig;
-            brickSideDist += deltaDistBig;
-            current_voxel += ivec3(brickSideDist*step);
-            big_step = false;
-        } else {*/
-
-        //}
-
         uvec4 voxel = get_voxel_color(current_voxel);
 
         if (voxel[3] == 0){                     // out of visible world
             return uvec4(0,0,0,255);
         } else if (voxel[3] == 254){            // brick is empty, can accelerate
-            //return uvec4(max(iter,1),0,0,255);
+            big_step = true;
         } else if (voxel != uvec4(0,0,0,255)){  // voxel hit
 
             //ty iMplode nZ
@@ -150,8 +141,7 @@ uvec4 trace_ray(vec3 direction, vec3 origin){
             if (mask.z) {
                 shadow = 0.75;
             }
-
-            return uvec4(shadow * mix(voxel.xyz, vec3(1,1,1), iter/500), 255);//voxel;
+            return uvec4(shadow * voxel.xyz, 255);//voxel;
         }
         iter+=1;
         mask = lessThanEqual(sideDist.xyz, min(sideDist.yzx, sideDist.zxy));

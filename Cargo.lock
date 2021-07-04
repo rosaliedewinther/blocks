@@ -2125,6 +2125,7 @@ name = "vox_world"
 version = "0.1.0"
 dependencies = [
  "bytemuck",
+ "log",
  "nalgebra",
  "noise",
  "rand 0.8.3",

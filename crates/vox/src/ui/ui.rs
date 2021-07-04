@@ -98,7 +98,7 @@ impl RenderPassable for UiRenderer {
                 .position([400.0, 200.0], Condition::FirstUseEver)
                 .build(&ui, || debug_info.add_to_ui(&ui));
         }
-        self.platform.prepare_render(&ui, &window);
+        //self.platform.prepare_frame(ui.io_mut(), &window);
         {
             let mut render_pass = encoder.begin_render_pass(&wgpu::RenderPassDescriptor {
                 label: Some("Render pass ui"),

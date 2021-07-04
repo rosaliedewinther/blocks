@@ -4,13 +4,17 @@ use crate::blocks::block_type::BlockType;
 use crate::player::Player;
 use crate::world_gen::chunk::Chunk;
 use crate::world_gen::meta_chunk::MetaChunk;
+use log::info;
 use nalgebra::Vector3;
 use noise::{MultiFractal, NoiseFn, Seedable};
 use rand::Rng;
+use rayon::iter::IntoParallelIterator;
+use rayon::iter::ParallelIterator;
 use rayon::prelude::ParallelSliceMut;
 use std::collections::{HashMap, HashSet};
 use std::convert::TryInto;
 use std::ops::Range;
+use std::sync::{RwLock, RwLockWriteGuard};
 use std::time::Instant;
 use vox_core::constants::{BRICKMAPSIZE, BRICKSIZE, METACHUNKSIZE, METACHUNK_GEN_RANGE};
 use vox_core::positions::{ChunkPos, GlobalBlockPos, MetaChunkPos};
@@ -34,7 +38,7 @@ impl BigWorld {
     pub fn new(seed: u32) -> BigWorld {
         let noise = noise::Fbm::new()
             .set_seed(0)
-            .set_octaves(4)
+            .set_octaves(2)
             .set_frequency(6.0);
         let mut rng = rand::thread_rng();
 
@@ -47,11 +51,13 @@ impl BigWorld {
         for meta_x in 0..3 {
             for meta_y in 0..3 {
                 for meta_z in 0..3 {
+                    info!("working on metachunk: {} {} {}", meta_x, meta_y, meta_z);
                     for brick_x in 0..BRICKMAPSIZE {
                         for brick_y in 0..BRICKMAPSIZE {
                             for brick_z in 0..BRICKMAPSIZE {
-                                let mut temp_brick = None;
-                                for x in 0..BRICKSIZE {
+                                let mut temp_brick: RwLock<Option<[u8; BRICKSIZE.pow(3)]>> =
+                                    RwLock::new(None);
+                                (0..BRICKSIZE).into_par_iter().for_each(|x| {
                                     for y in 0..BRICKSIZE {
                                         for z in 0..BRICKSIZE {
                                             let noise_index = [
@@ -72,13 +78,14 @@ impl BigWorld {
                                                     / (BRICKMAPSIZE * BRICKSIZE * 3) as f64,
                                             ];
                                             if noise.get(noise_index) > 0.3 {
-                                                match &mut temp_brick {
+                                                let mut w = temp_brick.write().unwrap();
+                                                match w.as_mut() {
                                                     None => {
                                                         let mut b = [0u8; BRICKSIZE.pow(3)];
                                                         b[x + y * BRICKSIZE
                                                             + z * BRICKSIZE * BRICKSIZE] =
                                                             ((z % 8) + 1) as u8;
-                                                        temp_brick = Some(b);
+                                                        w.replace(b);
                                                     }
                                                     Some(b) => {
                                                         b[x + y * BRICKSIZE
@@ -89,16 +96,19 @@ impl BigWorld {
                                             }
                                         }
                                     }
-                                }
-                                if temp_brick.is_some() {
-                                    brickmap[meta_x * BRICKMAPSIZE.pow(3)
-                                        + meta_y * BRICKMAPSIZE.pow(3) * 3
-                                        + meta_z * BRICKMAPSIZE.pow(3) * 9
-                                        + brick_x
-                                        + brick_y * BRICKMAPSIZE
-                                        + brick_z * BRICKMAPSIZE * BRICKMAPSIZE] =
-                                        bricks.len() as u32;
-                                    bricks.push(temp_brick.unwrap());
+                                });
+                                match temp_brick.into_inner().unwrap() {
+                                    None => {}
+                                    Some(b) => {
+                                        brickmap[meta_x * BRICKMAPSIZE.pow(3)
+                                            + meta_y * BRICKMAPSIZE.pow(3) * 3
+                                            + meta_z * BRICKMAPSIZE.pow(3) * 9
+                                            + brick_x
+                                            + brick_y * BRICKMAPSIZE
+                                            + brick_z * BRICKMAPSIZE * BRICKMAPSIZE] =
+                                            bricks.len() as u32;
+                                        bricks.push(b);
+                                    }
                                 }
                             }
                         }
@@ -126,14 +136,15 @@ impl BigWorld {
     pub fn upload_all_brickmaps(&self, wgpu_state: &WgpuState, world_renderer: &BigWorldRenderer) {
         //println!("bricks: {:?}", self.bricks);
         //println!("brickmap: {:?}", self.brickmap);
-        println!("bricks len: {:?}", self.bricks.len());
-        println!("brickmap len: {:?}", self.brickmap.len());
+        info!("bricks len: {:?}", self.bricks.len());
+        info!("brickmap len: {:?}", self.brickmap.len());
         for i in 0..self.bricks.len() {
             world_renderer.set_brick(i as u32, &self.bricks[i], wgpu_state);
         }
         for i in 0..27 {
             world_renderer.set_brickmap(i, self.get_slice_of_brickmap(i), wgpu_state);
         }
+        info!("queued all GPU uploads");
     }
     fn get_slice_of_brickmap(&self, i: u32) -> &[u32] {
         let s: &[u32] = &self.brickmap
