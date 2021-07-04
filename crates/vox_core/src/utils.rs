@@ -1,42 +1,42 @@
 use nalgebra::base::Matrix3;
 //use num_traits::real::Real;
 
-pub fn get_rotation_matrix_z(angle: f32) -> Matrix3<f32> {
+pub fn get_rotation_matrix_z(angle: f64) -> Matrix3<f64> {
     Matrix3::new(
         angle.cos(),
         -angle.sin(),
-        0f32,
+        0f64,
         angle.sin(),
         angle.cos(),
-        0f32,
-        0f32,
-        0f32,
-        1f32,
+        0f64,
+        0f64,
+        0f64,
+        1f64,
     )
 }
-pub fn get_rotation_matrix_x(angle: f32) -> Matrix3<f32> {
+pub fn get_rotation_matrix_x(angle: f64) -> Matrix3<f64> {
     Matrix3::new(
-        1f32,
-        0f32,
-        0f32,
-        0f32,
+        1f64,
+        0f64,
+        0f64,
+        0f64,
         angle.cos(),
         -angle.sin(),
-        0f32,
+        0f64,
         angle.sin(),
         angle.cos(),
     )
 }
-pub fn get_rotation_matrix_y(angle: f32) -> Matrix3<f32> {
+pub fn get_rotation_matrix_y(angle: f64) -> Matrix3<f64> {
     Matrix3::new(
         angle.cos(),
-        0f32,
+        0f64,
         angle.sin(),
-        0f32,
-        1f32,
-        0f32,
+        0f64,
+        1f64,
+        0f64,
         -angle.sin(),
-        0f32,
+        0f64,
         angle.cos(),
     )
 }

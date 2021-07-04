@@ -20,9 +20,9 @@ pub struct LocalBlockPos {
 //position of entities
 #[derive(Debug, PartialEq)]
 pub struct ObjectPos {
-    pub x: f32,
-    pub y: f32,
-    pub z: f32,
+    pub x: f64,
+    pub y: f64,
+    pub z: f64,
 }
 //position of global chunk
 #[derive(Hash, PartialEq, Debug, Clone, PartialOrd, Ord)]
@@ -88,16 +88,16 @@ impl GlobalBlockPos {
     }
     pub fn get_block_centre(&self) -> ObjectPos {
         ObjectPos {
-            x: self.x as f32 + 0.5,
-            y: self.y as f32 + 0.5,
-            z: self.z as f32 + 0.5,
+            x: self.x as f64 + 0.5,
+            y: self.y as f64 + 0.5,
+            z: self.z as f64 + 0.5,
         }
     }
     pub fn get_block_pos(&self) -> ObjectPos {
         ObjectPos {
-            x: self.x as f32,
-            y: self.y as f32,
-            z: self.z as f32,
+            x: self.x as f64,
+            y: self.y as f64,
+            z: self.z as f64,
         }
     }
     pub fn get_meta_chunk_pos(&self) -> MetaChunkPos {
@@ -119,12 +119,12 @@ impl ChunkPos {
         true
     }
 
-    pub fn get_distance(&self, pos: &ChunkPos) -> f32 {
-        ((((self.x - pos.x) as f32).pow(2)
-            + ((self.y - pos.y) as f32).pow(2)
-            + ((self.z - pos.z) as f32).pow(2)) as f32)
+    pub fn get_distance(&self, pos: &ChunkPos) -> f64 {
+        ((((self.x - pos.x) as f64).pow(2)
+            + ((self.y - pos.y) as f64).pow(2)
+            + ((self.z - pos.z) as f64).pow(2)) as f64)
             .sqrt()
-            * CHUNKSIZE as f32
+            * CHUNKSIZE as f64
     }
     pub fn get_local_chunk_pos(&self) -> LocalChunkPos {
         LocalChunkPos {
@@ -141,9 +141,9 @@ impl ChunkPos {
     }
     pub fn get_center_pos(&self) -> ObjectPos {
         ObjectPos {
-            x: self.x as f32 * CHUNKSIZE as f32 + CHUNKSIZE as f32 / 2.0,
-            y: self.y as f32 * CHUNKSIZE as f32 + CHUNKSIZE as f32 / 2.0,
-            z: self.z as f32 * CHUNKSIZE as f32 + CHUNKSIZE as f32 / 2.0,
+            x: self.x as f64 * CHUNKSIZE as f64 + CHUNKSIZE as f64 / 2.0,
+            y: self.y as f64 * CHUNKSIZE as f64 + CHUNKSIZE as f64 / 2.0,
+            z: self.z as f64 * CHUNKSIZE as f64 + CHUNKSIZE as f64 / 2.0,
         }
     }
 }
@@ -161,9 +161,9 @@ impl MetaChunkPos {
     }
     pub fn get_center_pos(&self) -> ObjectPos {
         ObjectPos {
-            x: self.x as f32 * METACHUNKSIZE as f32 * CHUNKSIZE as f32 + METACHUNKSIZE as f32 / 2.0,
-            y: 0f32,
-            z: self.z as f32 * METACHUNKSIZE as f32 * CHUNKSIZE as f32 + METACHUNKSIZE as f32 / 2.0,
+            x: self.x as f64 * METACHUNKSIZE as f64 * CHUNKSIZE as f64 + METACHUNKSIZE as f64 / 2.0,
+            y: 0f64,
+            z: self.z as f64 * METACHUNKSIZE as f64 * CHUNKSIZE as f64 + METACHUNKSIZE as f64 / 2.0,
         }
     }
 }
@@ -196,7 +196,7 @@ impl ObjectPos {
             z: self.z as i32 / (CHUNKSIZE as i32 * METACHUNKSIZE as i32),
         }
     }
-    pub fn get_diff(&self, x_diff: f32, y_diff: f32, z_diff: f32) -> ObjectPos {
+    pub fn get_diff(&self, x_diff: f64, y_diff: f64, z_diff: f64) -> ObjectPos {
         ObjectPos {
             x: (self.x + x_diff),
             y: (self.y + y_diff),

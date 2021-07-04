@@ -46,8 +46,9 @@ impl Uniforms {
         self.time += time_diff as f32;
         self.viewer_pos = viewer_pos;
         self.viewing_dir = viewing_dir;
-        let sun_dir = (get_rotation_matrix_y(self.time) * Vector3::new(1.0, -0.5, 0.0)).normalize();
-        self.sun_dir = [sun_dir[0], sun_dir[1], sun_dir[2]];
+        let sun_dir =
+            (get_rotation_matrix_y(self.time as f64) * Vector3::new(1.0, -0.5, 0.0)).normalize();
+        self.sun_dir = [sun_dir[0] as f32, sun_dir[1] as f32, sun_dir[2] as f32];
 
         let t = Vector3::new(
             viewing_dir[0] as f64,

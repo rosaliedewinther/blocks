@@ -124,8 +124,8 @@ impl BigWorld {
     }
 
     pub fn upload_all_brickmaps(&self, wgpu_state: &WgpuState, world_renderer: &BigWorldRenderer) {
-        println!("bricks: {:?}", self.bricks);
-        println!("brickmap: {:?}", self.brickmap);
+        //println!("bricks: {:?}", self.bricks);
+        //println!("brickmap: {:?}", self.brickmap);
         println!("bricks len: {:?}", self.bricks.len());
         println!("brickmap len: {:?}", self.brickmap.len());
         for i in 0..self.bricks.len() {

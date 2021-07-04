@@ -69,7 +69,7 @@ impl Game for VoxGame {
             .debug_info
             .insert_stat("fps".to_string(), (1.0 / dt) as f32);
         pw.update_ui_input(&input);
-        pw.player.handle_input(&input, &(dt as f32));
+        pw.player.handle_input(&input, &dt);
         let renderer = self.renderer.as_mut().unwrap();
 
         let wgpu_state = self.wgpu_state.as_ref().unwrap();

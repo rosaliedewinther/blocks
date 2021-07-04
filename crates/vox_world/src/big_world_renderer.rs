@@ -257,11 +257,15 @@ impl BigWorldRenderer {
         return (compute_bind_group_layout, compute_bind_group);
     }
     pub fn update_all_buffers(&mut self, wgpu_state: &WgpuState, player: &Player, time_diff: f64) {
-        let location = [player.position.x, player.position.y, player.position.z];
+        let location = [
+            player.position.x as f32,
+            player.position.y as f32,
+            player.position.z as f32,
+        ];
         let direction = [
-            player.direction[0],
-            player.direction[1],
-            player.direction[2],
+            player.direction[0] as f32,
+            player.direction[1] as f32,
+            player.direction[2] as f32,
         ];
         self.uniforms.update_view_proj(
             location,

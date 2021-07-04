@@ -75,12 +75,12 @@ uvec4 draw_skyline(vec3 direction, uvec4 pixel){
     return uvec4(mix(vec3(200,200,200), vec3(51,102,244), direction[1]), 255);
 }
 
-
+const uint OUT_OF_BOUNDS = 2147483647;
 
 uint get_brick_index(ivec3 location){
     uvec3 which_brickmap = uvec3(location/(uni.brick_size * uni.brickmap_size));
     if (which_brickmap[0] > 2 || which_brickmap[1] > 2 || which_brickmap[2] > 2){
-        return 4294967295; //max uint
+        return OUT_OF_BOUNDS; //max uint
     }
     uint brickmap_offset = uint((which_brickmap[0] + which_brickmap[1] * 3 + which_brickmap[2] * 9) * pow(uni.brickmap_size,3));
     ivec3 which_brick = ivec3(mod(location/uni.brick_size, uni.brickmap_size));
@@ -91,8 +91,10 @@ uint get_brick_index(ivec3 location){
 uvec4 get_voxel_color(ivec3 location){
     //validate indices
     uint brick_i = get_brick_index(location);
-    if (4294967295 == brick_i){
-        return  uvec4(0,0,0,255);
+    if (OUT_OF_BOUNDS == brick_i){
+        return uvec4(0, 0, 0, 0);
+    } else if (brick_i > 2097152){
+        return uvec4(0,0,0,254);
     } else {
         ivec3 which_voxel = ivec3(mod(location, uni.brick_size));
         uint voxel_index = uint(which_voxel[0] + which_voxel[1] * uni.brick_size + which_voxel[2] * uni.brick_size * uni.brick_size);
@@ -119,7 +121,7 @@ uvec4 trace_ray(vec3 direction, vec3 origin){
     bool big_step = false;
     bvec3 mask;
 
-    while(iter < 100){
+    while(iter < 1000){
         /*if (big_step){
             sideDist += deltaDistBig;
             brickSideDist += deltaDistBig;
@@ -149,7 +151,7 @@ uvec4 trace_ray(vec3 direction, vec3 origin){
                 shadow = 0.75;
             }
 
-            return uvec4(shadow * voxel.xyz * ((min(float(iter), 200)/200.0)*-1+1), 255);//voxel;
+            return uvec4(shadow * mix(voxel.xyz, vec3(1,1,1), iter/500), 255);//voxel;
         }
         iter+=1;
         mask = lessThanEqual(sideDist.xyz, min(sideDist.yzx, sideDist.zxy));
