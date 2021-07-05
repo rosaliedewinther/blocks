@@ -1,5 +1,5 @@
 use crate::player::Player;
-use log::info;
+use log::warn;
 use std::collections::HashMap;
 use vox_core::constants::{BRICKMAPSIZE, BRICKSIZE};
 use vox_render::compute_renderer::renderpassable::RenderPassable;
@@ -92,7 +92,7 @@ impl BigWorldRenderer {
             mapped_at_creation: false,
         };
         let brick_map_buffer = wgpu_state.device.create_buffer(&buffer_descriptor);
-        info!(
+        warn!(
             "initialized brickmap which can contain {} bricks",
             amount_of_bricks
         );
@@ -109,7 +109,7 @@ impl BigWorldRenderer {
         };
         let bricks_buffer = wgpu_state.device.create_buffer(&buffer_descriptor);
 
-        info!("initialized space for {} bricks", max_amount_of_bricks);
+        warn!("initialized space for {} bricks", max_amount_of_bricks);
         return bricks_buffer;
     }
     pub fn set_brick(

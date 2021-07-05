@@ -4,7 +4,7 @@ use crate::blocks::block_type::BlockType;
 use crate::player::Player;
 use crate::world_gen::chunk::Chunk;
 use crate::world_gen::meta_chunk::MetaChunk;
-use log::info;
+use log::warn;
 use nalgebra::Vector3;
 use noise::{MultiFractal, NoiseFn, Seedable};
 use rand::Rng;
@@ -51,7 +51,7 @@ impl BigWorld {
         for meta_x in 0..3 {
             for meta_y in 0..3 {
                 for meta_z in 0..3 {
-                    info!("working on metachunk: {} {} {}", meta_x, meta_y, meta_z);
+                    warn!("working on metachunk: {} {} {}", meta_x, meta_y, meta_z);
                     for brick_x in 0..BRICKMAPSIZE {
                         for brick_y in 0..BRICKMAPSIZE {
                             for brick_z in 0..BRICKMAPSIZE {
@@ -136,15 +136,15 @@ impl BigWorld {
     pub fn upload_all_brickmaps(&self, wgpu_state: &WgpuState, world_renderer: &BigWorldRenderer) {
         //println!("bricks: {:?}", self.bricks);
         //println!("brickmap: {:?}", self.brickmap);
-        info!("bricks len: {:?}", self.bricks.len());
-        info!("brickmap len: {:?}", self.brickmap.len());
+        warn!("bricks len: {:?}", self.bricks.len());
+        warn!("brickmap len: {:?}", self.brickmap.len());
         for i in 0..self.bricks.len() {
             world_renderer.set_brick(i as u32, &self.bricks[i], wgpu_state);
         }
         for i in 0..27 {
             world_renderer.set_brickmap(i, self.get_slice_of_brickmap(i), wgpu_state);
         }
-        info!("queued all GPU uploads");
+        warn!("queued all GPU uploads");
     }
     fn get_slice_of_brickmap(&self, i: u32) -> &[u32] {
         let s: &[u32] = &self.brickmap
