@@ -14,10 +14,13 @@ use rayon::prelude::ParallelSliceMut;
 use std::collections::{HashMap, HashSet};
 use std::convert::TryInto;
 use std::ops::Range;
+use std::path::Path;
 use std::sync::{RwLock, RwLockWriteGuard};
 use std::time::Instant;
 use vox_core::constants::{BRICKMAPSIZE, BRICKSIZE, METACHUNKSIZE, METACHUNK_GEN_RANGE};
 use vox_core::positions::{ChunkPos, GlobalBlockPos, MetaChunkPos};
+use vox_io::io::file_reader::read_struct_from_file;
+use vox_io::io::file_writer::write_struct_to_file;
 use vox_render::compute_renderer::wgpu_state::WgpuState;
 
 pub struct BigWorld {
@@ -36,11 +39,28 @@ impl BigWorld {
         return None;
     }
     pub fn new(seed: u32) -> BigWorld {
+        if Path::new(&format!("./{} {}.data", BRICKSIZE, BRICKMAPSIZE)).exists() {
+            let brickmap = Box::new(
+                read_struct_from_file(&format!("./{} {} brickmap.data", BRICKSIZE, BRICKMAPSIZE))
+                    .unwrap(),
+            );
+            let bricks =
+                read_struct_from_file(&format!("./{} {} bricks.data", BRICKSIZE, BRICKMAPSIZE))
+                    .unwrap();
+            return BigWorld {
+                brickmap,
+                bricks,
+                loading_chunks: HashSet::new(),
+                world_seed: seed,
+                time: 0.0,
+                start_time: Instant::now(),
+            };
+        }
+
         let noise = noise::Fbm::new()
             .set_seed(0)
             .set_octaves(2)
             .set_frequency(6.0);
-        let mut rng = rand::thread_rng();
 
         let mut brickmap: Box<[u32; BRICKMAPSIZE.pow(3) * 27]> =
             vec![0xFFFFFFFFu32; BRICKMAPSIZE.pow(3) * 27]
@@ -116,6 +136,14 @@ impl BigWorld {
                 }
             }
         }
+        write_struct_to_file(
+            &format!("./{} {} brickmap.data", BRICKSIZE, BRICKMAPSIZE),
+            brickmap.as_ref(),
+        );
+        write_struct_to_file(
+            &format!("./{} {} bricks.data", BRICKSIZE, BRICKMAPSIZE),
+            bricks.as_ref(),
+        );
         BigWorld {
             brickmap,
             bricks,

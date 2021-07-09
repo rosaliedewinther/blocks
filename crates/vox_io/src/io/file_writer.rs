@@ -1,9 +1,9 @@
 use serde::Serialize;
 use std::fs::File;
-use std::io::BufWriter;
+use std::io::{BufWriter, Write};
 
-pub fn write_to_file<T: Serialize>(filename: &str, obj: &T) {
+pub fn write_struct_to_file<T: bytemuck::Pod + bytemuck::Zeroable>(filename: &str, obj: &T) {
     let file = File::create(filename).unwrap();
-    let writer = BufWriter::new(file);
-    bincode::serialize_into(writer, obj).unwrap();
+    let mut writer = BufWriter::new(file);
+    writer.write(bytemuck::bytes_of(obj));
 }

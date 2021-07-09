@@ -119,12 +119,17 @@ checksum = "63396b8a4b9de3f4fdfb320ab6080762242f66a8ef174c49d8e19b674db4cdbe"
 
 [[package]]
 name = "bytemuck"
-version = "1.5.1"
+version = "1.7.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "bed57e2090563b83ba8f83366628ce535a7584c9afa4c9fc0612a03925c6df58"
+checksum = "9966d2ab714d0f785dbac0a0396251a35280aeb42413281617d0209ab4898435"
 dependencies = [
  "bytemuck_derive",
 ]
+
+[[package]]
+name = "bytemuck"
+version = "1.7.1-alpha.0"
+source = "git+https://github.com/Lokathor/bytemuck?branch=main#6db9c1944b0604171a70e178bcdd1db1a4ce4dd2"
 
 [[package]]
 name = "bytemuck_derive"
@@ -948,7 +953,7 @@ version = "0.23.14"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "24ffcb7e7244a9bf19d35bf2883b9c080c4ced3c07a9895572178cdb8f13f6a1"
 dependencies = [
- "bytemuck",
+ "bytemuck 1.7.0",
  "byteorder",
  "color_quant",
  "gif",
@@ -988,7 +993,7 @@ version = "0.15.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "e416ae1d240daa57a0d2a143251e6f925ca3705a1c8f58c986f9a1a17f98b56a"
 dependencies = [
- "bytemuck",
+ "bytemuck 1.7.0",
  "imgui",
  "log",
  "smallvec",
@@ -2103,6 +2108,7 @@ name = "vox_io"
 version = "0.1.0"
 dependencies = [
  "bincode",
+ "bytemuck 1.7.1-alpha.0",
  "serde",
 ]
 
@@ -2110,7 +2116,7 @@ dependencies = [
 name = "vox_render"
 version = "0.1.0"
 dependencies = [
- "bytemuck",
+ "bytemuck 1.7.0",
  "futures",
  "memcmp",
  "nalgebra",
@@ -2124,7 +2130,7 @@ dependencies = [
 name = "vox_world"
 version = "0.1.0"
 dependencies = [
- "bytemuck",
+ "bytemuck 1.7.0",
  "log",
  "nalgebra",
  "noise",

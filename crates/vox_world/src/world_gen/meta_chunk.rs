@@ -15,8 +15,8 @@ use std::borrow::BorrowMut;
 use vox_core::constants::{CHUNKSIZE, METACHUNKSIZE, METACHUNK_GEN_RANGE};
 use vox_core::positions::{ChunkPos, GlobalBlockPos, LocalChunkPos, MetaChunkPos};
 use vox_core::utils::{to_sign_of, wrap};
-use vox_io::io::file_reader::read_meta_chunk_from_file;
-use vox_io::io::file_writer::write_to_file;
+use vox_io::io::file_reader::read_struct_from_file;
+use vox_io::io::file_writer::write_struct_to_file;
 
 #[derive(Serialize, Deserialize)]
 pub struct MetaChunk {
@@ -136,13 +136,11 @@ impl MetaChunk {
     }
 
     pub fn load_from_disk(pos: &MetaChunkPos) -> Option<MetaChunk> {
-        let filename = format!("{}-{}.txt", pos.x, pos.z);
-        return read_meta_chunk_from_file(filename.as_str());
+        return None;
     }
 
     pub fn save_to_disk(&self) {
-        let filename = format!("{}-{}.txt", self.pos.x, self.pos.z);
-        write_to_file(filename.as_str(), self)
+        return;
     }
 
     pub fn set_block(&mut self, pos: &GlobalBlockPos, block: BlockId) {

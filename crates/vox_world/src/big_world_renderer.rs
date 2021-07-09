@@ -1,7 +1,7 @@
 use crate::player::Player;
 use log::warn;
 use std::collections::HashMap;
-use vox_core::constants::{BRICKMAPSIZE, BRICKSIZE};
+use vox_core::constants::{BRICKMAPSIZE, BRICKSIZE, MAX_AMOUNT_OF_BRICKS};
 use vox_render::compute_renderer::renderpassable::RenderPassable;
 use vox_render::compute_renderer::shader_modules::shader_module_init;
 use vox_render::compute_renderer::uniforms::Uniforms;
@@ -24,10 +24,7 @@ impl BigWorldRenderer {
         let (uniform_buffer, uniforms) = BigWorldRenderer::init_uniforms(wgpu_state);
         let brick_map_buffer =
             BigWorldRenderer::init_brickmaps(wgpu_state, BRICKMAPSIZE.pow(3) as u32 * 27);
-        let bricks_buffer = BigWorldRenderer::init_bricks(
-            wgpu_state,
-            (1073741824u64 / ((BRICKSIZE as u64).pow(3))) as u32,
-        ); //allocate 1gb of data for the buffer
+        let bricks_buffer = BigWorldRenderer::init_bricks(wgpu_state, MAX_AMOUNT_OF_BRICKS); //allocate 1gb of data for the buffer
         let (compute_bind_group_layout, compute_bind_group) =
             BigWorldRenderer::init_compute_bind_group(
                 wgpu_state,
