@@ -1,4 +1,4 @@
-mod algorithms;
+pub mod algorithms;
 pub mod big_world_renderer;
 mod blocks;
 pub mod player;

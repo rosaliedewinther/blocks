@@ -264,5 +264,5 @@ pub const COLORS: [[f32; 4]; 256] = [
     [0.0; 4],
 ];
 pub const BRICKSIZE: usize = 8;
-pub const BRICKMAPSIZE: usize = 8;
+pub const BRICKMAPSIZE: usize = 8; //has to be multiple of 8
 pub const MAX_AMOUNT_OF_BRICKS: u32 = (1073741824u64 / ((BRICKSIZE as u64).pow(3))) as u32;

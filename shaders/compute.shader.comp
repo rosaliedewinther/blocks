@@ -120,12 +120,16 @@ uvec4 trace_ray(vec3 direction, vec3 origin){
 
     bool big_step = false;
     bvec3 mask;
+    bool been_inside = false;
 
     while(iter < 1000){
         uvec4 voxel = get_voxel_color(current_voxel);
 
+
         if (voxel[3] == 0){                     // out of visible world
-            return uvec4(0,0,0,255);
+            if (been_inside){
+                return uvec4(0,0,0,255);
+            }
         } else if (voxel[3] == 254){            // brick is empty, can accelerate
             big_step = true;
         } else if (voxel != uvec4(0,0,0,255)){  // voxel hit
@@ -142,6 +146,8 @@ uvec4 trace_ray(vec3 direction, vec3 origin){
                 shadow = 0.75;
             }
             return uvec4(shadow * voxel.xyz, 255);//voxel;
+        } else{
+            been_inside = true;
         }
         iter+=1;
         mask = lessThanEqual(sideDist.xyz, min(sideDist.yzx, sideDist.zxy));
