@@ -1,5 +1,5 @@
 use futures::executor::block_on;
-use wgpu::{Device, Queue, Surface};
+use wgpu::{Device, Queue, Surface, TextureUsages};
 use winit::dpi::PhysicalSize;
 use winit::window::Window;
 
@@ -7,8 +7,7 @@ pub struct WgpuState {
     pub surface: wgpu::Surface,
     pub device: wgpu::Device,
     pub queue: wgpu::Queue,
-    pub sc_desc: wgpu::SwapChainDescriptor,
-    pub swap_chain: wgpu::SwapChain,
+    pub sc_desc: wgpu::SurfaceConfiguration,
     pub size: winit::dpi::PhysicalSize<u32>,
 }
 
@@ -16,23 +15,23 @@ impl WgpuState {
     pub fn new(window: &Window) -> Self {
         let size = window.inner_size();
 
-        let (device, queue, surface) = WgpuState::get_device_queue_surface(window);
+        let (device, queue, surface) = WgpuState::get_device_queue_surface(window, size);
         let sc_desc = WgpuState::get_sc_desc(size);
 
-        let swap_chain = device.create_swap_chain(&surface, &sc_desc);
-        //compute.compute_pass(&device, &queue);
         Self {
             surface,
             device,
             queue,
             sc_desc,
-            swap_chain,
             size,
         }
     }
-    pub fn get_device_queue_surface(window: &Window) -> (Device, Queue, Surface) {
+    pub fn get_device_queue_surface(
+        window: &Window,
+        size: PhysicalSize<u32>,
+    ) -> (Device, Queue, Surface) {
         block_on(async {
-            let instance = wgpu::Instance::new(wgpu::BackendBit::VULKAN);
+            let instance = wgpu::Instance::new(wgpu::Backends::VULKAN);
             let surface = unsafe { instance.create_surface(window) };
             let adapter = instance
                 .request_adapter(&wgpu::RequestAdapterOptions {
@@ -47,19 +46,21 @@ impl WgpuState {
                 .request_device(
                     &wgpu::DeviceDescriptor {
                         label: Some("requested device"),
-                        features: wgpu::Features::empty(),
+                        features: wgpu::Features::TEXTURE_ADAPTER_SPECIFIC_FORMAT_FEATURES,
                         limits,
                     },
                     None,
                 )
                 .await
                 .unwrap();
+            let surface_config = WgpuState::get_sc_desc(size);
+            surface.configure(&device, &surface_config);
             return (device, queue, surface);
         })
     }
-    pub fn get_sc_desc(size: PhysicalSize<u32>) -> wgpu::SwapChainDescriptor {
-        wgpu::SwapChainDescriptor {
-            usage: wgpu::TextureUsage::RENDER_ATTACHMENT,
+    pub fn get_sc_desc(size: PhysicalSize<u32>) -> wgpu::SurfaceConfiguration {
+        wgpu::SurfaceConfiguration {
+            usage: wgpu::TextureUsages::COPY_DST | wgpu::TextureUsages::RENDER_ATTACHMENT,
             format: wgpu::TextureFormat::Bgra8UnormSrgb,
             width: size.width,
             height: size.height,
@@ -71,6 +72,5 @@ impl WgpuState {
         self.size = new_size;
         self.sc_desc.width = new_size.width;
         self.sc_desc.height = new_size.height;
-        self.swap_chain = self.device.create_swap_chain(&self.surface, &self.sc_desc);
     }
 }

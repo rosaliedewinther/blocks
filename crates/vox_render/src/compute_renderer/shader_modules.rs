@@ -5,7 +5,6 @@ pub fn shader_module_init(filename: &str, device: &wgpu::Device) -> wgpu::Shader
     let fs_module_desc = wgpu::ShaderModuleDescriptor {
         label: Some(filename),
         source: wgpu::util::make_spirv(file_text.as_slice()),
-        flags: wgpu::ShaderFlags::VALIDATION,
     };
     return device.create_shader_module(&fs_module_desc);
 }

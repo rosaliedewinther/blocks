@@ -13,14 +13,14 @@ struct Uniforms{
     vec4[16] colors;
 };
 layout(local_size_x = 8, local_size_y = 8, local_size_z = 1) in;
-layout(rgba8ui, binding = 0) uniform uimage2D img_output;
+layout(rgba8ui, binding = 0) writeonly uniform uimage2D img_output;
 layout(binding = 1) readonly buffer brickmaps{
     uint[] brick_index;
 };
 layout(binding = 2) readonly buffer bricks{
     uint[] encoded_voxels;
 };
-layout(binding=3) uniform camera_details{
+layout(binding=3) readonly uniform camera_details{
     Uniforms uni;
 };
 

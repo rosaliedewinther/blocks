@@ -3,10 +3,11 @@ use crate::compute_renderer::shader_modules::shader_module_init;
 use crate::compute_renderer::uniforms::Uniforms;
 use crate::compute_renderer::vertex::Vertex;
 use crate::compute_renderer::wgpu_state::WgpuState;
+use core::default::Default;
 use wgpu::util::DeviceExt;
 use wgpu::{
     BindGroup, BindGroupLayout, BlendFactor, BlendOperation, BufferBinding, ComputePipeline,
-    RenderPipeline, Sampler, SwapChainError, Texture, TextureView, TextureViewDimension,
+    RenderPipeline, Sampler, Texture, TextureView, TextureViewDescriptor, TextureViewDimension,
 };
 
 pub struct Renderer {
@@ -41,8 +42,9 @@ impl Renderer {
         wgpu: &WgpuState,
         window: &winit::window::Window,
         renderpassables: Vec<&mut dyn RenderPassable>,
-    ) -> Result<(), SwapChainError> {
-        let frame = wgpu.swap_chain.get_current_frame()?.output;
+    ) {
+        let frame = &wgpu.surface.get_current_frame().unwrap().output.texture;
+        let frame_view = frame.create_view(&Default::default());
         let mut encoder = wgpu
             .device
             .create_command_encoder(&wgpu::CommandEncoderDescriptor {
@@ -53,7 +55,7 @@ impl Renderer {
             let mut render_pass = encoder.begin_render_pass(&wgpu::RenderPassDescriptor {
                 label: Some("Render pass world"),
                 color_attachments: &[wgpu::RenderPassColorAttachment {
-                    view: &frame.view,
+                    view: &frame_view,
                     resolve_target: None,
                     ops: wgpu::Operations {
                         load: wgpu::LoadOp::Clear(Default::default()),
@@ -70,11 +72,10 @@ impl Renderer {
             render_pass.draw_indexed(0..self.num_indices, 0, 0..1);
         }
         for obj in renderpassables {
-            obj.do_render_pass(window, &mut encoder, wgpu, &frame);
+            obj.do_render_pass(window, &mut encoder, wgpu, &frame_view);
         }
         // submit will accept anything that implements IntoIter
         wgpu.queue.submit(std::iter::once(encoder.finish()));
-        Ok(())
     }
 
     fn init_pipeline(
@@ -118,7 +119,7 @@ impl Renderer {
                     entry_point: "main",
                     targets: &[wgpu::ColorTargetState {
                         format: WgpuState::get_sc_desc(wgpu.size).format,
-                        write_mask: wgpu::ColorWrite::ALL,
+                        write_mask: wgpu::ColorWrites::ALL,
                         blend: Some(wgpu::BlendState {
                             color: wgpu::BlendComponent {
                                 src_factor: BlendFactor::SrcAlpha,
@@ -165,7 +166,7 @@ impl Renderer {
             .create_buffer_init(&wgpu::util::BufferInitDescriptor {
                 label: Some("Vertex Buffer"),
                 contents: bytemuck::cast_slice(vertices),
-                usage: wgpu::BufferUsage::VERTEX,
+                usage: wgpu::BufferUsages::VERTEX,
             });
 
         let index_buffer = wgpu
@@ -173,7 +174,7 @@ impl Renderer {
             .create_buffer_init(&wgpu::util::BufferInitDescriptor {
                 label: Some("Index Buffer"),
                 contents: bytemuck::cast_slice(indices),
-                usage: wgpu::BufferUsage::INDEX,
+                usage: wgpu::BufferUsages::INDEX,
             });
         let num_indices = indices.len() as u32;
         let num_vertices = vertices.len() as u32;
@@ -191,7 +192,7 @@ impl Renderer {
             sample_count: 1,
             dimension: wgpu::TextureDimension::D2,
             format: wgpu::TextureFormat::Rgba8Uint,
-            usage: wgpu::TextureUsage::STORAGE,
+            usage: wgpu::TextureUsages::STORAGE_BINDING,
             label: Some("diffuse_texture"),
         });
         let diffuse_texture_view = diffuse_texture.create_view(&wgpu::TextureViewDescriptor {
@@ -214,7 +215,7 @@ impl Renderer {
                 .create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
                     entries: &[wgpu::BindGroupLayoutEntry {
                         binding: 0,
-                        visibility: wgpu::ShaderStage::FRAGMENT,
+                        visibility: wgpu::ShaderStages::FRAGMENT,
                         ty: wgpu::BindingType::StorageTexture {
                             access: wgpu::StorageTextureAccess::ReadOnly,
                             view_dimension: wgpu::TextureViewDimension::D2,

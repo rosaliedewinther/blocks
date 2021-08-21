@@ -4,7 +4,7 @@
 layout(location=0) in vec2 v_tex_coords;
 layout(location=0) out vec4 f_color;
 
-layout(rgba8ui, binding = 0) uniform uimage2D img_output;
+layout(rgba8ui, binding = 0) readonly uniform uimage2D img_output;
 
 void main() {
     vec2 size = imageSize(img_output);

@@ -17,16 +17,7 @@ impl Noise for NoiseBracket {
 
         Self { noise }
     }
-    fn get(&self, x: f32, y: f32, z: f32, step_size: f32) -> [f32; 8] {
-        [
-            self.noise.get_noise3d(x, y, z) as f32,
-            self.noise.get_noise3d(x, y, z + 1.0 * step_size) as f32,
-            self.noise.get_noise3d(x, y, z + 2.0 * step_size) as f32,
-            self.noise.get_noise3d(x, y, z + 3.0 * step_size) as f32,
-            self.noise.get_noise3d(x, y, z + 4.0 * step_size) as f32,
-            self.noise.get_noise3d(x, y, z + 5.0 * step_size) as f32,
-            self.noise.get_noise3d(x, y, z + 6.0 * step_size) as f32,
-            self.noise.get_noise3d(x, y, z + 7.0 * step_size) as f32,
-        ]
+    fn get(&self, x: f32, y: f32, z: f32) -> f32 {
+        self.noise.get_noise3d(x, y, z) as f32
     }
 }

@@ -6,4 +6,4 @@ members = [
     "crates/vox_render",
     "crates/vox_world",
 ]
-
+resolver = "2"

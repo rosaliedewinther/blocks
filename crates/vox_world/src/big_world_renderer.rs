@@ -7,7 +7,7 @@ use vox_render::compute_renderer::shader_modules::shader_module_init;
 use vox_render::compute_renderer::uniforms::Uniforms;
 use vox_render::compute_renderer::wgpu_state::WgpuState;
 use wgpu::util::DeviceExt;
-use wgpu::{CommandEncoder, SwapChainTexture};
+use wgpu::CommandEncoder;
 use winit::window::Window;
 
 pub struct BigWorldRenderer {
@@ -53,7 +53,7 @@ impl BigWorldRenderer {
                 .create_buffer_init(&wgpu::util::BufferInitDescriptor {
                     label: Some("Uniform Buffer"),
                     contents: bytemuck::cast_slice(&[uniforms]),
-                    usage: wgpu::BufferUsage::UNIFORM | wgpu::BufferUsage::COPY_DST,
+                    usage: wgpu::BufferUsages::UNIFORM | wgpu::BufferUsages::COPY_DST,
                 });
         return (uniform_buffer, uniforms);
     }
@@ -85,7 +85,7 @@ impl BigWorldRenderer {
         let buffer_descriptor = wgpu::BufferDescriptor {
             label: Some("brickmap buffer"),
             size: amount_of_bricks as u64 * std::mem::size_of::<u32>() as u64,
-            usage: wgpu::BufferUsage::COPY_DST | wgpu::BufferUsage::STORAGE,
+            usage: wgpu::BufferUsages::COPY_DST | wgpu::BufferUsages::STORAGE,
             mapped_at_creation: false,
         };
         let brick_map_buffer = wgpu_state.device.create_buffer(&buffer_descriptor);
@@ -101,7 +101,7 @@ impl BigWorldRenderer {
             size: max_amount_of_bricks as u64
                 * std::mem::size_of::<u8>() as u64
                 * BRICKSIZE.pow(3) as u64,
-            usage: wgpu::BufferUsage::COPY_DST | wgpu::BufferUsage::STORAGE,
+            usage: wgpu::BufferUsages::COPY_DST | wgpu::BufferUsages::STORAGE,
             mapped_at_creation: false,
         };
         let bricks_buffer = wgpu_state.device.create_buffer(&buffer_descriptor);
@@ -121,7 +121,7 @@ impl BigWorldRenderer {
                 .create_buffer_init(&wgpu::util::BufferInitDescriptor {
                     label: Some("brick uploading Buffer"),
                     contents: bytemuck::cast_slice(data),
-                    usage: wgpu::BufferUsage::COPY_SRC,
+                    usage: wgpu::BufferUsages::COPY_SRC,
                 });
         let mut encoder = wgpu_state
             .device
@@ -142,7 +142,7 @@ impl BigWorldRenderer {
                 .create_buffer_init(&wgpu::util::BufferInitDescriptor {
                     label: Some("brickmap uploading Buffer"),
                     contents: bytemuck::cast_slice(data.as_ref()),
-                    usage: wgpu::BufferUsage::COPY_SRC,
+                    usage: wgpu::BufferUsages::COPY_SRC,
                 });
         let mut encoder = wgpu_state
             .device
@@ -171,7 +171,7 @@ impl BigWorldRenderer {
                     entries: &[
                         wgpu::BindGroupLayoutEntry {
                             binding: 0,
-                            visibility: wgpu::ShaderStage::COMPUTE,
+                            visibility: wgpu::ShaderStages::COMPUTE,
                             ty: wgpu::BindingType::StorageTexture {
                                 access: wgpu::StorageTextureAccess::WriteOnly,
                                 view_dimension: wgpu::TextureViewDimension::D2,
@@ -181,7 +181,7 @@ impl BigWorldRenderer {
                         },
                         wgpu::BindGroupLayoutEntry {
                             binding: 1,
-                            visibility: wgpu::ShaderStage::COMPUTE,
+                            visibility: wgpu::ShaderStages::COMPUTE,
                             ty: wgpu::BindingType::Buffer {
                                 ty: wgpu::BufferBindingType::Storage { read_only: true },
                                 has_dynamic_offset: false,
@@ -191,7 +191,7 @@ impl BigWorldRenderer {
                         },
                         wgpu::BindGroupLayoutEntry {
                             binding: 2,
-                            visibility: wgpu::ShaderStage::COMPUTE,
+                            visibility: wgpu::ShaderStages::COMPUTE,
                             ty: wgpu::BindingType::Buffer {
                                 ty: wgpu::BufferBindingType::Storage { read_only: true },
                                 has_dynamic_offset: false,
@@ -201,7 +201,7 @@ impl BigWorldRenderer {
                         },
                         wgpu::BindGroupLayoutEntry {
                             binding: 3,
-                            visibility: wgpu::ShaderStage::COMPUTE,
+                            visibility: wgpu::ShaderStages::COMPUTE,
                             ty: wgpu::BindingType::Buffer {
                                 ty: wgpu::BufferBindingType::Uniform,
                                 has_dynamic_offset: false,
@@ -286,7 +286,7 @@ impl RenderPassable for BigWorldRenderer {
         window: &Window,
         encoder: &mut CommandEncoder,
         wgpu_state: &WgpuState,
-        frame: &SwapChainTexture,
+        frame: &wgpu::TextureView,
     ) {
         let mut cpass = encoder.begin_compute_pass(&wgpu::ComputePassDescriptor { label: None });
         cpass.set_pipeline(&self.compute_pipeline);

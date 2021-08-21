@@ -1,7 +1,6 @@
 use crate::constants::{CHUNKSIZE, METACHUNKSIZE};
 use crate::utils::{wrap, wrapf};
 use core::ops;
-use num_traits::Pow;
 use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Copy, Clone, Eq, PartialEq, Hash)]
@@ -120,9 +119,9 @@ impl ChunkPos {
     }
 
     pub fn get_distance(&self, pos: &ChunkPos) -> f64 {
-        ((((self.x - pos.x) as f64).pow(2)
-            + ((self.y - pos.y) as f64).pow(2)
-            + ((self.z - pos.z) as f64).pow(2)) as f64)
+        ((((self.x - pos.x) as f64).powf(2.0)
+            + ((self.y - pos.y) as f64).powf(2.0)
+            + ((self.z - pos.z) as f64).powf(2.0)) as f64)
             .sqrt()
             * CHUNKSIZE as f64
     }
@@ -157,7 +156,7 @@ impl MetaChunkPos {
     }
     pub fn get_distance_to_object(&self, pos: &ObjectPos) -> f32 {
         let center_pos = self.get_center_pos();
-        ((center_pos.x - pos.x).pow(2) as f32 + (center_pos.z - pos.z).pow(2) as f32).sqrt()
+        ((center_pos.x - pos.x).powf(2.0) as f32 + (center_pos.z - pos.z).powf(2.0) as f32).sqrt()
     }
     pub fn get_center_pos(&self) -> ObjectPos {
         ObjectPos {
@@ -185,9 +184,9 @@ impl ObjectPos {
         }
     }
     pub fn get_distance(&self, pos: &ObjectPos) -> f32 {
-        ((self.x - pos.x).pow(2) as f32
-            + (self.y - pos.y).pow(2) as f32
-            + (self.z - pos.z).pow(2) as f32)
+        ((self.x - pos.x).powf(2.0) as f32
+            + (self.y - pos.y).powf(2.0) as f32
+            + (self.z - pos.z).powf(2.0) as f32)
             .sqrt()
     }
     pub fn get_meta_chunk(&self) -> MetaChunkPos {

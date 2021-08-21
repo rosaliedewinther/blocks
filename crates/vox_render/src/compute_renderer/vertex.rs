@@ -10,7 +10,7 @@ impl Vertex {
     pub fn desc<'a>() -> wgpu::VertexBufferLayout<'a> {
         wgpu::VertexBufferLayout {
             array_stride: std::mem::size_of::<Vertex>() as wgpu::BufferAddress,
-            step_mode: wgpu::InputStepMode::Vertex, // 2.
+            step_mode: wgpu::VertexStepMode::Vertex, // 2.
             attributes: &[
                 // 3.
                 wgpu::VertexAttribute {

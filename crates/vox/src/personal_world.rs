@@ -1,4 +1,3 @@
-use crate::ui::ui::UiRenderer;
 use cgmath::{InnerSpace, Vector3};
 use rayon::iter::ParallelIterator;
 use rayon::iter::{IntoParallelIterator, IntoParallelRefIterator};
@@ -15,7 +14,6 @@ use vox_render::compute_renderer::renderer::Renderer;
 use vox_render::compute_renderer::wgpu_state::WgpuState;
 use vox_world::algorithms::noise_bracket::NoiseBracket;
 use vox_world::algorithms::noise_default::NoiseDefault;
-use vox_world::algorithms::noise_simd::NoiseSimd;
 use vox_world::big_world_renderer::BigWorldRenderer;
 use vox_world::player::Player;
 use vox_world::world::big_world::BigWorld;
@@ -37,14 +35,12 @@ pub struct PersonalWorld {
     pub loading_chunks: HashSet<MetaChunkPos>,
     pub reload_vertex_load_order: bool,
     pub to_generate: Vec<(f32, ChunkPos)>,
-    pub ui: UiRenderer,
 }
 
 impl PersonalWorld {
     pub fn new(window: &Window, renderer: &Renderer, wgpu_state: &WgpuState) -> PersonalWorld {
-        let ui_renderer = UiRenderer::new(window, &renderer, wgpu_state);
         let world_renderer = BigWorldRenderer::new(wgpu_state, &renderer.texture_view);
-        let world = BigWorld::new::<NoiseSimd>(0);
+        let world = BigWorld::new::<NoiseBracket>(0);
         world.upload_all_brickmaps(wgpu_state, &world_renderer);
         PersonalWorld {
             world: world,
@@ -55,7 +51,6 @@ impl PersonalWorld {
             loading_chunks: HashSet::new(),
             reload_vertex_load_order: false,
             to_generate: Vec::new(),
-            ui: ui_renderer,
         }
     }
     pub fn update(&mut self) {
@@ -176,9 +171,6 @@ impl PersonalWorld {
             Err(_) => return,
         }
     }*/
-    pub fn update_ui_input(&mut self, input: &Input) {
-        self.ui.update_input(input);
-    }
     pub fn render(&mut self, window: &Window, renderer: &mut Renderer) -> RenderResult {
         return RenderResult::Continue;
     }

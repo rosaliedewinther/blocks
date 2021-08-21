@@ -15,10 +15,10 @@ vox_io = {path="../vox_io"}
 winit = "0.25"
 winit_window_control = {git = "https://github.com/jasperdewinther/winit_abstraction", branch = "main"}
 #winit_window_control = {path="../../../winit_abstraction"}
-nalgebra = "0.26"
+nalgebra = "0.29"
 rand = "0.8"
 serde = { version = "1.0", features = ["derive"] }
-wgpu = {version="0.8", features = ["cross"]}
+wgpu = "0.10"
 noise="0.7"
 rand_distr ="0.4"
 bytemuck = { version = "1.4", features = [ "derive" ] }

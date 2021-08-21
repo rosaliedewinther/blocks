@@ -8,11 +8,11 @@ edition = "2018"
 
 [dependencies]
 memcmp = "0.0.6"
-wgpu = {version="0.8", features = ["cross"]}
+wgpu = {version="0.10", features = ["spirv"]}
 futures = "0.3"
 winit = "0.25"
 rayon = "1.4"
-nalgebra = "0.26"
+nalgebra = "0.29"
 bytemuck = { version = "1.4", features = [ "derive" ] }
 vox_core = {path="../vox_core"}
 
