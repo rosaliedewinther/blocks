@@ -82,8 +82,8 @@ impl Renderer {
         wgpu: &mut WgpuState,
         texture_bind_group_layout: BindGroupLayout,
     ) -> RenderPipeline {
-        let vs_module = shader_module_init("./shaders/compute.shader.vert.spv", &wgpu.device);
-        let fs_module = shader_module_init("./shaders/compute.shader.frag.spv", &wgpu.device);
+        let vs_module = shader_module_init("./shaders/compute.vert.spv", &wgpu.device);
+        let fs_module = shader_module_init("./shaders/compute.frag.spv", &wgpu.device);
 
         let render_pipeline_layout =
             wgpu.device

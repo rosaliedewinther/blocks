@@ -2,7 +2,6 @@ use crate::personal_world::PersonalWorld;
 use std::time::Instant;
 use vox_render::compute_renderer::renderer::Renderer;
 use vox_render::compute_renderer::wgpu_state::WgpuState;
-use vox_world::world::small_world::SmallWorld;
 use winit::dpi::PhysicalSize;
 use winit::event::Event;
 use winit::window::Window;
@@ -33,7 +32,6 @@ impl VoxGame {
 impl Game for VoxGame {
     fn on_tick(&mut self, dt: f64) -> UpdateResult {
         let pw = &mut self.personal_world.as_mut().unwrap();
-        let timer = Instant::now();
 
         pw.on_game_tick(0.1);
 

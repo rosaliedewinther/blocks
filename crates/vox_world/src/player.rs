@@ -1,4 +1,4 @@
-use crate::world::small_world::SmallWorld;
+use crate::world::big_world::BigWorld;
 use nalgebra::{Matrix3, Vector3};
 use std::f32::consts::PI;
 use vox_core::constants::COLORS;
@@ -6,6 +6,7 @@ use vox_core::positions::{ChunkPos, ObjectPos};
 use vox_core::utils::{get_rotation_matrix_y, get_rotation_matrix_z};
 use winit::event::VirtualKeyCode;
 use winit_window_control::input::input::Input;
+
 #[derive(Debug)]
 pub struct Player {
     pub position: ObjectPos,
@@ -134,28 +135,6 @@ impl Player {
         }
     }
 
-    pub fn update(&mut self, _dt: &f32, world: &SmallWorld) {
-        loop {
-            if Player::collides(&self.position, world) {
-                self.position.y += 1.0;
-            } else {
-                return;
-            }
-        }
-    }
-    //pub fn get_collision_points() -> [ObjectPos; 8] {}
-    pub fn collides(pos: &ObjectPos, world: &SmallWorld) -> bool {
-        let blockpos = pos.get_block();
-        let faceblock = world.get_block(blockpos);
-        let feetblock = world.get_block(blockpos.get_diff(0, -1, 0));
-        return if (faceblock.is_some() && COLORS[faceblock.unwrap() as usize][3] == 255.0)
-            || (feetblock.is_some() && COLORS[feetblock.unwrap() as usize][3] == 255.0)
-        {
-            true
-        } else {
-            false
-        };
-    }
     pub fn chunk_in_view_distance(&self, pos: &ChunkPos) -> bool {
         self.position.get_chunk().get_distance(pos) < self.render_distance
     }

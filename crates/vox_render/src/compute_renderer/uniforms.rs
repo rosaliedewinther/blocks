@@ -1,6 +1,6 @@
 use nalgebra::Vector3;
 use std::f64::consts::PI;
-use vox_core::constants::{BRICKMAPSIZE, BRICKSIZE, COLORS};
+use vox_core::constants::{COLORS, WORLD_SIZE};
 use vox_core::utils::get_rotation_matrix_y;
 
 #[repr(C)]
@@ -11,11 +11,8 @@ pub struct Uniforms {
     viewing_dir: [f32; 3],
     _padding1: f32,
     sun_dir: [f32; 3],
-    brickmap_size: u32,
-    brick_size: u32,
-    _padding2: [f32; 3],
+    world_size: u32,
     ray_cast_data: [[f32; 4]; 3],
-    //_padding3: f32,
     colors: [[f32; 4]; 256],
 }
 
@@ -27,11 +24,8 @@ impl Uniforms {
             viewing_dir: [0.0, 1.0, 0.0],
             _padding1: 0.0,
             sun_dir: [0.0, 1.0, -1.0],
-            brickmap_size: BRICKMAPSIZE as u32,
-            brick_size: BRICKSIZE as u32,
-            _padding2: [0.0; 3],
+            world_size: WORLD_SIZE as u32,
             ray_cast_data: [[0.0; 4]; 3],
-            //_padding3: 0.0,
             colors: COLORS,
         }
     }

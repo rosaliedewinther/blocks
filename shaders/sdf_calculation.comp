@@ -1,0 +1,47 @@
+#version 440
+
+
+
+
+layout(local_size_x = 8, local_size_y = 8, local_size_z = 1) in;
+layout(binding = 0) readonly buffer world_data{
+    uint[] world;
+};
+layout(binding = 1) writeonly buffer sdf_data{
+    uint[] sdf;
+};
+
+bool contains_block(){
+    return true;
+}
+
+void store_stepcount(int steps){
+
+}
+
+void main() {
+    uvec2 position = gl_GlobalInvocationID.xy;
+    int world_size = 256;
+    int world_size_minus_one = world_size-1;
+    //loop along x
+    int stepcount = 1;
+    for (int i = 0;i< world_size; i++){
+        if (contains_block()){
+            stepcount = 1;
+        } else {
+            store_stepcount(stepcount);
+        }
+    }
+    stepcount = 0;
+    for(int i = world_size_minus_one; i >= 0; i--){
+
+    }
+
+
+
+
+    //loop along y
+
+
+    //loop along z
+}

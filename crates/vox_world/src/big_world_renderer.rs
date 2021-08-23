@@ -1,7 +1,8 @@
+use crate::blocks::block::BlockId;
 use crate::player::Player;
 use log::warn;
 use std::collections::HashMap;
-use vox_core::constants::{BRICKMAPSIZE, BRICKSIZE, MAX_AMOUNT_OF_BRICKS};
+use vox_core::constants::WORLD_SIZE;
 use vox_render::compute_renderer::renderpassable::RenderPassable;
 use vox_render::compute_renderer::shader_modules::shader_module_init;
 use vox_render::compute_renderer::uniforms::Uniforms;
@@ -11,40 +12,41 @@ use wgpu::CommandEncoder;
 use winit::window::Window;
 
 pub struct BigWorldRenderer {
-    compute_pipeline: wgpu::ComputePipeline,
-    compute_bind_group: wgpu::BindGroup,
+    rendering_pipeline: wgpu::ComputePipeline,
+    rendering_bind_group: wgpu::BindGroup,
+    sdf_pipeline: wgpu::ComputePipeline,
+    sdf_bind_group: wgpu::BindGroup,
     uniforms: Uniforms,
     uniform_buffer: wgpu::Buffer,
-    brick_map_buffer: wgpu::Buffer,
-    bricks_buffer: wgpu::Buffer,
+    world_buffer: wgpu::Buffer,
+    sdf_buffer: wgpu::Buffer,
 }
 
 impl BigWorldRenderer {
     pub fn new(wgpu_state: &WgpuState, texture_to_draw_to: &wgpu::TextureView) -> BigWorldRenderer {
         let (uniform_buffer, uniforms) = BigWorldRenderer::init_uniforms(wgpu_state);
-        let brick_map_buffer =
-            BigWorldRenderer::init_brickmaps(wgpu_state, BRICKMAPSIZE.pow(3) as u32 * 27);
-        let bricks_buffer = BigWorldRenderer::init_bricks(wgpu_state, MAX_AMOUNT_OF_BRICKS); //allocate 1gb of data for the buffer
-        let (compute_bind_group_layout, compute_bind_group) =
-            BigWorldRenderer::init_compute_bind_group(
-                wgpu_state,
-                texture_to_draw_to,
-                &uniform_buffer,
-                &brick_map_buffer,
-                &bricks_buffer,
-            );
-        let compute_pipeline =
-            BigWorldRenderer::init_compute_pipeline(wgpu_state, compute_bind_group_layout);
+        let world_buffer = BigWorldRenderer::init_world_buffer(wgpu_state);
+        let sdf_buffer = BigWorldRenderer::init_sdf_buffer(wgpu_state);
+        let (rendering_pipeline, rendering_bind_group) = BigWorldRenderer::init_rendering_pipeline(
+            wgpu_state,
+            texture_to_draw_to,
+            &uniform_buffer,
+            &world_buffer,
+            &sdf_buffer,
+        );
+        let (sdf_pipeline, sdf_bind_group) =
+            BigWorldRenderer::init_sdf_pipeline(wgpu_state, &world_buffer, &sdf_buffer);
         BigWorldRenderer {
-            compute_pipeline,
-            compute_bind_group,
+            rendering_pipeline,
+            rendering_bind_group,
+            sdf_pipeline,
+            sdf_bind_group,
             uniforms,
             uniform_buffer,
-            brick_map_buffer,
-            bricks_buffer,
+            world_buffer,
+            sdf_buffer,
         }
     }
-
     fn init_uniforms(wgpu_state: &WgpuState) -> (wgpu::Buffer, Uniforms) {
         let uniforms = Uniforms::new();
         let uniform_buffer =
@@ -57,70 +59,53 @@ impl BigWorldRenderer {
                 });
         return (uniform_buffer, uniforms);
     }
-    fn init_compute_pipeline(
-        wgpu_state: &WgpuState,
-        compute_bind_group_layout: wgpu::BindGroupLayout,
-    ) -> wgpu::ComputePipeline {
-        let pipeline_layout =
-            wgpu_state
-                .device
-                .create_pipeline_layout(&wgpu::PipelineLayoutDescriptor {
-                    label: None,
-                    bind_group_layouts: &[&compute_bind_group_layout],
-                    push_constant_ranges: &[],
-                });
-        let cs_module = shader_module_init("./shaders/compute.shader.comp.spv", &wgpu_state.device);
-        let compute_pipeline =
-            wgpu_state
-                .device
-                .create_compute_pipeline(&wgpu::ComputePipelineDescriptor {
-                    label: None,
-                    layout: Some(&pipeline_layout),
-                    module: &cs_module,
-                    entry_point: "main",
-                });
-        return compute_pipeline;
-    }
-    fn init_brickmaps(wgpu_state: &WgpuState, amount_of_bricks: u32) -> wgpu::Buffer {
+    fn init_world_buffer(wgpu_state: &WgpuState) -> wgpu::Buffer {
         let buffer_descriptor = wgpu::BufferDescriptor {
-            label: Some("brickmap buffer"),
-            size: amount_of_bricks as u64 * std::mem::size_of::<u32>() as u64,
+            label: Some("world buffer"),
+            size: (WORLD_SIZE.pow(3) * std::mem::size_of::<u8>()) as u64,
             usage: wgpu::BufferUsages::COPY_DST | wgpu::BufferUsages::STORAGE,
             mapped_at_creation: false,
         };
-        let brick_map_buffer = wgpu_state.device.create_buffer(&buffer_descriptor);
+        let world_buffer = wgpu_state.device.create_buffer(&buffer_descriptor);
         warn!(
-            "initialized brickmap which can contain {} bricks",
-            amount_of_bricks
+            "initialized world with size of {} bytes",
+            WORLD_SIZE.pow(3) * std::mem::size_of::<u8>()
         );
-        return brick_map_buffer;
+        return world_buffer;
     }
-    fn init_bricks(wgpu_state: &WgpuState, max_amount_of_bricks: u32) -> wgpu::Buffer {
+    fn init_sdf_buffer(wgpu_state: &WgpuState) -> wgpu::Buffer {
         let buffer_descriptor = wgpu::BufferDescriptor {
-            label: Some("bricks buffer"),
-            size: max_amount_of_bricks as u64
-                * std::mem::size_of::<u8>() as u64
-                * BRICKSIZE.pow(3) as u64,
+            label: Some("sdf buffer"),
+            size: (WORLD_SIZE.pow(3) * std::mem::size_of::<u8>()) as u64,
             usage: wgpu::BufferUsages::COPY_DST | wgpu::BufferUsages::STORAGE,
             mapped_at_creation: false,
         };
-        let bricks_buffer = wgpu_state.device.create_buffer(&buffer_descriptor);
-
-        warn!("initialized space for {} bricks", max_amount_of_bricks);
-        return bricks_buffer;
+        let sdf_buffer = wgpu_state.device.create_buffer(&buffer_descriptor);
+        warn!(
+            "initialized sdf with size of {} bytes",
+            WORLD_SIZE.pow(3) * std::mem::size_of::<u8>()
+        );
+        return sdf_buffer;
     }
-    pub fn set_brick(
+    /*pub fn rebuild_sdf(
         &self,
         brick_index: u32,
         data: &[u8; BRICKSIZE.pow(3)],
         wgpu_state: &WgpuState,
     ) {
+        let mut encoder = wgpu_state
+            .device
+            .create_command_encoder(&wgpu::CommandEncoderDescriptor { label: None });
+
+        wgpu_state.queue.submit(std::iter::once(encoder.finish()));
+    }*/
+    pub fn upload_world(&self, world: &[BlockId], wgpu_state: &WgpuState) {
         let uploading_buffer =
             wgpu_state
                 .device
                 .create_buffer_init(&wgpu::util::BufferInitDescriptor {
-                    label: Some("brick uploading Buffer"),
-                    contents: bytemuck::cast_slice(data),
+                    label: Some("world uploading Buffer"),
+                    contents: bytemuck::cast_slice(world),
                     usage: wgpu::BufferUsages::COPY_SRC,
                 });
         let mut encoder = wgpu_state
@@ -129,40 +114,19 @@ impl BigWorldRenderer {
         encoder.copy_buffer_to_buffer(
             &uploading_buffer,
             0,
-            &self.bricks_buffer,
-            (std::mem::size_of::<u8>() * brick_index as usize * BRICKSIZE.pow(3)) as u64,
-            (std::mem::size_of::<u8>() * BRICKSIZE.pow(3)) as u64,
-        );
-        wgpu_state.queue.submit(std::iter::once(encoder.finish()));
-    }
-    pub fn set_brickmap(&self, brickmap_index: u32, data: &[u32], wgpu_state: &WgpuState) {
-        let uploading_buffer =
-            wgpu_state
-                .device
-                .create_buffer_init(&wgpu::util::BufferInitDescriptor {
-                    label: Some("brickmap uploading Buffer"),
-                    contents: bytemuck::cast_slice(data.as_ref()),
-                    usage: wgpu::BufferUsages::COPY_SRC,
-                });
-        let mut encoder = wgpu_state
-            .device
-            .create_command_encoder(&wgpu::CommandEncoderDescriptor { label: None });
-        encoder.copy_buffer_to_buffer(
-            &uploading_buffer,
+            &self.world_buffer,
             0,
-            &self.brick_map_buffer,
-            (std::mem::size_of::<u32>() * brickmap_index as usize * BRICKMAPSIZE.pow(3)) as u64,
-            (std::mem::size_of::<u32>() * BRICKMAPSIZE.pow(3)) as u64,
+            (WORLD_SIZE.pow(3) * std::mem::size_of::<u8>()) as u64,
         );
         wgpu_state.queue.submit(std::iter::once(encoder.finish()));
     }
-    fn init_compute_bind_group(
+    fn init_rendering_pipeline(
         wgpu_state: &WgpuState,
         diffuse_texture_view: &wgpu::TextureView,
         uniform_buffer: &wgpu::Buffer,
-        brick_map_buffer: &wgpu::Buffer,
-        bricks_buffer: &wgpu::Buffer,
-    ) -> (wgpu::BindGroupLayout, wgpu::BindGroup) {
+        world_buffer: &wgpu::Buffer,
+        sdf_buffer: &wgpu::Buffer,
+    ) -> (wgpu::ComputePipeline, wgpu::BindGroup) {
         let compute_bind_group_layout =
             wgpu_state
                 .device
@@ -225,7 +189,7 @@ impl BigWorldRenderer {
                         binding: 1,
                         resource: wgpu::BindingResource::Buffer {
                             0: wgpu::BufferBinding {
-                                buffer: &(brick_map_buffer),
+                                buffer: &(world_buffer),
                                 offset: 0,
                                 size: None,
                             },
@@ -235,7 +199,7 @@ impl BigWorldRenderer {
                         binding: 2,
                         resource: wgpu::BindingResource::Buffer {
                             0: wgpu::BufferBinding {
-                                buffer: &(bricks_buffer),
+                                buffer: &(sdf_buffer),
                                 offset: 0,
                                 size: None,
                             },
@@ -253,7 +217,107 @@ impl BigWorldRenderer {
                     },
                 ],
             });
-        return (compute_bind_group_layout, compute_bind_group);
+        let pipeline_layout =
+            wgpu_state
+                .device
+                .create_pipeline_layout(&wgpu::PipelineLayoutDescriptor {
+                    label: None,
+                    bind_group_layouts: &[&compute_bind_group_layout],
+                    push_constant_ranges: &[],
+                });
+        let cs_module = shader_module_init("./shaders/compute.comp.spv", &wgpu_state.device);
+        let compute_pipeline =
+            wgpu_state
+                .device
+                .create_compute_pipeline(&wgpu::ComputePipelineDescriptor {
+                    label: None,
+                    layout: Some(&pipeline_layout),
+                    module: &cs_module,
+                    entry_point: "main",
+                });
+        return (compute_pipeline, compute_bind_group);
+    }
+    fn init_sdf_pipeline(
+        wgpu_state: &WgpuState,
+        world_buffer: &wgpu::Buffer,
+        sdf_buffer: &wgpu::Buffer,
+    ) -> (wgpu::ComputePipeline, wgpu::BindGroup) {
+        let sdf_bind_group_layout =
+            wgpu_state
+                .device
+                .create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
+                    label: None,
+                    entries: &[
+                        wgpu::BindGroupLayoutEntry {
+                            binding: 0,
+                            visibility: wgpu::ShaderStages::COMPUTE,
+                            ty: wgpu::BindingType::Buffer {
+                                ty: wgpu::BufferBindingType::Storage { read_only: true },
+                                has_dynamic_offset: false,
+                                min_binding_size: None,
+                            },
+                            count: None,
+                        },
+                        wgpu::BindGroupLayoutEntry {
+                            binding: 1,
+                            visibility: wgpu::ShaderStages::COMPUTE,
+                            ty: wgpu::BindingType::Buffer {
+                                ty: wgpu::BufferBindingType::Storage { read_only: false },
+                                has_dynamic_offset: false,
+                                min_binding_size: None,
+                            },
+                            count: None,
+                        },
+                    ],
+                });
+        let sdf_bind_group = wgpu_state
+            .device
+            .create_bind_group(&wgpu::BindGroupDescriptor {
+                label: None,
+                layout: &sdf_bind_group_layout,
+                entries: &[
+                    wgpu::BindGroupEntry {
+                        binding: 0,
+                        resource: wgpu::BindingResource::Buffer {
+                            0: wgpu::BufferBinding {
+                                buffer: &(world_buffer),
+                                offset: 0,
+                                size: None,
+                            },
+                        },
+                    },
+                    wgpu::BindGroupEntry {
+                        binding: 1,
+                        resource: wgpu::BindingResource::Buffer {
+                            0: wgpu::BufferBinding {
+                                buffer: &(sdf_buffer),
+                                offset: 0,
+                                size: None,
+                            },
+                        },
+                    },
+                ],
+            });
+        let sdf_pipeline_layout =
+            wgpu_state
+                .device
+                .create_pipeline_layout(&wgpu::PipelineLayoutDescriptor {
+                    label: None,
+                    bind_group_layouts: &[&sdf_bind_group_layout],
+                    push_constant_ranges: &[],
+                });
+        let cs_module =
+            shader_module_init("./shaders/sdf_calculation.comp.spv", &wgpu_state.device);
+        let sdf_pipeline =
+            wgpu_state
+                .device
+                .create_compute_pipeline(&wgpu::ComputePipelineDescriptor {
+                    label: None,
+                    layout: Some(&sdf_pipeline_layout),
+                    module: &cs_module,
+                    entry_point: "main",
+                });
+        return (sdf_pipeline, sdf_bind_group);
     }
     pub fn update_all_buffers(&mut self, wgpu_state: &WgpuState, player: &Player, time_diff: f64) {
         let location = [
@@ -289,8 +353,8 @@ impl RenderPassable for BigWorldRenderer {
         frame: &wgpu::TextureView,
     ) {
         let mut cpass = encoder.begin_compute_pass(&wgpu::ComputePassDescriptor { label: None });
-        cpass.set_pipeline(&self.compute_pipeline);
-        cpass.set_bind_group(0, &self.compute_bind_group, &[]);
+        cpass.set_pipeline(&self.rendering_pipeline);
+        cpass.set_bind_group(0, &self.rendering_bind_group, &[]);
         cpass.insert_debug_marker("compute screen pixels");
         cpass.dispatch(
             (wgpu_state.size.width as f32 / 8.0).ceil() as u32,

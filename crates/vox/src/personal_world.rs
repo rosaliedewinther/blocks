@@ -17,7 +17,6 @@ use vox_world::algorithms::noise_default::NoiseDefault;
 use vox_world::big_world_renderer::BigWorldRenderer;
 use vox_world::player::Player;
 use vox_world::world::big_world::BigWorld;
-use vox_world::world::small_world::SmallWorld;
 use vox_world::world_gen::chunk_gen_thread::ChunkGenThread;
 use vox_world::world_gen::meta_chunk::MetaChunk;
 use winit::event::Event;
@@ -41,7 +40,7 @@ impl PersonalWorld {
     pub fn new(window: &Window, renderer: &Renderer, wgpu_state: &WgpuState) -> PersonalWorld {
         let world_renderer = BigWorldRenderer::new(wgpu_state, &renderer.texture_view);
         let world = BigWorld::new::<NoiseBracket>(0);
-        world.upload_all_brickmaps(wgpu_state, &world_renderer);
+        world.upload_world(wgpu_state, &world_renderer);
         PersonalWorld {
             world: world,
             //chunk_render_data: HashMap::new(),

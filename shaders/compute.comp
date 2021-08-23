@@ -7,18 +7,17 @@ struct Uniforms{
     float time;
     vec3 direction;
     vec3 sun_dir;
-    uint brickmap_size;
-    uint brick_size;
+    uint world_size;
     vec3[3] ray_cast_data;
     vec4[16] colors;
 };
 layout(local_size_x = 8, local_size_y = 8, local_size_z = 1) in;
 layout(rgba8ui, binding = 0) writeonly uniform uimage2D img_output;
-layout(binding = 1) readonly buffer brickmaps{
-    uint[] brick_index;
+layout(binding = 1) readonly buffer world_data{
+    uint[] world;
 };
-layout(binding = 2) readonly buffer bricks{
-    uint[] encoded_voxels;
+layout(binding = 2) readonly buffer sdf_data{
+    uint[] sdf;
 };
 layout(binding=3) readonly uniform camera_details{
     Uniforms uni;
@@ -75,35 +74,24 @@ uvec4 draw_skyline(vec3 direction, uvec4 pixel){
     return uvec4(mix(vec3(200,200,200), vec3(51,102,244), direction[1]), 255);
 }
 
-const uint OUT_OF_BOUNDS = 2147483647;
-
-uint get_brick_index(ivec3 location){
-    uvec3 which_brickmap = uvec3(location/(uni.brick_size * uni.brickmap_size));
-    if (which_brickmap[0] > 2 || which_brickmap[1] > 2 || which_brickmap[2] > 2){
-        return OUT_OF_BOUNDS; //max uint
-    }
-    uint brickmap_offset = uint((which_brickmap[0] + which_brickmap[1] * 3 + which_brickmap[2] * 9) * pow(uni.brickmap_size,3));
-    ivec3 which_brick = ivec3(mod(location/uni.brick_size, uni.brickmap_size));
-    uint brick_offset = uint(which_brick[0] + which_brick[1] * uni.brickmap_size + which_brick[2] * uni.brickmap_size * uni.brickmap_size);
-    return brick_index[brick_offset + brickmap_offset];
+bool block_in_world(ivec3 world_position){
+    return
+        world_position.x < uni.world_size &&
+        world_position.x > -1  &&
+        world_position.y < uni.world_size &&
+        world_position.y > -1 &&
+        world_position.z < uni.world_size &&
+        world_position.z > -1;
 }
 
-uvec4 get_voxel_color(ivec3 location){
-    //validate indices
-    uint brick_i = get_brick_index(location);
-    if (OUT_OF_BOUNDS == brick_i){
-        return uvec4(0, 0, 0, 0);
-    } else if (brick_i > 2097152){
-        return uvec4(0,0,0,254);
-    } else {
-        ivec3 which_voxel = ivec3(mod(location, uni.brick_size));
-        uint voxel_index = uint(which_voxel[0] + which_voxel[1] * uni.brick_size + which_voxel[2] * uni.brick_size * uni.brick_size);
-        uint voxel_data = encoded_voxels[(int(brick_i * pow(uni.brick_size, 3)) + voxel_index)/4];
-        uint voxel = uint(0xFF) & uint(voxel_data >> uint(8 * uint(mod(voxel_index,4))));
-        return uvec4(uni.colors[voxel]);
-    }
+uint get_block_id(ivec3 world_position){
+    uint position = world_position.x + world_position.y * uni.world_size + world_position.z * uni.world_size * uni.world_size;
+    uint shift = uint(mod(position, 4))*8;
+    return uint((world[position/4] >> shift) & 15);
 }
-
+vec4 get_voxel_color(uint voxel_id){
+    return uni.colors[voxel_id];
+}
 
 
 //https://www.researchgate.net/profile/Kai-Xiao-9/publication/233899848_Efficient_implementation_of_the_3D-DDA_ray_traversal_algorithm_on_GPU_and_its_application_in_radiation_dose_calculation/links/5acfaa9b4585154f3f47bf20/Efficient-implementation-of-the-3D-DDA-ray-traversal-algorithm-on-GPU-and-its-application-in-radiation-dose-calculation.pdf?origin=publication_detail
@@ -112,28 +100,19 @@ uvec4 trace_ray(vec3 direction, vec3 origin){
     int iter = 0;
 
     vec3 deltaDist = abs(vec3(length(direction))/direction);
-    vec3 deltaDistBig = abs(vec3(uni.brick_size)/direction);
     vec3 step = ivec3(sign(direction));
     vec3 sideDist = (sign(direction) * (vec3(current_voxel) - origin) + (sign(direction) * 0.5) + 0.5) * deltaDist;
-    //vec3 brickSideDist = (sign(direction) * (ivec3(current_voxel/uni.brick_size) - origin) + (sign(direction) * 0.5) + 0.5) * deltaDist;
 
-
-    bool big_step = false;
     bvec3 mask;
-    bool been_inside = false;
 
     while(iter < 1000){
-        uvec4 voxel = get_voxel_color(current_voxel);
+        if (!block_in_world(current_voxel)){
+            return uvec4(0,0,0,255);
+        }
 
+        uint block_id = get_block_id(current_voxel);
 
-        if (voxel[3] == 0){                     // out of visible world
-            if (been_inside){
-                return uvec4(0,0,0,255);
-            }
-        } else if (voxel[3] == 254){            // brick is empty, can accelerate
-            big_step = true;
-        } else if (voxel != uvec4(0,0,0,255)){  // voxel hit
-
+        if (block_id != 0){
             //ty iMplode nZ
             float shadow;
             if (mask.x) {
@@ -145,9 +124,8 @@ uvec4 trace_ray(vec3 direction, vec3 origin){
             if (mask.z) {
                 shadow = 0.75;
             }
-            return uvec4(shadow * voxel.xyz, 255);//voxel;
-        } else{
-            been_inside = true;
+            uvec4 voxel = uvec4(get_voxel_color(block_id));
+            return uvec4(shadow * voxel.xyz, voxel[3]);
         }
         iter+=1;
         mask = lessThanEqual(sideDist.xyz, min(sideDist.yzx, sideDist.zxy));
@@ -162,12 +140,9 @@ void main() {
     vec3 origin = uni.position;
     vec3 direction = generateRayDirection();
     uvec4 pixel = trace_ray(direction, origin);
-    if (pixel == vec4(0,0,0,255)){
+    /*if (pixel == vec4(0,0,0,255)){
         pixel = draw_skyline(direction, pixel);
         pixel = draw_sun(direction, pixel);
-    }
-
-
+    }*/
     imageStore(img_output, ivec2(gl_GlobalInvocationID.xy), pixel);
-    return;
 }
