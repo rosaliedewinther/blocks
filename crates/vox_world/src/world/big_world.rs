@@ -6,6 +6,7 @@ use crate::blocks::block_type::BlockType;
 use crate::player::Player;
 use crate::world_gen::chunk::Chunk;
 use crate::world_gen::generator::WorldGenerator;
+use crate::world_gen::hills::HillsWorldGenerator;
 use crate::world_gen::meta_chunk::MetaChunk;
 use crate::world_gen::standard::StandardWorldGenerator;
 use log::warn;
@@ -39,7 +40,7 @@ impl BigWorld {
         return None;
     }
     pub fn new<T: Noise>(seed: u32) -> BigWorld {
-        let generator = StandardWorldGenerator::<NoiseDefault>::new();
+        let generator = HillsWorldGenerator::<NoiseDefault>::new();
         let world = generator.generate_area(0, 0, 0, WORLD_SIZE);
 
         BigWorld {
@@ -57,6 +58,7 @@ impl BigWorld {
     }
     pub fn upload_world(&self, wgpu_state: &WgpuState, world_renderer: &BigWorldRenderer) {
         world_renderer.upload_world(&self.world, wgpu_state);
+        world_renderer.rebuild_sdf(wgpu_state);
     }
     pub fn upload_sdf(&self, wgpu_state: &WgpuState, world_renderer: &BigWorldRenderer) {
         todo!()

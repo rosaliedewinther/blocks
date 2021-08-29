@@ -1,27 +1,36 @@
-#version 440
+#version 460
 
 
 
 
 layout(local_size_x = 8, local_size_y = 8, local_size_z = 1) in;
-layout(binding = 0) readonly buffer world_data{
-    uint[] world;
-};
-layout(binding = 1) writeonly buffer sdf_data{
-    uint[] sdf;
-};
+
+layout(rgba8ui, binding = 0) readonly uniform uimage3D world;
+layout(rgba8ui, binding = 1) writeonly uniform uimage3D sdf;
+
+int world_size = 512;
 
 bool contains_block(){
     return true;
 }
 
-void store_stepcount(int steps){
-
+//steps has to be less than 255
+void store_stepcount(ivec3 world_position, uvec4 steps){
+    imageStore(sdf, world_position, uvec4(uint(steps & uint(255))));
 }
 
 void main() {
+
     uvec2 position = gl_GlobalInvocationID.xy;
-    int world_size = 256;
+    int x = int(position.x);
+    int y = int(position.y);
+    for (int z = 0; z < world_size; z++){
+        ivec3 position = ivec3(x,y,z);
+        store_stepcount(position, 1);
+    }
+
+
+    /*uvec2 position = gl_GlobalInvocationID.xy;
     int world_size_minus_one = world_size-1;
     //loop along x
     int stepcount = 1;
@@ -43,5 +52,5 @@ void main() {
     //loop along y
 
 
-    //loop along z
+    //loop along z*/
 }

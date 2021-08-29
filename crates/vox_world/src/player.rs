@@ -1,7 +1,7 @@
 use crate::world::big_world::BigWorld;
 use nalgebra::{Matrix3, Vector3};
 use std::f32::consts::PI;
-use vox_core::constants::COLORS;
+use vox_core::constants::{COLORS, WORLD_SIZE};
 use vox_core::positions::{ChunkPos, ObjectPos};
 use vox_core::utils::{get_rotation_matrix_y, get_rotation_matrix_z};
 use winit::event::VirtualKeyCode;
@@ -24,12 +24,12 @@ impl Player {
         Player {
             position: ObjectPos {
                 x: 0.0,
-                y: 0.0,
+                y: WORLD_SIZE as f64 - 3.0,
                 z: 0.0,
             },
             direction: Vector3::new(0f64, 0.0f64, 1.0f64),
             up: [0f64, 1.0f64, 0f64],
-            speed: 10f64,
+            speed: 100f64,
             camera_speed: 2.0f64,
             render_distance: 5000f64,
             generated_chunks_for: ChunkPos {

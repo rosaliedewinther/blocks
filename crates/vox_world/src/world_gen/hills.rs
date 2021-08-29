@@ -9,11 +9,11 @@ use std::time::Instant;
 use vox_core::constants::WORLD_SIZE;
 use wgpu::Instance;
 
-pub struct StandardWorldGenerator<T: Noise + std::marker::Sync> {
+pub struct HillsWorldGenerator<T: Noise + std::marker::Sync> {
     noise: T,
 }
 
-impl<T: Noise + std::marker::Sync> WorldGenerator for StandardWorldGenerator<T> {
+impl<T: Noise + std::marker::Sync> WorldGenerator for HillsWorldGenerator<T> {
     fn new() -> Self {
         Self {
             noise: T::new(1, 0, 6.0),
@@ -28,20 +28,30 @@ impl<T: Noise + std::marker::Sync> WorldGenerator for StandardWorldGenerator<T> 
         size: usize,
     ) -> Box<[BlockId]> {
         let timer = Instant::now();
-        let world_data: Vec<BlockId> = (0..size * size * size)
+        let heigthmap: Vec<f32> = (0..size * size)
             .into_par_iter()
             .enumerate()
             .map(|(index, val)| {
                 let x = (index % size) as f32;
-                let y = ((index / size) % size) as f32;
-                let z = (index / (size * size) % size) as f32;
+                let z = ((index / size) % size) as f32;
 
                 let noise_data = self.noise.get(
                     x_start as f32 + x / (WORLD_SIZE) as f32,
-                    y_start as f32 + y / (WORLD_SIZE) as f32,
+                    0.0,
                     z_start as f32 + z / (WORLD_SIZE) as f32,
                 );
-                if noise_data > 0.3 {
+                return noise_data;
+            })
+            .collect();
+        let world_data: Vec<BlockId> = (0..size * size * size)
+            .into_par_iter()
+            .enumerate()
+            .map(|(index, val)| {
+                let x = index % size;
+                let y = (index / size) % size;
+                let z = index / (size * size) % size;
+
+                if ((heigthmap[x + z * size] as f64 + 1.0) / 2.0) * size as f64 > y as f64 {
                     return ((x as i32 % 8) + 1) as BlockId;
                 }
                 return 0u8;
