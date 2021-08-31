@@ -1,7 +1,6 @@
 use crate::blocks::block::BlockId;
 use crate::player::Player;
 use log::warn;
-use std::collections::HashMap;
 use std::num::NonZeroU32;
 use vox_core::constants::WORLD_SIZE;
 use vox_render::compute_renderer::renderpassable::RenderPassable;
@@ -379,10 +378,10 @@ impl BigWorldRenderer {
 impl RenderPassable for BigWorldRenderer {
     fn do_render_pass<'a>(
         &'a mut self,
-        window: &Window,
+        _window: &Window,
         encoder: &mut CommandEncoder,
         wgpu_state: &WgpuState,
-        frame: &wgpu::TextureView,
+        _frame: &wgpu::TextureView,
     ) {
         let mut cpass = encoder.begin_compute_pass(&wgpu::ComputePassDescriptor { label: None });
         cpass.set_pipeline(&self.rendering_pipeline);

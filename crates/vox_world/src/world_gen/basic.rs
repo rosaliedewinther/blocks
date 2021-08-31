@@ -2,7 +2,6 @@ use crate::blocks::block::{get_blockid, get_blocktype};
 use crate::blocks::block_type::BlockType;
 use crate::world_gen::chunk::{Chunk, ChunkData};
 use noise::{Fbm, MultiFractal, NoiseFn, Seedable};
-use std::cmp::max;
 use vox_core::constants::{CHUNKSIZE, METACHUNKSIZE};
 use vox_core::positions::{ChunkPos, LocalBlockPos};
 

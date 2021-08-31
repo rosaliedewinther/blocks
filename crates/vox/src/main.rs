@@ -11,8 +11,7 @@ mod personal_world;
 fn main() {
     setup_logger().unwrap();
     let timer = Instant::now();
-
-    let mut game = VoxGame::new();
+    let game = VoxGame::new();
     game.run();
     warn!("game ran for {} seconds", timer.elapsed().as_secs_f64());
 }

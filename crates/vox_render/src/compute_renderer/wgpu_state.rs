@@ -1,5 +1,5 @@
 use futures::executor::block_on;
-use wgpu::{Device, Queue, Surface, TextureUsages};
+use wgpu::{Device, Queue, Surface};
 use winit::dpi::PhysicalSize;
 use winit::window::Window;
 
@@ -68,7 +68,7 @@ impl WgpuState {
         }
     }
 
-    fn resize(&mut self, new_size: winit::dpi::PhysicalSize<u32>) {
+    pub fn resize(&mut self, new_size: winit::dpi::PhysicalSize<u32>) {
         self.size = new_size;
         self.sc_desc.width = new_size.width;
         self.sc_desc.height = new_size.height;

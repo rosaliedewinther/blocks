@@ -1,7 +1,6 @@
 use crate::blocks::block::{get_blocktype, BlockId};
 use crate::blocks::block_type::BlockType;
 use crate::world_gen::basic::ChunkGenerator;
-use bytemuck::{Pod, Zeroable};
 use serde::{Deserialize, Serialize};
 use serde_big_array::big_array;
 use vox_core::constants::CHUNKSIZE;

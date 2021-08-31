@@ -1,13 +1,11 @@
 use crate::algorithms::noise_abstraction::Noise;
-use crate::blocks::block::{get_blockid, BlockId};
-use crate::blocks::block_type::BlockType;
+use crate::blocks::block::BlockId;
 use crate::world_gen::generator::WorldGenerator;
 use rayon::iter::IndexedParallelIterator;
 use rayon::iter::ParallelIterator;
-use rayon::prelude::{IntoParallelIterator, IntoParallelRefIterator, IntoParallelRefMutIterator};
+use rayon::prelude::IntoParallelIterator;
 use std::time::Instant;
 use vox_core::constants::WORLD_SIZE;
-use wgpu::Instance;
 
 pub struct HillsWorldGenerator<T: Noise + std::marker::Sync> {
     noise: T,
@@ -23,7 +21,7 @@ impl<T: Noise + std::marker::Sync> WorldGenerator for HillsWorldGenerator<T> {
     fn generate_area(
         &self,
         x_start: i32,
-        y_start: i32,
+        _y_start: i32,
         z_start: i32,
         size: usize,
     ) -> Box<[BlockId]> {
@@ -31,7 +29,7 @@ impl<T: Noise + std::marker::Sync> WorldGenerator for HillsWorldGenerator<T> {
         let heigthmap: Vec<f32> = (0..size * size)
             .into_par_iter()
             .enumerate()
-            .map(|(index, val)| {
+            .map(|(index, _val)| {
                 let x = (index % size) as f32;
                 let z = ((index / size) % size) as f32;
 
@@ -46,7 +44,7 @@ impl<T: Noise + std::marker::Sync> WorldGenerator for HillsWorldGenerator<T> {
         let world_data: Vec<BlockId> = (0..size * size * size)
             .into_par_iter()
             .enumerate()
-            .map(|(index, val)| {
+            .map(|(index, _val)| {
                 let x = index % size;
                 let y = (index / size) % size;
                 let z = index / (size * size) % size;
@@ -64,7 +62,7 @@ impl<T: Noise + std::marker::Sync> WorldGenerator for HillsWorldGenerator<T> {
         return world_data.into_boxed_slice();
     }
 
-    fn add_generation_layer(&self, generation_function: fn(i32, i32, i32, usize)) {
+    fn add_generation_layer(&self, _generation_function: fn(i32, i32, i32, usize)) {
         todo!()
     }
 }

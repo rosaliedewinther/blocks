@@ -1,6 +1,5 @@
 use crate::algorithms::noise_abstraction::Noise;
 use bracket_noise::prelude::{CellularDistanceFunction, CellularReturnType, FastNoise, NoiseType};
-use noise::{MultiFractal, NoiseFn, Seedable};
 
 pub struct NoiseBracket {
     noise: bracket_noise::prelude::FastNoise,

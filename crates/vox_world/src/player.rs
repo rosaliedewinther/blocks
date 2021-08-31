@@ -1,7 +1,6 @@
-use crate::world::big_world::BigWorld;
 use nalgebra::{Matrix3, Vector3};
 use std::f32::consts::PI;
-use vox_core::constants::{COLORS, WORLD_SIZE};
+use vox_core::constants::WORLD_SIZE;
 use vox_core::positions::{ChunkPos, ObjectPos};
 use vox_core::utils::{get_rotation_matrix_y, get_rotation_matrix_z};
 use winit::event::VirtualKeyCode;

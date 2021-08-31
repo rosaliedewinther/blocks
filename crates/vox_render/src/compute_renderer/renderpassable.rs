@@ -1,5 +1,4 @@
 use crate::compute_renderer::wgpu_state::WgpuState;
-use std::collections::HashMap;
 use winit::window::Window;
 
 pub trait RenderPassable {

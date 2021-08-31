@@ -1,9 +1,7 @@
 use crate::personal_world::PersonalWorld;
-use std::time::Instant;
 use vox_render::compute_renderer::renderer::Renderer;
 use vox_render::compute_renderer::wgpu_state::WgpuState;
 use winit::dpi::PhysicalSize;
-use winit::event::Event;
 use winit::window::Window;
 use winit_window_control::input::input::Input;
 use winit_window_control::main_loop::{
@@ -30,7 +28,7 @@ impl VoxGame {
 }
 
 impl Game for VoxGame {
-    fn on_tick(&mut self, dt: f64) -> UpdateResult {
+    fn on_tick(&mut self, _dt: f64) -> UpdateResult {
         let pw = &mut self.personal_world.as_mut().unwrap();
 
         pw.on_game_tick(0.1);
@@ -65,5 +63,9 @@ impl Game for VoxGame {
 
         return InitResult::Continue;
     }
-    fn on_resize(&mut self, physical_size: PhysicalSize<u32>) {}
+    fn on_resize(&mut self, physical_size: PhysicalSize<u32>) {
+        self.wgpu_state.as_mut().unwrap().resize(physical_size);
+        let wgpu_state = self.wgpu_state.as_ref().unwrap();
+        self.renderer.as_mut().unwrap().resized(wgpu_state);
+    }
 }

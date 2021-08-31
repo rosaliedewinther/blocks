@@ -1,13 +1,11 @@
 use crate::compute_renderer::renderpassable::RenderPassable;
 use crate::compute_renderer::shader_modules::shader_module_init;
-use crate::compute_renderer::uniforms::Uniforms;
 use crate::compute_renderer::vertex::Vertex;
 use crate::compute_renderer::wgpu_state::WgpuState;
 use core::default::Default;
 use wgpu::util::DeviceExt;
 use wgpu::{
-    BindGroup, BindGroupLayout, BlendFactor, BlendOperation, BufferBinding, ComputePipeline,
-    RenderPipeline, Sampler, Texture, TextureView, TextureViewDescriptor, TextureViewDimension,
+    BindGroup, BindGroupLayout, BlendFactor, BlendOperation, RenderPipeline, Texture, TextureView,
 };
 
 pub struct Renderer {
@@ -133,7 +131,7 @@ impl Renderer {
             });
         return render_pipeline;
     }
-    fn resized(&mut self, wgpu: &mut WgpuState) {
+    pub fn resized(&mut self, wgpu: &WgpuState) {
         let (bind_group, _, _) = Renderer::init_texture(wgpu);
         self.texture_bind_group = bind_group;
     }
@@ -180,7 +178,7 @@ impl Renderer {
         let num_vertices = vertices.len() as u32;
         return (vertex_buffer, index_buffer, num_indices, num_vertices);
     }
-    fn remake_texture(wgpu: &mut WgpuState) -> (Texture, TextureView) {
+    fn remake_texture(wgpu: &WgpuState) -> (Texture, TextureView) {
         let texture_size = wgpu::Extent3d {
             width: wgpu.size.width,
             height: wgpu.size.height,
@@ -208,7 +206,7 @@ impl Renderer {
         return (diffuse_texture, diffuse_texture_view);
     }
 
-    fn init_texture(wgpu: &mut WgpuState) -> (BindGroup, BindGroupLayout, wgpu::TextureView) {
+    fn init_texture(wgpu: &WgpuState) -> (BindGroup, BindGroupLayout, wgpu::TextureView) {
         let (_, diffuse_texture_view) = Renderer::remake_texture(wgpu);
         let texture_bind_group_layout =
             wgpu.device
