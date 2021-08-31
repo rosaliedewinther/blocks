@@ -4,29 +4,29 @@
 
 
 layout(local_size_x = 8, local_size_y = 8, local_size_z = 1) in;
-
 layout(rgba8ui, binding = 0) readonly uniform uimage3D world;
 layout(rgba8ui, binding = 1) writeonly uniform uimage3D sdf;
 
-int world_size = 512;
+int world_size = 256;
 
-bool contains_block(){
-    return true;
+bool contains_block(ivec3 world_position){
+    ivec3 position = ivec3(world_position.x/4, world_position.y, world_position.z);
+    int offset = int(mod(world_position.x, 4));
+    return bool(imageLoad(world, position)[offset]);
 }
 
 //steps has to be less than 255
 void store_stepcount(ivec3 world_position, uvec4 steps){
-    imageStore(sdf, world_position, uvec4(uint(steps & uint(255))));
+    imageStore(sdf, world_position, steps);
 }
 
 void main() {
-
     uvec2 position = gl_GlobalInvocationID.xy;
     int x = int(position.x);
     int y = int(position.y);
-    for (int z = 0; z < world_size; z++){
-        ivec3 position = ivec3(x,y,z);
-        store_stepcount(position, 1);
+    for (int z = 0; z < world_size/4; z++){
+        ivec3 position = ivec3(x/4,y,z);
+        store_stepcount(position, uvec4(1));
     }
 
 

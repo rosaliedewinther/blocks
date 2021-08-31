@@ -59,14 +59,16 @@ fn main() -> Result<()> {
     // spawn multiple processes to handle this, but it would probably
     // be better just to only compile shaders that have been changed
     // recently.
+    let mut options = shaderc::CompileOptions::new().unwrap();
+    options.set_optimization_level(shaderc::OptimizationLevel::Zero);
+    //options.set_generate_debug_info();
+
     for shader in shaders {
         // This tells cargo to rerun this script if something in /src/ changes.
         println!(
             "cargo:rerun-if-changed={}",
             shader.src_path.as_os_str().to_str().unwrap()
         );
-        let mut options = shaderc::CompileOptions::new().unwrap();
-        options.set_optimization_level(shaderc::OptimizationLevel::Zero);
 
         let compiled = compiler.compile_into_spirv(
             &shader.src,
