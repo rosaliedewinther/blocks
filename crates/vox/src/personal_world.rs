@@ -2,7 +2,7 @@ use std::collections::HashSet;
 use vox_core::positions::{ChunkPos, MetaChunkPos};
 use vox_render::compute_renderer::renderer::Renderer;
 use vox_render::compute_renderer::wgpu_state::WgpuState;
-use vox_world::algorithms::noise_bracket::NoiseBracket;
+use vox_world::algorithms::noise_default::NoiseDefault;
 use vox_world::big_world_renderer::BigWorldRenderer;
 use vox_world::player::Player;
 use vox_world::world::big_world::BigWorld;
@@ -24,7 +24,7 @@ pub struct PersonalWorld {
 impl PersonalWorld {
     pub fn new(_window: &Window, renderer: &Renderer, wgpu_state: &WgpuState) -> PersonalWorld {
         let world_renderer = BigWorldRenderer::new(wgpu_state, &renderer.texture_view);
-        let world = BigWorld::new::<NoiseBracket>(0);
+        let world = BigWorld::new::<NoiseDefault>(0);
         world.upload_world(wgpu_state, &world_renderer);
         PersonalWorld {
             world: world,

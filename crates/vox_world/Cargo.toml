@@ -11,7 +11,6 @@ rayon = "1.4"
 vox_core = {path="../vox_core"}
 log = "0.4"
 vox_render = {path="../vox_render"}
-vox_io = {path="../vox_io"}
 winit = "0.25"
 winit_window_control = {git = "https://github.com/jasperdewinther/winit_abstraction", branch = "main"}
 #winit_window_control = {path="../../../winit_abstraction"}
@@ -23,5 +22,3 @@ noise="0.7"
 rand_distr ="0.4"
 bytemuck = { version = "1.4", features = [ "derive" ] }
 serde-big-array = "0.3"
-simdnoise = "3.1"
-bracket-noise = "0.8"

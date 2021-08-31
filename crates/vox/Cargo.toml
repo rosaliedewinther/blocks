@@ -12,14 +12,12 @@ log = "0.4"
 fern = "0.6"
 chrono = "0.4"
 noise="0.7"
-cgmath = "0.18"
 winit_window_control = {git = "https://github.com/jasperdewinther/winit_abstraction", branch = "main"}
 #winit_window_control = {path="../../../winit_abstraction"}
 serde-big-array = "0.3"
 rand_distr ="0.4"
 vox_core = {path="../vox_core"}
 vox_render = {path="../vox_render"}
-vox_io = {path="../vox_io"}
 vox_world = {path="../vox_world"}
 winit = "0.25"
 rayon = "1.4"
@@ -28,7 +26,6 @@ wgpu = "0.10"
 
 [build-dependencies]
 anyhow = "1.0"
-fs_extra = "1.1"
 glob = "0.3"
 shaderc = "0.7"
 rayon = "1.5"
