@@ -26,31 +26,11 @@ void main() {
     int y = int(position.y);
     for (int z = 0; z < world_size/4; z++){
         ivec3 position = ivec3(x/4,y,z);
-        store_stepcount(position, uvec4(1));
+        uvec4 data = uvec4(0);
+        data[0] = uint(contains_block(position + ivec3(0,0,0)));
+        data[1] = uint(contains_block(position + ivec3(1,0,0)));
+        data[2] = uint(contains_block(position + ivec3(2,0,0)));
+        data[3] = uint(contains_block(position + ivec3(3,0,0)));
+        store_stepcount(position, data);
     }
-
-
-    /*uvec2 position = gl_GlobalInvocationID.xy;
-    int world_size_minus_one = world_size-1;
-    //loop along x
-    int stepcount = 1;
-    for (int i = 0;i< world_size; i++){
-        if (contains_block()){
-            stepcount = 1;
-        } else {
-            store_stepcount(stepcount);
-        }
-    }
-    stepcount = 0;
-    for(int i = world_size_minus_one; i >= 0; i--){
-
-    }
-
-
-
-
-    //loop along y
-
-
-    //loop along z*/
 }

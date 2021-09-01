@@ -1,6 +1,7 @@
 #version 460
 
 float PI = 3.1415926538;
+float sqrt_three = 1.732050808;
 
 struct Uniforms{
     vec3 position;
@@ -85,11 +86,14 @@ uint get_block_id(ivec3 world_position){
     int offset = int(mod(world_position.x, 4));
     return uint(imageLoad(world, position)[offset]);
 }
+uint get_sdf_value(ivec3 world_position){
+    ivec3 position = ivec3(world_position.x/4, world_position.y, world_position.z);
+    int offset = int(mod(world_position.x, 4));
+    return uint(imageLoad(sdf, position)[offset]);
+}
 vec4 get_voxel_color(uint voxel_id){
     return uni.colors[voxel_id];
 }
-
-
 //https://www.researchgate.net/profile/Kai-Xiao-9/publication/233899848_Efficient_implementation_of_the_3D-DDA_ray_traversal_algorithm_on_GPU_and_its_application_in_radiation_dose_calculation/links/5acfaa9b4585154f3f47bf20/Efficient-implementation-of-the-3D-DDA-ray-traversal-algorithm-on-GPU-and-its-application-in-radiation-dose-calculation.pdf?origin=publication_detail
 uvec4 trace_ray(vec3 direction, vec3 origin){
     ivec3 current_voxel = ivec3(origin);
@@ -102,13 +106,15 @@ uvec4 trace_ray(vec3 direction, vec3 origin){
     bvec3 mask;
 
     while(iter < 500){
+        //check if voxel is inside world
         if (!block_in_world(current_voxel)){
             return uvec4(0,0,0,255);
         }
+        //check if voxel is hit
+        uint sdf_value = get_sdf_value(current_voxel);
+        if (sdf_value == 0){
+            uint block_id = get_block_id(current_voxel);
 
-        uint block_id = get_block_id(current_voxel);
-
-        if (block_id != 0){
             //ty iMplode nZ
             float shadow;
             if (mask.x) {
@@ -124,9 +130,14 @@ uvec4 trace_ray(vec3 direction, vec3 origin){
             return uvec4(shadow * voxel.xyz, voxel[3]);
         }
         iter+=1;
-        mask = lessThanEqual(sideDist.xyz, min(sideDist.yzx, sideDist.zxy));
-        sideDist += vec3(mask) * deltaDist;
-        current_voxel += ivec3(vec3(mask)*step);
+        if (sdf_value == 1){
+            mask = lessThanEqual(sideDist.xyz, min(sideDist.yzx, sideDist.zxy));
+            sideDist += vec3(mask) * deltaDist;
+            current_voxel += ivec3(vec3(mask)*step);
+        } else {
+            current_voxel += ivec3(direction * (sdf_value/sqrt_three));
+            sideDist = (sign(direction) * (vec3(current_voxel) - origin) + (sign(direction) * 0.5) + 0.5) * deltaDist;
+        }
     }
     return uvec4(0,0,0,255);
 }
