@@ -19,8 +19,8 @@ struct Uniforms{
 };
 layout(local_size_x = 8, local_size_y = 8, local_size_z = 1) in;
 layout(rgba8ui, binding = 0) writeonly uniform uimage2D img_output;
-layout(rgba8ui, binding = 1) readonly uniform uimage3D world;
-layout(rgba8ui, binding = 2) readonly uniform uimage3D sdf;
+layout(r8ui, binding = 1) readonly uniform uimage3D world;
+layout(r8ui, binding = 2) readonly uniform uimage3D sdf;
 layout(binding=3) readonly uniform camera_details{
     Uniforms uni;
 };
@@ -87,14 +87,14 @@ bool block_in_world(ivec3 world_position){
 }
 
 uint get_block_id(ivec3 world_position){
-    ivec3 position = ivec3(world_position.x/4, world_position.y, world_position.z);
-    int offset = int(mod(world_position.x, 4));
-    return uint(imageLoad(world, position)[offset]);
+    //ivec3 position = ivec3(world_position.x/4, world_position.y, world_position.z);
+    //int offset = int(mod(world_position.x, 4));
+    return uint(imageLoad(world, world_position));
 }
 uint get_sdf_value(ivec3 world_position){
-    ivec3 position = ivec3(world_position.x/4, world_position.y, world_position.z);
-    int offset = int(mod(world_position.x, 4));
-    return uint(imageLoad(sdf, position)[offset]);
+    //ivec3 position = ivec3(world_position.x/4, world_position.y, world_position.z);
+    //int offset = int(mod(world_position.x, 4));
+    return uint(imageLoad(sdf, world_position));
 }
 vec4 get_voxel_color(uint voxel_id){
     return uni.colors[voxel_id];
@@ -140,12 +140,12 @@ uvec4 trace_ray(vec3 direction, vec3 origin){
             }
         }
         iter+=1;
-        if (sdf_value == 1){
+        if (sdf_value <= 4){
             mask = lessThanEqual(sideDist.xyz, min(sideDist.yzx, sideDist.zxy));
             sideDist += vec3(mask) * deltaDist;
             current_voxel += ivec3(vec3(mask)*step);
         } else {
-            current_voxel += ivec3(direction * (sdf_value/sqrt_three));
+            current_voxel = ivec3(vec3(current_voxel) + (deltaDist) + vec3(direction * (sdf_value)));
             sideDist = (sign(direction) * (vec3(current_voxel) - origin) + (sign(direction) * 0.5) + 0.5) * deltaDist;
         }
     }

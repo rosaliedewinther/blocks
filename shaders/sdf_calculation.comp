@@ -4,34 +4,110 @@
 
 
 layout(local_size_x = 8, local_size_y = 8, local_size_z = 1) in;
-layout(rgba8ui, binding = 0) readonly uniform uimage3D world;
-layout(rgba8ui, binding = 1) writeonly uniform uimage3D sdf;
+layout(r8ui, binding = 0) readonly uniform uimage3D world;
+layout(r8ui, binding = 1) uniform uimage3D sdf;
 
-int world_size = 256;
+int world_size = 512;
 
 bool contains_block(ivec3 world_position){
-    ivec3 position = ivec3(world_position.x/4, world_position.y, world_position.z);
-    int offset = int(mod(world_position.x, 4));
-    return !bool(imageLoad(world, position)[offset]);
+    return bool(imageLoad(world, world_position));
 }
 
 //steps has to be less than 255
-void store_stepcount(ivec3 world_position, uvec4 steps){
-    imageStore(sdf, world_position, steps);
+void store_stepcount(ivec3 world_position, uint steps){
+    imageStore(sdf, world_position, uvec4(steps));
+}
+uint get_stepcount(ivec3 world_position){
+    return uint(imageLoad(sdf, world_position));
+}
+
+void populate_along_x_axis(vec2 position){
+    int z = int(position.x);
+    int y = int(position.y);
+    uint steps = 255;
+    for (int x = 0; x < world_size; x++){
+        ivec3 position = ivec3(x,y,z);
+        if (contains_block(position)){
+            steps = 0;
+        }
+        store_stepcount(position, steps);
+        steps +=1;
+        steps = max(255, steps);
+    }
+    steps = 255;
+    for (int x = world_size-1; x >= 0; x--){
+        ivec3 position = ivec3(x,y,z);
+        if (contains_block(position)){
+            steps = 0;
+        }
+        if (get_stepcount(position) > steps){
+            store_stepcount(position, steps);
+        }
+        steps +=1;
+        steps = max(255, steps);
+    }
+}
+void populate_along_y_axis(vec2 position){
+    int x = int(position.x);
+    int z = int(position.y);
+    uint steps = 255;
+    for (int y = 0; y < world_size; y++){
+        ivec3 position = ivec3(x,y,z);
+        if (contains_block(position)){
+            steps = 0;
+        }
+        if (get_stepcount(position) > steps){
+            store_stepcount(position, steps);
+        }
+        steps +=1;
+        steps = max(255, steps);
+    }
+    steps = 255;
+    for (int y = world_size-1; y >= 0; y--){
+        ivec3 position = ivec3(x,y,z);
+        if (contains_block(position)){
+            steps = 0;
+        }
+        if (get_stepcount(position) > steps){
+            store_stepcount(position, steps);
+        }
+        steps +=1;
+        steps = max(255, steps);
+    }
+}
+
+void populate_along_z_axis(vec2 position){
+    int x = int(position.x);
+    int y = int(position.y);
+    uint steps = 255;
+    for (int z = 0; z < world_size; z++){
+        ivec3 position = ivec3(x,y,z);
+        if (contains_block(position)){
+            steps = 0;
+        }
+        if (get_stepcount(position) > steps){
+            store_stepcount(position, steps);
+        }
+        steps +=1;
+        steps = max(255, steps);
+    }
+    steps = 255;
+    for (int z = world_size-1; z >= 0; z--){
+        ivec3 position = ivec3(x,y,z);
+        if (contains_block(position)){
+            steps = 0;
+        }
+        if (get_stepcount(position) > steps){
+            store_stepcount(position, steps);
+        }
+        steps +=1;
+        steps = max(255, steps);
+    }
 }
 
 void main() {
     uvec2 position = gl_GlobalInvocationID.xy;
-    int z = int(position.x);
-    int y = int(position.y);
-    for (int x = 0; x < world_size/4; x++){
-        ivec3 position = ivec3(x*4,y,z);
-        uvec4 data = uvec4(0);
-        data[0] = uint(contains_block(position + ivec3(0,0,0)));
-        data[1] = uint(contains_block(position + ivec3(1,0,0)));
-        data[2] = uint(contains_block(position + ivec3(2,0,0)));
-        data[3] = uint(contains_block(position + ivec3(3,0,0)));
-        position = ivec3(x,y,z);
-        store_stepcount(position, data);
-    }
+    populate_along_x_axis(position);
+    populate_along_y_axis(position);
+    populate_along_z_axis(position);
 }

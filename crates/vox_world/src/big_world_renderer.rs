@@ -66,7 +66,7 @@ impl BigWorldRenderer {
     }
     fn init_world_buffer(wgpu_state: &WgpuState) -> (wgpu::Texture, wgpu::TextureView) {
         let texture_size = wgpu::Extent3d {
-            width: WORLD_SIZE as u32 / 4,
+            width: WORLD_SIZE as u32,
             height: WORLD_SIZE as u32,
             depth_or_array_layers: WORLD_SIZE as u32,
         };
@@ -75,13 +75,13 @@ impl BigWorldRenderer {
             mip_level_count: 1,
             sample_count: 1,
             dimension: wgpu::TextureDimension::D3,
-            format: wgpu::TextureFormat::Rgba8Uint,
+            format: wgpu::TextureFormat::R8Uint,
             usage: wgpu::TextureUsages::STORAGE_BINDING | wgpu::TextureUsages::COPY_DST,
             label: Some("sdf_texture"),
         });
         let texture_view = texture.create_view(&wgpu::TextureViewDescriptor {
             label: Some("sdf_texture_view"),
-            format: Some(wgpu::TextureFormat::Rgba8Uint),
+            format: Some(wgpu::TextureFormat::R8Uint),
             dimension: Some(wgpu::TextureViewDimension::D3),
             aspect: Default::default(),
             base_mip_level: 0,
@@ -94,7 +94,7 @@ impl BigWorldRenderer {
     }
     fn init_sdf_buffer(wgpu_state: &WgpuState) -> (wgpu::Texture, wgpu::TextureView) {
         let texture_size = wgpu::Extent3d {
-            width: WORLD_SIZE as u32 / 4,
+            width: WORLD_SIZE as u32,
             height: WORLD_SIZE as u32,
             depth_or_array_layers: WORLD_SIZE as u32,
         };
@@ -103,13 +103,13 @@ impl BigWorldRenderer {
             mip_level_count: 1,
             sample_count: 1,
             dimension: wgpu::TextureDimension::D3,
-            format: wgpu::TextureFormat::Rgba8Uint,
+            format: wgpu::TextureFormat::R8Uint,
             usage: wgpu::TextureUsages::STORAGE_BINDING,
             label: Some("sdf_texture"),
         });
         let texture_view = texture.create_view(&wgpu::TextureViewDescriptor {
             label: Some("sdf_texture_view"),
-            format: Some(wgpu::TextureFormat::Rgba8Uint),
+            format: Some(wgpu::TextureFormat::R8Uint),
             dimension: Some(wgpu::TextureViewDimension::D3),
             aspect: Default::default(),
             base_mip_level: 0,
@@ -166,7 +166,7 @@ impl BigWorldRenderer {
                 aspect: Default::default(),
             },
             wgpu::Extent3d {
-                width: WORLD_SIZE as u32 / 4,
+                width: WORLD_SIZE as u32,
                 height: WORLD_SIZE as u32,
                 depth_or_array_layers: WORLD_SIZE as u32,
             },
@@ -202,7 +202,7 @@ impl BigWorldRenderer {
                             ty: wgpu::BindingType::StorageTexture {
                                 access: wgpu::StorageTextureAccess::ReadOnly,
                                 view_dimension: wgpu::TextureViewDimension::D3,
-                                format: wgpu::TextureFormat::Rgba8Uint,
+                                format: wgpu::TextureFormat::R8Uint,
                             },
                             count: None,
                         },
@@ -212,7 +212,7 @@ impl BigWorldRenderer {
                             ty: wgpu::BindingType::StorageTexture {
                                 access: wgpu::StorageTextureAccess::ReadOnly,
                                 view_dimension: wgpu::TextureViewDimension::D3,
-                                format: wgpu::TextureFormat::Rgba8Uint,
+                                format: wgpu::TextureFormat::R8Uint,
                             },
                             count: None,
                         },
@@ -296,7 +296,7 @@ impl BigWorldRenderer {
                             ty: wgpu::BindingType::StorageTexture {
                                 access: wgpu::StorageTextureAccess::ReadOnly,
                                 view_dimension: wgpu::TextureViewDimension::D3,
-                                format: wgpu::TextureFormat::Rgba8Uint,
+                                format: wgpu::TextureFormat::R8Uint,
                             },
                             count: None,
                         },
@@ -304,9 +304,9 @@ impl BigWorldRenderer {
                             binding: 1,
                             visibility: wgpu::ShaderStages::COMPUTE,
                             ty: wgpu::BindingType::StorageTexture {
-                                access: wgpu::StorageTextureAccess::WriteOnly,
+                                access: wgpu::StorageTextureAccess::ReadWrite,
                                 view_dimension: wgpu::TextureViewDimension::D3,
-                                format: wgpu::TextureFormat::Rgba8Uint,
+                                format: wgpu::TextureFormat::R8Uint,
                             },
                             count: None,
                         },

@@ -71,6 +71,5 @@ impl Uniforms {
             [qy[0] as f32, qy[1] as f32, qy[2] as f32, 0.0],
             [p1m[0] as f32, p1m[1] as f32, p1m[2] as f32, 0.0],
         ];
-        println!("{:?}", self);
     }
 }
