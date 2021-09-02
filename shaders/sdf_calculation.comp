@@ -12,7 +12,7 @@ int world_size = 256;
 bool contains_block(ivec3 world_position){
     ivec3 position = ivec3(world_position.x/4, world_position.y, world_position.z);
     int offset = int(mod(world_position.x, 4));
-    return bool(imageLoad(world, position)[offset]);
+    return !bool(imageLoad(world, position)[offset]);
 }
 
 //steps has to be less than 255
@@ -22,15 +22,16 @@ void store_stepcount(ivec3 world_position, uvec4 steps){
 
 void main() {
     uvec2 position = gl_GlobalInvocationID.xy;
-    int x = int(position.x);
+    int z = int(position.x);
     int y = int(position.y);
-    for (int z = 0; z < world_size/4; z++){
-        ivec3 position = ivec3(x/4,y,z);
+    for (int x = 0; x < world_size/4; x++){
+        ivec3 position = ivec3(x*4,y,z);
         uvec4 data = uvec4(0);
         data[0] = uint(contains_block(position + ivec3(0,0,0)));
         data[1] = uint(contains_block(position + ivec3(1,0,0)));
         data[2] = uint(contains_block(position + ivec3(2,0,0)));
         data[3] = uint(contains_block(position + ivec3(3,0,0)));
+        position = ivec3(x,y,z);
         store_stepcount(position, data);
     }
 }

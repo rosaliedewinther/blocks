@@ -366,6 +366,7 @@ impl BigWorldRenderer {
             time_diff,
             direction,
             [wgpu_state.size.width, wgpu_state.size.height],
+            player.view_type,
         );
         wgpu_state.queue.write_buffer(
             &self.uniform_buffer,

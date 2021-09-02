@@ -1,3 +1,4 @@
+use crate::compute_renderer::view_type::ViewType;
 use nalgebra::Vector3;
 use std::f64::consts::PI;
 use vox_core::constants::{COLORS, WORLD_SIZE};
@@ -12,6 +13,8 @@ pub struct Uniforms {
     _padding1: f32,
     sun_dir: [f32; 3],
     world_size: u32,
+    view_type: u32,
+    _padding2: [f32; 3],
     ray_cast_data: [[f32; 4]; 3],
     colors: [[f32; 4]; 256],
 }
@@ -25,6 +28,8 @@ impl Uniforms {
             _padding1: 0.0,
             sun_dir: [0.0, 1.0, -1.0],
             world_size: WORLD_SIZE as u32,
+            view_type: 0,
+            _padding2: [0.0, 0.0, 0.0],
             ray_cast_data: [[0.0; 4]; 3],
             colors: COLORS,
         }
@@ -36,7 +41,9 @@ impl Uniforms {
         time_diff: f64,
         viewing_dir: [f32; 3],
         screensize: [u32; 2],
+        view_type: ViewType,
     ) {
+        self.view_type = view_type as u32;
         self.time += time_diff as f32;
         self.viewer_pos = viewer_pos;
         self.viewing_dir = viewing_dir;
@@ -64,5 +71,6 @@ impl Uniforms {
             [qy[0] as f32, qy[1] as f32, qy[2] as f32, 0.0],
             [p1m[0] as f32, p1m[1] as f32, p1m[2] as f32, 0.0],
         ];
+        println!("{:?}", self);
     }
 }

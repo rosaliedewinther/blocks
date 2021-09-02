@@ -2,6 +2,10 @@
 
 float PI = 3.1415926538;
 float sqrt_three = 1.732050808;
+uint VIEWTYPE_STANDARD = 1;
+uint VIEWTYPE_COMPLEXITY = 2;
+uint VIEWTYPE_UNSHADED = 3;
+
 
 struct Uniforms{
     vec3 position;
@@ -9,6 +13,7 @@ struct Uniforms{
     vec3 direction;
     vec3 sun_dir;
     uint world_size;
+    uint view_type;
     vec3[3] ray_cast_data;
     vec4[16] colors;
 };
@@ -114,20 +119,25 @@ uvec4 trace_ray(vec3 direction, vec3 origin){
         uint sdf_value = get_sdf_value(current_voxel);
         if (sdf_value == 0){
             uint block_id = get_block_id(current_voxel);
-
-            //ty iMplode nZ
-            float shadow;
-            if (mask.x) {
-                shadow = 0.5;
-            }
-            if (mask.y) {
-                shadow = 1.0;
-            }
-            if (mask.z) {
-                shadow = 0.75;
-            }
             uvec4 voxel = uvec4(get_voxel_color(block_id));
-            return uvec4(shadow * voxel.xyz, voxel[3]);
+            if (uni.view_type == VIEWTYPE_STANDARD){
+                //ty iMplode nZ
+                float shadow;
+                if (mask.x) {
+                    shadow = 0.5;
+                }
+                if (mask.y) {
+                    shadow = 1.0;
+                }
+                if (mask.z) {
+                    shadow = 0.75;
+                }
+                return uvec4(shadow * voxel.xyz, voxel[3]);
+            } else if (uni.view_type == VIEWTYPE_UNSHADED){
+                return uvec4(voxel.xyz, voxel[3]);
+            } else if (uni.view_type == VIEWTYPE_COMPLEXITY){
+                return uvec4(max(pow(1.06, iter),1), 0,0, 255);
+            }
         }
         iter+=1;
         if (sdf_value == 1){

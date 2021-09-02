@@ -3,6 +3,7 @@ use std::f32::consts::PI;
 use vox_core::constants::WORLD_SIZE;
 use vox_core::positions::{ChunkPos, ObjectPos};
 use vox_core::utils::{get_rotation_matrix_y, get_rotation_matrix_z};
+use vox_render::compute_renderer::view_type::ViewType;
 use winit::event::VirtualKeyCode;
 use winit_window_control::input::input::Input;
 
@@ -16,6 +17,7 @@ pub struct Player {
     pub render_distance: f64,
     pub generated_chunks_for: ChunkPos,
     pub gravity: f64,
+    pub view_type: ViewType,
 }
 
 impl Player {
@@ -37,10 +39,12 @@ impl Player {
                 z: i32::MAX,
             },
             gravity: 0.0,
+            view_type: ViewType::Standard,
         }
     }
 
     pub fn handle_input(&mut self, input: &Input, dt: &f64) {
+        self.set_view_type(input);
         self.change_position(
             input,
             VirtualKeyCode::A,
@@ -131,6 +135,15 @@ impl Player {
         }
         if backup_dir[2].is_sign_positive() != self.direction[2].is_sign_positive() {
             self.direction[2] = backup_dir[2];
+        }
+    }
+    pub fn set_view_type(&mut self, input: &Input) {
+        if input.keyboard_state.just_pressed(VirtualKeyCode::F1) {
+            self.view_type = ViewType::Standard;
+        } else if input.keyboard_state.just_pressed(VirtualKeyCode::F2) {
+            self.view_type = ViewType::Complexity;
+        } else if input.keyboard_state.just_pressed(VirtualKeyCode::F3) {
+            self.view_type = ViewType::Unshaded;
         }
     }
 
