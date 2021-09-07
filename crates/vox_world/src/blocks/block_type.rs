@@ -1,5 +1,4 @@
-use serde::{Deserialize, Serialize};
-#[derive(PartialEq, Clone, Copy, Deserialize, Serialize, Debug)]
+#[derive(PartialEq, Clone, Copy, Debug)]
 pub enum BlockType {
     Unknown,
     Grass,

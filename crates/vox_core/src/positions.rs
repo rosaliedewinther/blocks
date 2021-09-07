@@ -1,7 +1,6 @@
 use crate::constants::{CHUNKSIZE, METACHUNKSIZE};
 use crate::utils::{wrap, wrapf};
 use core::ops;
-use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Copy, Clone, Eq, PartialEq, Hash)]
 pub struct GlobalBlockPos {
@@ -31,7 +30,7 @@ pub struct ChunkPos {
     pub z: i32,
 }
 //meta chunk location
-#[derive(Serialize, Deserialize, Hash, PartialEq, Eq, Clone, Copy, Debug, PartialOrd, Ord)]
+#[derive(Hash, PartialEq, Eq, Clone, Copy, Debug, PartialOrd, Ord)]
 pub struct MetaChunkPos {
     pub x: i32,
     pub z: i32,

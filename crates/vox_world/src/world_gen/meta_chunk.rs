@@ -8,13 +8,11 @@ use crate::world_gen::basic::ChunkGenerator;
 use crate::world_gen::chunk::Chunk;
 use rand::distributions::{Distribution, Uniform};
 use rand_distr::Normal;
-use serde::{Deserialize, Serialize};
 use std::borrow::BorrowMut;
 use vox_core::constants::{CHUNKSIZE, METACHUNKSIZE, METACHUNK_GEN_RANGE};
 use vox_core::positions::{ChunkPos, GlobalBlockPos, LocalChunkPos, MetaChunkPos};
 use vox_core::utils::{to_sign_of, wrap};
 
-#[derive(Serialize, Deserialize)]
 pub struct MetaChunk {
     chunks: Vec<Chunk>,
     pub pos: MetaChunkPos,

@@ -1,22 +1,15 @@
 use crate::blocks::block::{get_blocktype, BlockId};
 use crate::blocks::block_type::BlockType;
 use crate::world_gen::basic::ChunkGenerator;
-use serde::{Deserialize, Serialize};
-use serde_big_array::big_array;
 use vox_core::constants::CHUNKSIZE;
 use vox_core::positions::{ChunkPos, LocalBlockPos};
 
-big_array! { BigArray;
-CHUNKSIZE * CHUNKSIZE * CHUNKSIZE}
-
 #[repr(C)]
-#[derive(Serialize, Deserialize, Copy, Clone)]
+#[derive(Clone)]
 pub struct ChunkData {
-    #[serde(with = "BigArray")]
     pub d: [BlockId; CHUNKSIZE * CHUNKSIZE * CHUNKSIZE],
 }
 
-#[derive(Serialize, Deserialize)]
 pub struct Chunk {
     pub blocks: ChunkData,
     pub is_completely_air: bool,
