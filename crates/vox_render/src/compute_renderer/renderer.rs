@@ -90,8 +90,7 @@ impl Renderer {
                     bind_group_layouts: &[&texture_bind_group_layout],
                     push_constant_ranges: &[],
                 });
-        let render_pipeline = wgpu
-            .device
+        wgpu.device
             .create_render_pipeline(&wgpu::RenderPipelineDescriptor {
                 label: Some("Render Pipeline"),
                 layout: Some(&render_pipeline_layout),
@@ -128,8 +127,7 @@ impl Renderer {
                         }),
                     }],
                 }),
-            });
-        return render_pipeline;
+            })
     }
     pub fn resized(&mut self, wgpu: &WgpuState) {
         let (bind_group, _, _) = Renderer::init_texture(wgpu);
@@ -176,7 +174,7 @@ impl Renderer {
             });
         let num_indices = indices.len() as u32;
         let num_vertices = vertices.len() as u32;
-        return (vertex_buffer, index_buffer, num_indices, num_vertices);
+        (vertex_buffer, index_buffer, num_indices, num_vertices)
     }
     fn remake_texture(wgpu: &WgpuState) -> (Texture, TextureView) {
         let texture_size = wgpu::Extent3d {
@@ -203,7 +201,7 @@ impl Renderer {
             base_array_layer: 0,
             array_layer_count: None,
         });
-        return (diffuse_texture, diffuse_texture_view);
+        (diffuse_texture, diffuse_texture_view)
     }
 
     fn init_texture(wgpu: &WgpuState) -> (BindGroup, BindGroupLayout, wgpu::TextureView) {
@@ -232,10 +230,10 @@ impl Renderer {
             label: Some("diffuse_bind_group"),
         });
 
-        return (
+        (
             diffuse_bind_group,
             texture_bind_group_layout,
             diffuse_texture_view,
-        );
+        )
     }
 }

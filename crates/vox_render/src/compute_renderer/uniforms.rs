@@ -18,6 +18,11 @@ pub struct Uniforms {
     ray_cast_data: [[f32; 4]; 3],
     colors: [[f32; 4]; 256],
 }
+impl Default for Uniforms {
+    fn default() -> Self {
+        Self::new()
+    }
+}
 
 impl Uniforms {
     pub fn new() -> Self {
@@ -63,8 +68,8 @@ impl Uniforms {
         let vn = tn.cross(&bn);
         let gx = f64::tan(PI / 4.0);
         let gy = gx * (screensize[1] as f64 / screensize[0] as f64);
-        let qx = ((2.0 * gx) / (screensize[0] as f64 - 1.0)) * &bn;
-        let qy = ((2.0 * gy) / (screensize[1] as f64 - 1.0)) * &vn;
+        let qx = ((2.0 * gx) / (screensize[0] as f64 - 1.0)) * bn;
+        let qy = ((2.0 * gy) / (screensize[1] as f64 - 1.0)) * vn;
         let p1m = tn - gx * bn - gy * vn;
         self.ray_cast_data = [
             [qx[0] as f32, qx[1] as f32, qx[2] as f32, 0.0],

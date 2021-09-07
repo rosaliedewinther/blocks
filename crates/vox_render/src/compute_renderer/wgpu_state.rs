@@ -40,8 +40,10 @@ impl WgpuState {
                 })
                 .await
                 .unwrap();
-            let mut limits = wgpu::Limits::default();
-            limits.max_storage_buffer_binding_size = 1073741824;
+            let limits = wgpu::Limits {
+                max_storage_buffer_binding_size: 1073741824,
+                ..Default::default()
+            };
             let (device, queue) = adapter
                 .request_device(
                     &wgpu::DeviceDescriptor {
@@ -55,7 +57,7 @@ impl WgpuState {
                 .unwrap();
             let surface_config = WgpuState::get_sc_desc(size);
             surface.configure(&device, &surface_config);
-            return (device, queue, surface);
+            (device, queue, surface)
         })
     }
     pub fn get_sc_desc(size: PhysicalSize<u32>) -> wgpu::SurfaceConfiguration {

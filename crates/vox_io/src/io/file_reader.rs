@@ -6,11 +6,13 @@ pub fn read_struct_from_file<T: bytemuck::Pod + bytemuck::Zeroable>(
 ) -> Option<Box<T>> {
     println!("ooooo");
     let f = File::open(filename);
-    if f.is_ok() {
-        let mut reader = BufReader::new(f.unwrap());
-        let mut buf = Vec::new();
-        reader.read_to_end(&mut buf).unwrap();
-        return Some(Box::new(*bytemuck::from_bytes_mut(&mut buf[..])));
-    }
-    return None;
+    return match f {
+        Ok(file) => {
+            let mut reader = BufReader::new(file);
+            let mut buf = Vec::new();
+            reader.read_to_end(&mut buf).unwrap();
+            Some(Box::new(*bytemuck::from_bytes_mut(&mut buf[..])))
+        }
+        Err(_) => None,
+    };
 }

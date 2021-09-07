@@ -63,9 +63,9 @@ pub fn wrapf(val: f32, max: f32) -> f32 {
     }
 }
 pub fn to_sign_of(read: i32, write: i32) -> i32 {
-    return if read.is_negative() {
+    if read.is_negative() {
         -(write.abs())
     } else {
         write.abs()
-    };
+    }
 }
