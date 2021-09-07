@@ -33,12 +33,11 @@ impl<T: Noise + std::marker::Sync> WorldGenerator for HillsWorldGenerator<T> {
                 let x = (index % size) as f32;
                 let z = ((index / size) % size) as f32;
 
-                let noise_data = self.noise.get(
+                self.noise.get(
                     x_start as f32 + x / (WORLD_SIZE) as f32,
                     0.0,
                     z_start as f32 + z / (WORLD_SIZE) as f32,
-                );
-                return noise_data;
+                )
             })
             .collect();
         let world_data: Vec<BlockId> = (0..size * size * size)
@@ -52,14 +51,14 @@ impl<T: Noise + std::marker::Sync> WorldGenerator for HillsWorldGenerator<T> {
                 if ((heigthmap[x + z * size] as f64 + 1.0) / 2.0) * size as f64 > y as f64 {
                     return ((x as i32 % 8) + 1) as BlockId;
                 }
-                return 0u8;
+                0u8
             })
             .collect();
         println!(
             "generated world in {:?} seconds",
             timer.elapsed().as_secs_f64()
         );
-        return world_data.into_boxed_slice();
+        world_data.into_boxed_slice()
     }
 
     fn add_generation_layer(&self, _generation_function: fn(i32, i32, i32, usize)) {

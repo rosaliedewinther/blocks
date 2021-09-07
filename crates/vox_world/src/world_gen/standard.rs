@@ -42,14 +42,14 @@ impl<T: Noise + std::marker::Sync> WorldGenerator for StandardWorldGenerator<T> 
                 if noise_data > 0.3 {
                     return ((x as i32 % 8) + 1) as BlockId;
                 }
-                return 0u8;
+                0u8
             })
             .collect();
         println!(
             "generated world in {:?} seconds",
             timer.elapsed().as_secs_f64()
         );
-        return world_data.into_boxed_slice();
+        world_data.into_boxed_slice()
     }
 
     fn add_generation_layer(&self, _generation_function: fn(i32, i32, i32, usize)) {

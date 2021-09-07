@@ -62,7 +62,7 @@ impl BigWorldRenderer {
                     contents: bytemuck::cast_slice(&[uniforms]),
                     usage: wgpu::BufferUsages::UNIFORM | wgpu::BufferUsages::COPY_DST,
                 });
-        return (uniform_buffer, uniforms);
+        (uniform_buffer, uniforms)
     }
     fn init_world_buffer(wgpu_state: &WgpuState) -> (wgpu::Texture, wgpu::TextureView) {
         let texture_size = wgpu::Extent3d {
@@ -90,7 +90,7 @@ impl BigWorldRenderer {
             array_layer_count: None,
         });
         warn!("initialized world texture with size of {}^3", WORLD_SIZE);
-        return (texture, texture_view);
+        (texture, texture_view)
     }
     fn init_sdf_buffer(wgpu_state: &WgpuState) -> (wgpu::Texture, wgpu::TextureView) {
         let texture_size = wgpu::Extent3d {
@@ -118,7 +118,7 @@ impl BigWorldRenderer {
             array_layer_count: None,
         });
         warn!("initialized sdf texture with size of {}^3", WORLD_SIZE);
-        return (texture, texture_view);
+        (texture, texture_view)
     }
     pub fn rebuild_sdf(&self, wgpu_state: &WgpuState) {
         let mut encoder = wgpu_state
@@ -236,21 +236,21 @@ impl BigWorldRenderer {
                 entries: &[
                     wgpu::BindGroupEntry {
                         binding: 0,
-                        resource: wgpu::BindingResource::TextureView(&diffuse_texture_view),
+                        resource: wgpu::BindingResource::TextureView(diffuse_texture_view),
                     },
                     wgpu::BindGroupEntry {
                         binding: 1,
-                        resource: wgpu::BindingResource::TextureView(&world_texture),
+                        resource: wgpu::BindingResource::TextureView(world_texture),
                     },
                     wgpu::BindGroupEntry {
                         binding: 2,
-                        resource: wgpu::BindingResource::TextureView(&sdf_texture),
+                        resource: wgpu::BindingResource::TextureView(sdf_texture),
                     },
                     wgpu::BindGroupEntry {
                         binding: 3,
                         resource: wgpu::BindingResource::Buffer {
                             0: wgpu::BufferBinding {
-                                buffer: &(uniform_buffer),
+                                buffer: uniform_buffer,
                                 offset: 0,
                                 size: None,
                             },
@@ -277,7 +277,7 @@ impl BigWorldRenderer {
                     entry_point: "main",
                 });
         println!("created rendering pipeline");
-        return (compute_pipeline, compute_bind_group);
+        (compute_pipeline, compute_bind_group)
     }
     fn init_sdf_pipeline(
         wgpu_state: &WgpuState,
@@ -320,11 +320,11 @@ impl BigWorldRenderer {
                 entries: &[
                     wgpu::BindGroupEntry {
                         binding: 0,
-                        resource: wgpu::BindingResource::TextureView(&world_texture),
+                        resource: wgpu::BindingResource::TextureView(world_texture),
                     },
                     wgpu::BindGroupEntry {
                         binding: 1,
-                        resource: wgpu::BindingResource::TextureView(&sdf_texture),
+                        resource: wgpu::BindingResource::TextureView(sdf_texture),
                     },
                 ],
             });
@@ -348,7 +348,7 @@ impl BigWorldRenderer {
                     entry_point: "main",
                 });
         println!("created sdf pipeline");
-        return (sdf_pipeline, sdf_bind_group);
+        (sdf_pipeline, sdf_bind_group)
     }
     pub fn update_all_buffers(&mut self, wgpu_state: &WgpuState, player: &Player, time_diff: f64) {
         let location = [

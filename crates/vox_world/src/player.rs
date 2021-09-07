@@ -20,6 +20,12 @@ pub struct Player {
     pub view_type: ViewType,
 }
 
+impl Default for Player {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl Player {
     pub fn new() -> Player {
         Player {
@@ -101,7 +107,7 @@ impl Player {
         change: f64,
     ) {
         if input.key_pressed(key) {
-            let move_vec = get_rotation_matrix_y(rotation_degree) * &self.direction;
+            let move_vec = get_rotation_matrix_y(rotation_degree) * self.direction;
             let to_extend =
                 1f64 / (move_vec[0].powf(2f64).abs() + move_vec[2].powf(2f64).abs()).sqrt();
             let x_change = change * move_vec.x * to_extend;
@@ -114,21 +120,21 @@ impl Player {
         }
     }
     pub fn change_direction_horizontal(&mut self, mat: &Matrix3<f64>) {
-        self.direction = mat * &self.direction;
+        self.direction = mat * self.direction;
     }
     pub fn change_direction_vertical(&mut self, change: f64) {
-        let backup_dir = self.direction.clone();
+        let backup_dir = self.direction;
         let angle = (backup_dir[2] / backup_dir[0]).atan() as f64;
         if backup_dir[0].is_sign_negative() {
             self.direction = get_rotation_matrix_y(-angle)
                 * get_rotation_matrix_z(-change)
                 * get_rotation_matrix_y(angle)
-                * &self.direction;
+                * self.direction;
         } else {
             self.direction = get_rotation_matrix_y(-angle)
                 * get_rotation_matrix_z(change)
                 * get_rotation_matrix_y(angle)
-                * &self.direction;
+                * self.direction;
         }
         if backup_dir[0].is_sign_positive() != self.direction[0].is_sign_positive() {
             self.direction[0] = backup_dir[0];

@@ -20,7 +20,7 @@ pub struct BigWorld {
 impl BigWorld {
     #[inline]
     pub fn get_block(&self, _pos: GlobalBlockPos) -> Option<BlockId> {
-        return None;
+        None
     }
     pub fn new<T: Noise>(seed: u32) -> BigWorld {
         let generator = HillsWorldGenerator::<NoiseDefault>::new();

@@ -33,35 +33,35 @@ impl Game for VoxGame {
 
         pw.on_game_tick(0.1);
 
-        return UpdateResult::Continue;
+        UpdateResult::Continue
     }
     fn on_render(&mut self, input: &mut Input, dt: f64, window: &Window) -> RenderResult {
         let pw = self.personal_world.as_mut().unwrap();
         println!("{}", (1.0 / dt) as f32);
 
-        pw.player.handle_input(&input, &dt);
+        pw.player.handle_input(input, &dt);
         let renderer = self.renderer.as_mut().unwrap();
 
         let wgpu_state = self.wgpu_state.as_ref().unwrap();
 
         pw.world_render_data
-            .update_all_buffers(&wgpu_state, &pw.player, dt);
-        renderer.do_render_pass(&wgpu_state, window, vec![&mut pw.world_render_data]);
+            .update_all_buffers(wgpu_state, &pw.player, dt);
+        renderer.do_render_pass(wgpu_state, window, vec![&mut pw.world_render_data]);
 
         input.update();
-        return RenderResult::Continue;
+        RenderResult::Continue
     }
     fn on_init(&mut self, window: &Window) -> InitResult {
-        self.wgpu_state = Some(WgpuState::new(&window));
+        self.wgpu_state = Some(WgpuState::new(window));
         let renderer = Renderer::new(&mut self.wgpu_state.as_mut().unwrap());
         self.personal_world = Some(PersonalWorld::new(
             window,
             &renderer,
-            &self.wgpu_state.as_ref().unwrap(),
+            self.wgpu_state.as_ref().unwrap(),
         ));
         self.renderer = Some(renderer);
 
-        return InitResult::Continue;
+        InitResult::Continue
     }
     fn on_resize(&mut self, physical_size: PhysicalSize<u32>) {
         self.wgpu_state.as_mut().unwrap().resize(physical_size);
