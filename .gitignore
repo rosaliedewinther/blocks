@@ -6,3 +6,4 @@
 *.spv
 *.iml
 .VSCode*
+cargo-timing

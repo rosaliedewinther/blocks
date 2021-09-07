@@ -7,10 +7,10 @@ edition = "2018"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-wgpu = {version="0.10", features = ["spirv"]}
+wgpu = {version="0.10", default-features = false, features = ["spirv"]}
 futures = "0.3"
 winit = "0.25"
-nalgebra = "0.29"
+nalgebra = {version="0.29", default-features=false, features=["std"]}
 bytemuck = { version = "1.4", features = [ "derive" ] }
 vox_core = {path="../vox_core"}
 
