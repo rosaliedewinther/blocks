@@ -140,12 +140,12 @@ uvec4 trace_ray(vec3 direction, vec3 origin){
             }
         }
         iter+=1;
-        if (sdf_value <= 255){
+        if (sdf_value <= 4){
             mask = lessThanEqual(sideDist.xyz, min(sideDist.yzx, sideDist.zxy));
             sideDist += vec3(mask) * deltaDist;
             current_voxel += ivec3(vec3(mask)*step);
         } else {
-            current_voxel = ivec3(vec3(current_voxel) + (deltaDist) + vec3(direction * (sdf_value)));
+            current_voxel = ivec3(vec3(current_voxel) + vec3(direction * (sdf_value)));
             sideDist = (sign(direction) * (vec3(current_voxel) - origin) + (sign(direction) * 0.5) + 0.5) * deltaDist;
         }
     }

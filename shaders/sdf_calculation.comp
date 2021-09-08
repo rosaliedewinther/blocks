@@ -32,7 +32,7 @@ void populate_along_x_axis(vec2 position){
         }
         store_stepcount(position, steps);
         steps +=1;
-        steps = max(255, steps);
+        steps = min(255, steps);
     }
     steps = 255;
     for (int x = world_size-1; x >= 0; x--){
@@ -44,7 +44,7 @@ void populate_along_x_axis(vec2 position){
             store_stepcount(position, steps);
         }
         steps +=1;
-        steps = max(255, steps);
+        steps = min(255, steps);
     }
 }
 void populate_along_y_axis(vec2 position){
@@ -60,7 +60,7 @@ void populate_along_y_axis(vec2 position){
             store_stepcount(position, steps);
         }
         steps +=1;
-        steps = max(255, steps);
+        steps = min(255, steps);
     }
     steps = 255;
     for (int y = world_size-1; y >= 0; y--){
@@ -72,7 +72,7 @@ void populate_along_y_axis(vec2 position){
             store_stepcount(position, steps);
         }
         steps +=1;
-        steps = max(255, steps);
+        steps = min(255, steps);
     }
 }
 
@@ -89,7 +89,7 @@ void populate_along_z_axis(vec2 position){
             store_stepcount(position, steps);
         }
         steps +=1;
-        steps = max(255, steps);
+        steps = min(255, steps);
     }
     steps = 255;
     for (int z = world_size-1; z >= 0; z--){
@@ -101,7 +101,7 @@ void populate_along_z_axis(vec2 position){
             store_stepcount(position, steps);
         }
         steps +=1;
-        steps = max(255, steps);
+        steps = min(255, steps);
     }
 }
 
