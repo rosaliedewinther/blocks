@@ -102,7 +102,9 @@ vec4 get_voxel_color(uint voxel_id){
 //https://www.researchgate.net/profile/Kai-Xiao-9/publication/233899848_Efficient_implementation_of_the_3D-DDA_ray_traversal_algorithm_on_GPU_and_its_application_in_radiation_dose_calculation/links/5acfaa9b4585154f3f47bf20/Efficient-implementation-of-the-3D-DDA-ray-traversal-algorithm-on-GPU-and-its-application-in-radiation-dose-calculation.pdf?origin=publication_detail
 uvec4 trace_ray(vec3 direction, vec3 origin){
     ivec3 current_voxel = ivec3(origin);
+    vec3 exactRayPosition = origin;
     int iter = 0;
+
 
     vec3 deltaDist = abs(vec3(length(direction))/direction);
     vec3 step = ivec3(sign(direction));
@@ -140,12 +142,12 @@ uvec4 trace_ray(vec3 direction, vec3 origin){
             }
         }
         iter+=1;
-        if (sdf_value <= 4){
+        if (sdf_value <= 16){
             mask = lessThanEqual(sideDist.xyz, min(sideDist.yzx, sideDist.zxy));
             sideDist += vec3(mask) * deltaDist;
             current_voxel += ivec3(vec3(mask)*step);
         } else {
-            current_voxel = ivec3(vec3(current_voxel) + vec3(direction * (sdf_value)));
+            current_voxel = ivec3(vec3(current_voxel) + vec3(direction * (sdf_value/sqrt_three)));
             sideDist = (sign(direction) * (vec3(current_voxel) - origin) + (sign(direction) * 0.5) + 0.5) * deltaDist;
         }
     }
