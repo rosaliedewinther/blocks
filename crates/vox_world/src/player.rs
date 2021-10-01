@@ -1,4 +1,5 @@
 use nalgebra::{Matrix3, Vector3};
+use std::cmp::{max, min};
 use std::f32::consts::PI;
 use vox_core::constants::WORLD_SIZE;
 use vox_core::positions::{ChunkPos, ObjectPos};
@@ -50,6 +51,8 @@ impl Player {
     }
 
     pub fn handle_input(&mut self, input: &Input, dt: &f64) {
+        self.speed = f64::max(1f64, self.speed + input.mouse_state.scroll_delta * 10f64);
+
         self.set_view_type(input);
         self.change_position(
             input,

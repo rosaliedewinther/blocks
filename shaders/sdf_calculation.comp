@@ -7,7 +7,7 @@ layout(local_size_x = 8, local_size_y = 8, local_size_z = 1) in;
 layout(r8ui, binding = 0) readonly uniform uimage3D world;
 layout(r8ui, binding = 1) uniform uimage3D sdf;
 
-int world_size = 512;
+int world_size = 256;
 
 bool contains_block(ivec3 world_position){
     return bool(imageLoad(world, world_position));

@@ -264,4 +264,4 @@ pub const COLORS: [[f32; 4]; 256] = [
     [0.0; 4],
 ];
 pub const MAX_MEMORY: usize = 2147483648usize;
-pub static WORLD_SIZE: usize = 512usize;
+pub static WORLD_SIZE: usize = 256usize;

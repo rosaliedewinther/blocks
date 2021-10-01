@@ -37,7 +37,7 @@ impl Game for VoxGame {
     }
     fn on_render(&mut self, input: &mut Input, dt: f64, window: &Window) -> RenderResult {
         let pw = self.personal_world.as_mut().unwrap();
-        println!("{}", (1.0 / dt) as f32);
+        println!("{}", dt);
 
         pw.player.handle_input(input, &dt);
         let renderer = self.renderer.as_mut().unwrap();
