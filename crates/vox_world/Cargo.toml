@@ -2,7 +2,7 @@
 name = "vox_world"
 version = "0.1.0"
 authors = ["jasperdewinther <jasper.dewinther@student.hu.nl>"]
-edition = "2018"
+edition = "2021"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
@@ -16,7 +16,7 @@ winit_window_control = {git = "https://github.com/jasperdewinther/winit_abstract
 #winit_window_control = {path="../../../winit_abstraction"}
 nalgebra = {version="0.29", default-features=false}
 rand = "0.8"
-wgpu = {version="0.10", default-features=false}
+wgpu = {version="0.11", default-features=false}
 noise= {version="0.7", default-features = false}
 rand_distr ="0.4"
 bytemuck = { version = "1.4", features = [ "derive" ] }

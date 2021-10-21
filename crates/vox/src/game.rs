@@ -60,6 +60,7 @@ impl Game for VoxGame {
             self.wgpu_state.as_ref().unwrap(),
         ));
         self.renderer = Some(renderer);
+        self.wgpu_state.as_ref().unwrap().init_surface();
 
         InitResult::Continue
     }

@@ -14,8 +14,7 @@ pub struct WgpuState {
 impl WgpuState {
     pub fn new(window: &Window) -> Self {
         let size = window.inner_size();
-
-        let (device, queue, surface) = WgpuState::get_device_queue_surface(window, size);
+        let (device, queue, surface) = WgpuState::get_device_queue_surface(window);
         let sc_desc = WgpuState::get_sc_desc(size);
 
         Self {
@@ -26,20 +25,19 @@ impl WgpuState {
             size,
         }
     }
-    pub fn get_device_queue_surface(
-        window: &Window,
-        size: PhysicalSize<u32>,
-    ) -> (Device, Queue, Surface) {
+    pub fn get_device_queue_surface(window: &Window) -> (Device, Queue, Surface) {
         block_on(async {
             let instance = wgpu::Instance::new(wgpu::Backends::VULKAN);
             let surface = unsafe { instance.create_surface(window) };
             let adapter = instance
                 .request_adapter(&wgpu::RequestAdapterOptions {
                     power_preference: wgpu::PowerPreference::HighPerformance,
+                    force_fallback_adapter: false,
                     compatible_surface: Some(&surface),
                 })
                 .await
                 .unwrap();
+
             let limits = wgpu::Limits {
                 max_storage_buffer_binding_size: 1073741824,
                 ..Default::default()
@@ -55,8 +53,7 @@ impl WgpuState {
                 )
                 .await
                 .unwrap();
-            let surface_config = WgpuState::get_sc_desc(size);
-            surface.configure(&device, &surface_config);
+
             (device, queue, surface)
         })
     }
@@ -68,6 +65,10 @@ impl WgpuState {
             height: size.height,
             present_mode: wgpu::PresentMode::Immediate,
         }
+    }
+    pub fn init_surface(&self) {
+        let surface_config = &self.sc_desc;
+        self.surface.configure(&self.device, &surface_config);
     }
 
     pub fn resize(&mut self, new_size: winit::dpi::PhysicalSize<u32>) {

@@ -41,39 +41,45 @@ impl Renderer {
         window: &winit::window::Window,
         renderpassables: Vec<&mut dyn RenderPassable>,
     ) {
-        let frame = &wgpu.surface.get_current_frame().unwrap().output.texture;
-        let frame_view = frame.create_view(&Default::default());
-        let mut encoder = wgpu
-            .device
-            .create_command_encoder(&wgpu::CommandEncoderDescriptor {
-                label: Some("Render Encoder"),
-            });
-
+        let mut possible_surface_texture = wgpu.surface.get_current_texture();
+        let surface_texture = possible_surface_texture.unwrap();
         {
-            let mut render_pass = encoder.begin_render_pass(&wgpu::RenderPassDescriptor {
-                label: Some("Render pass world"),
-                color_attachments: &[wgpu::RenderPassColorAttachment {
-                    view: &frame_view,
-                    resolve_target: None,
-                    ops: wgpu::Operations {
-                        load: wgpu::LoadOp::Clear(Default::default()),
-                        store: true,
-                    },
-                }],
-                depth_stencil_attachment: None,
-            });
+            let frame = &surface_texture.texture;
+            let frame_view = &frame.create_view(&Default::default());
+            let mut encoder = wgpu
+                .device
+                .create_command_encoder(&wgpu::CommandEncoderDescriptor {
+                    label: Some("Render Encoder"),
+                });
 
-            render_pass.set_pipeline(&self.render_pipeline);
-            render_pass.set_bind_group(0, &self.texture_bind_group, &[]);
-            render_pass.set_vertex_buffer(0, self.vertex_buffer.slice(..));
-            render_pass.set_index_buffer(self.index_buffer.slice(..), wgpu::IndexFormat::Uint16);
-            render_pass.draw_indexed(0..self.num_indices, 0, 0..1);
+            {
+                let mut render_pass = encoder.begin_render_pass(&wgpu::RenderPassDescriptor {
+                    label: Some("Render pass world"),
+                    color_attachments: &[wgpu::RenderPassColorAttachment {
+                        view: &frame_view,
+                        resolve_target: None,
+                        ops: wgpu::Operations {
+                            load: wgpu::LoadOp::Clear(Default::default()),
+                            store: true,
+                        },
+                    }],
+                    depth_stencil_attachment: None,
+                });
+
+                render_pass.set_pipeline(&self.render_pipeline);
+                render_pass.set_bind_group(0, &self.texture_bind_group, &[]);
+                render_pass.set_vertex_buffer(0, self.vertex_buffer.slice(..));
+                render_pass
+                    .set_index_buffer(self.index_buffer.slice(..), wgpu::IndexFormat::Uint16);
+                render_pass.draw_indexed(0..self.num_indices, 0, 0..1);
+            }
+            for obj in renderpassables {
+                obj.do_render_pass(window, &mut encoder, wgpu, &frame_view);
+            }
+            wgpu.queue.submit(std::iter::once(encoder.finish()));
         }
-        for obj in renderpassables {
-            obj.do_render_pass(window, &mut encoder, wgpu, &frame_view);
-        }
+        wgpu::SurfaceTexture::present(surface_texture);
         // submit will accept anything that implements IntoIter
-        wgpu.queue.submit(std::iter::once(encoder.finish()));
     }
 
     fn init_pipeline(
