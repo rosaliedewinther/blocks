@@ -1,4 +1,4 @@
-use crate::blocks::block::{get_blockid, get_blocktype};
+/*use crate::blocks::block::{get_blockid, get_blocktype};
 use crate::blocks::block_type::BlockType;
 use crate::world::big_world::BigWorld;
 use rand::distributions::{Distribution, Uniform};
@@ -26,3 +26,4 @@ pub fn place_tree(pos: &GlobalBlockPos, world: &mut BigWorld) {
         }
     }
 }
+*/

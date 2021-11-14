@@ -69,7 +69,7 @@ impl Game for VoxGame {
     }
     fn on_init(&mut self, window: &Window) -> InitResult {
         self.wgpu_state = Some(WgpuState::new(window));
-        let renderer = Renderer::new(&mut self.wgpu_state.as_mut().unwrap());
+        let renderer = Renderer::new(self.wgpu_state.as_mut().unwrap());
         self.personal_world = Some(PersonalWorld::new(
             window,
             &renderer,

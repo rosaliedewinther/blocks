@@ -41,7 +41,7 @@ impl Renderer {
         window: &winit::window::Window,
         renderpassables: Vec<&mut dyn RenderPassable>,
     ) {
-        let mut possible_surface_texture = wgpu.surface.get_current_texture();
+        let possible_surface_texture = wgpu.surface.get_current_texture();
         let surface_texture = possible_surface_texture.unwrap();
         {
             let frame = &surface_texture.texture;
@@ -56,7 +56,7 @@ impl Renderer {
                 let mut render_pass = encoder.begin_render_pass(&wgpu::RenderPassDescriptor {
                     label: Some("Render pass world"),
                     color_attachments: &[wgpu::RenderPassColorAttachment {
-                        view: &frame_view,
+                        view: frame_view,
                         resolve_target: None,
                         ops: wgpu::Operations {
                             load: wgpu::LoadOp::Clear(Default::default()),
@@ -74,7 +74,7 @@ impl Renderer {
                 render_pass.draw_indexed(0..self.num_indices, 0, 0..1);
             }
             for obj in renderpassables {
-                obj.do_render_pass(window, &mut encoder, wgpu, &frame_view);
+                obj.do_render_pass(window, &mut encoder, wgpu, frame_view);
             }
             wgpu.queue.submit(std::iter::once(encoder.finish()));
         }

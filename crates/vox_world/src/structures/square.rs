@@ -1,4 +1,4 @@
-use crate::blocks::block::get_blockid;
+/*use crate::blocks::block::get_blockid;
 use crate::blocks::block_type::BlockType;
 use crate::world::big_world::BigWorld;
 use vox_core::positions::GlobalBlockPos;
@@ -14,4 +14,4 @@ pub fn place_square(pos: &GlobalBlockPos, size: u32, world: &mut BigWorld) {
             }
         }
     }
-}
+}*/

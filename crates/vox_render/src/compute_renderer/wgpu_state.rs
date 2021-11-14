@@ -68,7 +68,7 @@ impl WgpuState {
     }
     pub fn init_surface(&self) {
         let surface_config = &self.sc_desc;
-        self.surface.configure(&self.device, &surface_config);
+        self.surface.configure(&self.device, surface_config);
     }
 
     pub fn resize(&mut self, new_size: winit::dpi::PhysicalSize<u32>) {

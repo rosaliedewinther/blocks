@@ -19,16 +19,16 @@ pub struct BigWorldRenderer {
     uniforms: Uniforms,
     uniform_buffer: wgpu::Buffer,
     world_texture: wgpu::Texture,
-    world_textureview: wgpu::TextureView,
-    sdf_texture: wgpu::Texture,
-    sdf_textureview: wgpu::TextureView,
+    //world_textureview: wgpu::TextureView,
+    //sdf_texture: wgpu::Texture,
+    //sdf_textureview: wgpu::TextureView,
 }
 
 impl BigWorldRenderer {
     pub fn new(wgpu_state: &WgpuState, texture_to_draw_to: &wgpu::TextureView) -> BigWorldRenderer {
         let (uniform_buffer, uniforms) = BigWorldRenderer::init_uniforms(wgpu_state);
         let (world_texture, world_textureview) = BigWorldRenderer::init_world_buffer(wgpu_state);
-        let (sdf_texture, sdf_textureview) = BigWorldRenderer::init_sdf_buffer(wgpu_state);
+        let (_sdf_texture, sdf_textureview) = BigWorldRenderer::init_sdf_buffer(wgpu_state);
         let (sdf_pipeline, sdf_bind_group) =
             BigWorldRenderer::init_sdf_pipeline(wgpu_state, &world_textureview, &sdf_textureview);
         let (rendering_pipeline, rendering_bind_group) = BigWorldRenderer::init_rendering_pipeline(
@@ -47,9 +47,9 @@ impl BigWorldRenderer {
             uniforms,
             uniform_buffer,
             world_texture,
-            world_textureview,
-            sdf_texture,
-            sdf_textureview,
+            //world_textureview,
+            //sdf_texture,
+            //sdf_textureview,
         }
     }
     fn init_uniforms(wgpu_state: &WgpuState) -> (wgpu::Buffer, Uniforms) {

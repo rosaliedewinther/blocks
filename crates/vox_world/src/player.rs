@@ -1,5 +1,4 @@
 use nalgebra::{Matrix3, Vector3};
-use std::cmp::{max, min};
 use std::f32::consts::PI;
 use vox_core::constants::WORLD_SIZE;
 use vox_core::positions::{ChunkPos, ObjectPos};
