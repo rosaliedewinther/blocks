@@ -1,9 +1,8 @@
 [workspace]
 members = [
-    "crates/vox",
-    "crates/vox_core",
-    "crates/vox_io",
-    "crates/vox_render",
-    "crates/vox_world",
+    "vox_client",
+    "vox_server",
+    "vox_shared",
+    "vox_window"
 ]
 resolver = "2"

@@ -1,0 +1,1 @@
+pub const MS_PER_TICK: u32 = 100;
