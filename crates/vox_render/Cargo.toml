@@ -8,11 +8,11 @@ edition = "2021"
 
 [dependencies]
 memcmp = "0.0.6"
-wgpu = {version="0.8", default-features=false}
+wgpu = {version="0.11", default-features=false, features=["spirv"]}
 futures = "0.3"
-winit = "0.24"
+winit = "0.25"
 rayon = "1.4"
-nalgebra = {version="0.22", default-features=false, features=["std"]}
+nalgebra = {version="0.29", default-features=false, features=["std"]}
 bytemuck = { version = "1.4", features = [ "derive" ] }
 vox_core = {path="../vox_core"}
 

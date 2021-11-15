@@ -2,9 +2,7 @@ use crate::renderer::depth_texture::DepthTexture;
 use crate::renderer::uniforms::Uniforms;
 use crate::renderer::vertex::Vertex;
 use wgpu::util::DeviceExt;
-use wgpu::{
-    BlendFactor, BlendOperation, BufferBinding, Device, Queue, RenderPass, SwapChainDescriptor
-};
+use wgpu::{BlendFactor, BlendOperation, BufferBinding, Device, Queue, RenderPass, SurfaceConfiguration};
 
 pub struct WgpuPipeline {
     pub uniform_buffer: wgpu::Buffer,
@@ -14,19 +12,19 @@ pub struct WgpuPipeline {
 }
 
 impl WgpuPipeline {
-    pub fn new(device: &Device, sc_desc: &SwapChainDescriptor) -> WgpuPipeline {
+    pub fn new(device: &Device, surface_desc: &SurfaceConfiguration) -> WgpuPipeline {
         let uniforms = Uniforms::new();
 
         let uniform_buffer = device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
             label: Some("Uniform Buffer"),
             contents: bytemuck::cast_slice(&[uniforms]),
-            usage: wgpu::BufferUsage::UNIFORM | wgpu::BufferUsage::COPY_DST,
+            usage: wgpu::BufferUsages::UNIFORM | wgpu::BufferUsages::COPY_DST,
         });
         let uniform_bind_group_layout =
             device.create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
                 entries: &[wgpu::BindGroupLayoutEntry {
                     binding: 0,
-                    visibility: wgpu::ShaderStage::VERTEX,
+                    visibility: wgpu::ShaderStages::VERTEX,
                     ty: wgpu::BindingType::Buffer {
                         ty: wgpu::BufferBindingType::Uniform,
                         min_binding_size: None,
@@ -97,8 +95,8 @@ impl WgpuPipeline {
                 module: &fs_module,
                 entry_point: "main",
                 targets: &[wgpu::ColorTargetState {
-                    format: sc_desc.format,
-                    write_mask: wgpu::ColorWrite::ALL,
+                    format: surface_desc.format,
+                    write_mask: wgpu::ColorWrites::ALL,
                     blend: Some(wgpu::BlendState {
                         color: wgpu::BlendComponent {
                             src_factor: BlendFactor::SrcAlpha,

@@ -1,17 +1,14 @@
 use crate::ui::ui::UiRenderer;
 use cgmath::{InnerSpace, Vector3};
-use rayon::iter::ParallelIterator;
-use rayon::iter::{IntoParallelIterator, IntoParallelRefIterator};
 use rayon::prelude::ParallelSliceMut;
-use std::cmp::{min, Ordering};
+use std::cmp::Ordering;
 use std::collections::{BinaryHeap, HashMap, HashSet};
-use std::sync::{Arc, Mutex};
 use std::time::{Instant, SystemTime, UNIX_EPOCH};
 use vox_core::constants::{
     CHUNKSIZE, METACHUNKSIZE, METACHUNK_GEN_RANGE, METACHUNK_UNLOAD_RADIUS, SEED,
 };
 use vox_core::positions::{ChunkPos, MetaChunkPos};
-use vox_render::renderer::renderer::{Renderer, resize};
+use vox_render::renderer::renderer::Renderer;
 use vox_render::renderer::renderpassable::RenderPassable;
 use vox_render::renderer::wgpu::WgpuState;
 use vox_render::renderer::wgpu_pipeline::WgpuPipeline;
@@ -20,8 +17,6 @@ use vox_world::player::Player;
 use vox_world::world::small_world::SmallWorld;
 use vox_world::world_gen::chunk_gen_thread::ChunkGenThread;
 use vox_world::world_gen::meta_chunk::MetaChunk;
-use winit::event::Event;
-use winit::event_loop::ControlFlow;
 use winit::window::Window;
 use winit_window_control::input::input::Input;
 use winit_window_control::main_loop::RenderResult;
@@ -242,9 +237,16 @@ impl PersonalWorld {
         match renderer.do_render_pass(window, self) {
             Ok(_) => {}
             // Recreate the swap_chain if lost
-            Err(wgpu::SwapChainError::Lost) => renderer.wgpu.resize(renderer.wgpu.size),
+            Err(wgpu::SurfaceError::Lost) => renderer.wgpu.resize(renderer.wgpu.size),
             // The system is out of memory, we should probably quit
-            Err(wgpu::SwapChainError::OutOfMemory) => return RenderResult::Exit,
+            Err(wgpu::SurfaceError::OutOfMemory) => {
+                eprintln!("Out of memory during render pass");
+                return RenderResult::Exit
+            },
+            Err(wgpu::SurfaceError::Timeout) => {
+                eprintln!("Surface timeout");
+                renderer.wgpu.resize(renderer.wgpu.size);
+            },
             // All other errors (Outdated, Timeout) should be resolved by the next frame
             Err(e) => eprintln!("{:?}", e),
         }
@@ -260,13 +262,13 @@ impl RenderPassable for PersonalWorld {
         encoder: &mut wgpu::CommandEncoder,
         wgpu_state: &WgpuState,
         pipelines: &HashMap<String, WgpuPipeline>,
-        frame: &wgpu::SwapChainTexture,
+        frame: &wgpu::TextureView,
     ) {
         {
             let mut render_pass = encoder.begin_render_pass(&wgpu::RenderPassDescriptor {
                 label: Some("Render pass world"),
                 color_attachments: &[wgpu::RenderPassColorAttachment {
-                    view: &frame.view,
+                    view: &frame,
                     resolve_target: None,
                     ops: wgpu::Operations {
                         load: wgpu::LoadOp::Clear(wgpu::Color {
@@ -314,7 +316,7 @@ impl RenderPassable for PersonalWorld {
             let mut render_pass = encoder.begin_render_pass(&wgpu::RenderPassDescriptor {
                 label: Some("Render pass ui"),
                 color_attachments: &[wgpu::RenderPassColorAttachment {
-                    view: &frame.view,
+                    view: &frame,
                     resolve_target: None,
                     ops: wgpu::Operations {
                         load: wgpu::LoadOp::Load,

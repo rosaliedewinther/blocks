@@ -49,7 +49,7 @@ impl UiRenderer {
         };
 
         let renderer_config = RendererConfig {
-            texture_format: WgpuState::get_sc_desc(window.inner_size()).format,
+            texture_format: WgpuState::get_surface_desc(window.inner_size()).format,
             ..Default::default()
         };
 

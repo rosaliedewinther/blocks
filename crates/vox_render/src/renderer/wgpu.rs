@@ -9,8 +9,7 @@ pub struct WgpuState {
     pub surface: wgpu::Surface,
     pub device: wgpu::Device,
     pub queue: wgpu::Queue,
-    pub sc_desc: wgpu::SwapChainDescriptor,
-    pub swap_chain: wgpu::SwapChain,
+    pub surface_desc: wgpu::SurfaceConfiguration,
     pub size: winit::dpi::PhysicalSize<u32>,
     pub depth_texture: DepthTexture,
 }
@@ -19,33 +18,28 @@ impl WgpuState {
     // Creating some of the wgpu types requires async code
     pub fn new(window: &Window) -> Self {
         let size = window.inner_size();
-
-        // The instance is A handle to our GPU
-        // BackendBit::PRIMARY => Vulkan + Metal + DX12 + Browser WebGPU
-
         let (device, queue, surface) = WgpuState::get_device_queue_surface(window);
-        let sc_desc = WgpuState::get_sc_desc(size);
-
-        let swap_chain = device.create_swap_chain(&surface, &sc_desc);
-        let depth_texture = DepthTexture::create_depth_texture(&device, &sc_desc, "depth_texture");
-        //compute.compute_pass(&device, &queue);
-        Self {
+        let surface_desc = WgpuState::get_surface_desc(size);
+        let depth_texture = DepthTexture::create_depth_texture(&device, &surface_desc, "depth_texture");
+        let s = Self {
             surface,
             device,
             queue,
-            sc_desc,
-            swap_chain,
+            surface_desc,
             size,
             depth_texture,
-        }
+        };
+        s.init_surface();
+        s
     }
     pub fn get_device_queue_surface(window: &Window) -> (Device, Queue, Surface) {
         block_on(async {
-            let instance = wgpu::Instance::new(wgpu::BackendBit::PRIMARY);
+            let instance = wgpu::Instance::new(wgpu::Backends::VULKAN);
             let surface = unsafe { instance.create_surface(window) };
             let adapter = instance
                 .request_adapter(&wgpu::RequestAdapterOptions {
                     power_preference: wgpu::PowerPreference::HighPerformance,
+                    force_fallback_adapter: false,
                     compatible_surface: Some(&surface),
                 })
                 .await
@@ -64,9 +58,13 @@ impl WgpuState {
             return (device, queue, surface);
         })
     }
-    pub fn get_sc_desc(size: PhysicalSize<u32>) -> wgpu::SwapChainDescriptor {
-        wgpu::SwapChainDescriptor {
-            usage: wgpu::TextureUsage::RENDER_ATTACHMENT,
+    pub fn init_surface(&self){
+        let surface_config = &self.surface_desc;
+        self.surface.configure(&self.device, surface_config);
+    }
+    pub fn get_surface_desc(size: PhysicalSize<u32>) -> wgpu::SurfaceConfiguration {
+        wgpu::SurfaceConfiguration {
+            usage: wgpu::TextureUsages::RENDER_ATTACHMENT,
             format: wgpu::TextureFormat::Bgra8UnormSrgb,
             width: size.width,
             height: size.height,
@@ -76,14 +74,14 @@ impl WgpuState {
 
     pub fn resize(&mut self, new_size: winit::dpi::PhysicalSize<u32>) {
         self.size = new_size;
-        self.sc_desc.width = new_size.width;
-        self.sc_desc.height = new_size.height;
-        self.swap_chain = self.device.create_swap_chain(&self.surface, &self.sc_desc);
+        self.surface_desc.width = new_size.width;
+        self.surface_desc.height = new_size.height;
         self.depth_texture = DepthTexture::create_depth_texture(
             &self.device,
-            &self.sc_desc,
+            &self.surface_desc,
             "depth_texture",
         );
+        self.init_surface();
     }
 }
 
