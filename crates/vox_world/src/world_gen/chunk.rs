@@ -1,4 +1,4 @@
-use crate::blocks::block::{get_blocktype, BlockId};
+use crate::blocks::block::{get_blocktype, BlockId, get_blockid};
 use crate::blocks::block_type::BlockType;
 use crate::world_gen::basic::ChunkGenerator;
 use bytemuck::{Pod, Zeroable};
@@ -6,46 +6,28 @@ use serde::{Deserialize, Serialize};
 use serde_big_array::big_array;
 use vox_core::constants::CHUNKSIZE;
 use vox_core::positions::{ChunkPos, LocalBlockPos};
-
-big_array! { BigArray;
-CHUNKSIZE * CHUNKSIZE * CHUNKSIZE}
-
-#[repr(C)]
-#[derive(Serialize, Deserialize, Copy, Clone)]
-pub struct ChunkData {
-    #[serde(with = "BigArray")]
-    pub d: [BlockId; CHUNKSIZE * CHUNKSIZE * CHUNKSIZE],
-}
+use vox_core::utils::coord_to_array_indice;
 
 #[derive(Serialize, Deserialize)]
 pub struct Chunk {
-    pub blocks: ChunkData,
+    pub blocks: Vec<BlockId>,
     pub is_completely_air: bool,
 }
 
 impl Chunk {
-    pub fn new(blocks: ChunkData) -> Chunk {
-        Chunk {
-            blocks,
-            is_completely_air: false,
-        }
-    }
-    pub fn generate(pos: &ChunkPos, seed: u32) -> Chunk {
-        let chunk_generator = ChunkGenerator::new(seed);
-        let mut chunk = chunk_generator.full_generation_pass(pos);
+    pub fn generate(chunk_generator: &ChunkGenerator, pos: &ChunkPos) -> Chunk {
+        let mut chunk_data = chunk_generator.full_generation_pass(pos);
         for x in 0..CHUNKSIZE as i32 {
             for y in 0..CHUNKSIZE as i32 {
                 for z in 0..CHUNKSIZE as i32 {
-                    if get_blocktype(chunk.get_block(&LocalBlockPos { x, y, z }).unwrap())
-                        != BlockType::Air
+                    if chunk_data[coord_to_array_indice(x as u32,y as u32,z as u32, CHUNKSIZE as u32)] != get_blockid(BlockType::Air)
                     {
-                        return chunk;
+                        return Chunk{ blocks: chunk_data, is_completely_air: false };
                     }
                 }
             }
         }
-        chunk.is_completely_air = true;
-        return chunk;
+        return Chunk{blocks: vec![], is_completely_air: true};
     }
 
     pub fn update(&mut self, _dt: f32) -> bool {
@@ -53,6 +35,10 @@ impl Chunk {
     }
 
     pub fn set_block(&mut self, block: BlockId, pos: &LocalBlockPos) {
+        if self.is_completely_air{
+            self.blocks = vec![get_blockid(BlockType::Air); CHUNKSIZE * CHUNKSIZE * CHUNKSIZE ];
+            self.is_completely_air = false;
+        }
         if pos.x < 0
             || pos.x > (CHUNKSIZE - 1) as i32
             || pos.y < 0
@@ -63,11 +49,12 @@ impl Chunk {
             println!("couldn't set block at: {:?}", &pos);
             return;
         }
-        self.blocks.d[pos.x as usize
-            + pos.y as usize * CHUNKSIZE as usize
-            + pos.z as usize * CHUNKSIZE as usize * CHUNKSIZE as usize] = block;
+        self.blocks[coord_to_array_indice(pos.x as u32, pos.y as u32, pos.z as u32, CHUNKSIZE as u32)] = block;
     }
     pub fn get_block(&self, pos: &LocalBlockPos) -> Option<BlockId> {
+        if self.is_completely_air{
+            return Some(get_blockid(BlockType::Air))
+        }
         if pos.x < 0
             || pos.x >= (CHUNKSIZE) as i32
             || pos.y < 0
@@ -79,9 +66,7 @@ impl Chunk {
             return None;
         }
         return Some(
-            self.blocks.d[pos.x as usize
-                + pos.y as usize * CHUNKSIZE as usize
-                + pos.z as usize * CHUNKSIZE as usize * CHUNKSIZE as usize],
+            self.blocks[coord_to_array_indice(pos.x as u32, pos.y as u32, pos.z as u32, CHUNKSIZE as u32)],
         );
     }
 }

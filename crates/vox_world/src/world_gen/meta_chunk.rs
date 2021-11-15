@@ -45,7 +45,7 @@ impl MetaChunk {
                         y: y as i32,
                         z: z as i32 + pos.z * METACHUNKSIZE as i32,
                     };
-                    chunks.push(chunk_generator.full_generation_pass(local_pos));
+                    chunks.push(Chunk::generate(&chunk_generator, local_pos));
                 }
             }
         }

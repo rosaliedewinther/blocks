@@ -74,14 +74,14 @@ impl WgpuState {
         }
     }
 
-    fn resize(&mut self, new_size: winit::dpi::PhysicalSize<u32>) {
+    pub fn resize(&mut self, new_size: winit::dpi::PhysicalSize<u32>) {
         self.size = new_size;
         self.sc_desc.width = new_size.width;
         self.sc_desc.height = new_size.height;
         self.swap_chain = self.device.create_swap_chain(&self.surface, &self.sc_desc);
         self.depth_texture = DepthTexture::create_depth_texture(
             &self.device,
-            &WgpuState::get_sc_desc(self.size),
+            &self.sc_desc,
             "depth_texture",
         );
     }

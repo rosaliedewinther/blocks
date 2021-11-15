@@ -3,8 +3,7 @@ use crate::renderer::uniforms::Uniforms;
 use crate::renderer::vertex::Vertex;
 use wgpu::util::DeviceExt;
 use wgpu::{
-    BlendFactor, BlendOperation, BufferBinding, Device, Queue, RenderPass, SwapChainDescriptor,
-    VertexState,
+    BlendFactor, BlendOperation, BufferBinding, Device, Queue, RenderPass, SwapChainDescriptor
 };
 
 pub struct WgpuPipeline {

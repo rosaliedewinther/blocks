@@ -1,11 +1,8 @@
 use crate::renderer::renderpassable::RenderPassable;
 use crate::renderer::wgpu::WgpuState;
 use crate::renderer::wgpu_pipeline::WgpuPipeline;
-use rayon::prelude::ParallelSliceMut;
 use std::collections::HashMap;
-use vox_core::positions::ChunkPos;
 use wgpu::SwapChainError;
-use winit::event::Event;
 use winit::window::Window;
 
 pub struct Renderer {

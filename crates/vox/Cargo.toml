@@ -27,9 +27,3 @@ vox_world = {path="../vox_world"}
 winit = "0.24"
 rayon = "1.4"
 wgpu = "0.8"
-
-[profile.dev]
-opt-level = 2
-
-[profile.test]
-opt-level = 2

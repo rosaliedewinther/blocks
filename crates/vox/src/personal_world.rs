@@ -11,7 +11,7 @@ use vox_core::constants::{
     CHUNKSIZE, METACHUNKSIZE, METACHUNK_GEN_RANGE, METACHUNK_UNLOAD_RADIUS, SEED,
 };
 use vox_core::positions::{ChunkPos, MetaChunkPos};
-use vox_render::renderer::renderer::{resize, Renderer};
+use vox_render::renderer::renderer::{Renderer, resize};
 use vox_render::renderer::renderpassable::RenderPassable;
 use vox_render::renderer::wgpu::WgpuState;
 use vox_render::renderer::wgpu_pipeline::WgpuPipeline;
@@ -242,7 +242,7 @@ impl PersonalWorld {
         match renderer.do_render_pass(window, self) {
             Ok(_) => {}
             // Recreate the swap_chain if lost
-            Err(wgpu::SwapChainError::Lost) => resize(renderer.wgpu.size, &mut renderer.wgpu),
+            Err(wgpu::SwapChainError::Lost) => renderer.wgpu.resize(renderer.wgpu.size),
             // The system is out of memory, we should probably quit
             Err(wgpu::SwapChainError::OutOfMemory) => return RenderResult::Exit,
             // All other errors (Outdated, Timeout) should be resolved by the next frame
@@ -294,6 +294,7 @@ impl RenderPassable for PersonalWorld {
             let mut positions: Vec<&ChunkPos> = self
                 .chunk_render_data
                 .iter()
+                .filter(|(_, data)| data.num_indices.is_some())
                 .map(|(pos, data)| pos)
                 .collect();
             let player = &self.player;

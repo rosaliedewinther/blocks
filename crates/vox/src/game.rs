@@ -57,7 +57,12 @@ impl Game for VoxGame {
             .insert_stat("world tick".to_string(), timer.elapsed().as_secs_f32());
         return UpdateResult::Continue;
     }
-    fn on_resize(&mut self, physical_size: PhysicalSize<u32>) {}
+    fn on_resize(&mut self, physical_size: PhysicalSize<u32>) {
+        let wgpu_state = &mut self.renderer.as_mut().unwrap().wgpu;
+        todo!("fix resizing");
+        //wgpu_state.resize(physical_size);
+
+    }
     fn on_render(&mut self, input: &mut Input, dt: f64, window: &Window) -> RenderResult {
         let timer = Instant::now();
         let pw = self.personal_world.as_mut().unwrap();
