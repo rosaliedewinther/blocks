@@ -2,7 +2,7 @@
 name = "vox"
 version = "0.0.1"
 authors = ["jasperdewinther <jasper.dewinther@student.hu.nl>"]
-edition = "2018"
+edition = "2021"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
@@ -12,7 +12,7 @@ log = "0.4"
 fern = "0.6"
 chrono = "0.4"
 num-traits = "0.2"
-noise="0.6"
+noise= {version="0.7", default-features = false}
 cgmath = "0.18"
 imgui-wgpu = "0.15"
 imgui = "0.7"
@@ -26,4 +26,4 @@ vox_io = {path="../vox_io"}
 vox_world = {path="../vox_world"}
 winit = "0.24"
 rayon = "1.4"
-wgpu = "0.8"
+wgpu = {version="0.8", default-features=false}
