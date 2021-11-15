@@ -232,7 +232,6 @@ impl PersonalWorld {
             (renderer.wgpu.size.width, renderer.wgpu.size.height),
             self.world.time,
         );
-        let render_data = &self.chunk_render_data;
         main_pipeline.set_uniform_buffer(&renderer.wgpu.queue, main_pipeline.uniforms);
         match renderer.do_render_pass(window, self) {
             Ok(_) => {}

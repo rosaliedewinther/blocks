@@ -48,7 +48,7 @@ impl WgpuState {
                 .request_device(
                     &wgpu::DeviceDescriptor {
                         label: Some("requested device"),
-                        features: wgpu::Features::empty(),
+                        features: wgpu::Features::default(),
                         limits: wgpu::Limits::default(),
                     },
                     None,
@@ -68,7 +68,7 @@ impl WgpuState {
             format: wgpu::TextureFormat::Bgra8UnormSrgb,
             width: size.width,
             height: size.height,
-            present_mode: wgpu::PresentMode::Fifo,
+            present_mode: wgpu::PresentMode::Mailbox,
         }
     }
 

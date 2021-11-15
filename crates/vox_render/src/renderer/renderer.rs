@@ -27,15 +27,18 @@ impl Renderer {
         obj: &mut T,
     ) -> Result<(), wgpu::SurfaceError> {
         let frame = self.wgpu.surface.get_current_texture()?;
-        let texture_view = frame.texture.create_view(&Default::default());
-        let mut encoder =
-            self.wgpu
-                .device
-                .create_command_encoder(&wgpu::CommandEncoderDescriptor {
-                    label: Some("Render Encoder"),
-                });
-        obj.do_render_pass(window, &mut encoder, &self.wgpu, &self.pipelines, &texture_view);
-        self.wgpu.queue.submit(std::iter::once(encoder.finish()));
+        {
+            let texture_view = frame.texture.create_view(&Default::default());
+            let mut encoder =
+                self.wgpu
+                    .device
+                    .create_command_encoder(&wgpu::CommandEncoderDescriptor {
+                        label: Some("Render Encoder"),
+                    });
+            obj.do_render_pass(window, &mut encoder, &self.wgpu, &self.pipelines, &texture_view);
+            self.wgpu.queue.submit(std::iter::once(encoder.finish()));
+        }
+        wgpu::SurfaceTexture::present(frame);
         Ok(())
     }
 }
