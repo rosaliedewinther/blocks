@@ -9,6 +9,7 @@ use winit_window_control::input::input::Input;
 use winit_window_control::main_loop::{
     main_loop_run, Game, InitResult, RenderResult, UpdateResult,
 };
+use vox_render::renderer::vertex::Vertex;
 
 pub struct VoxGame {
     personal_world: Option<PersonalWorld>,
@@ -66,6 +67,30 @@ impl Game for VoxGame {
             pw.ui.debug_info.insert_stat(
                 "per chunk vertex time".to_string(),
                 timer.elapsed().as_secs_f32() / number_generated as f32,
+            );
+            let mut vertex_count = 0u64;
+            let mut index_count = 0u64;
+            for c in &pw.chunk_render_data{
+                vertex_count += match c.1.num_vertices{
+                    None => 0u64,
+                    Some(n) => n as u64
+                };
+                index_count += match c.1.num_indices{
+                    None => 0u64,
+                    Some(n) => n as u64
+                }
+            }
+            pw.ui.debug_info.insert_stat(
+                "vertices".to_string(),
+                vertex_count as f32,
+            );
+            pw.ui.debug_info.insert_stat(
+                "indices".to_string(),
+                index_count as f32,
+            );
+            pw.ui.debug_info.insert_stat(
+                "memory usage".to_string(),
+                (index_count  * std::mem::size_of::<u32>() as u64 + vertex_count * std::mem::size_of::<Vertex>() as u64) as f32,
             );
         }
 
