@@ -2,25 +2,22 @@
 #[derive(Clone, Copy, Debug, bytemuck::Pod, bytemuck::Zeroable)]
 pub struct Vertex {
     pub _pos: [f32; 3],
-    pub _color: u32,
-    pub _normal: [f32; 3],
-    pub _type: u32,
+    pub _material: u32,
+    pub _normal: u32,
 }
 
-pub fn vertex(pos: [f32; 3], col: u32, nor: [f32; 3]) -> Vertex {
+pub fn vertex(pos: [f32; 3], material: u32, nor: u32) -> Vertex {
     Vertex {
         _pos: [pos[0], pos[1], pos[2]],
-        _color: col,
-        _normal: [nor[0], nor[1], nor[2]],
-        _type: 0,
+        _material: material,
+        _normal: nor,
     }
 }
-pub fn vertex_typed(pos: [f32; 3], col: u32, nor: [f32; 3], block_type: u32) -> Vertex {
+pub fn vertex_typed(pos: [f32; 3], material: u32, nor: u32) -> Vertex {
     Vertex {
         _pos: [pos[0], pos[1], pos[2]],
-        _color: col,
-        _normal: [nor[0], nor[1], nor[2]],
-        _type: block_type,
+        _material: material,
+        _normal: nor,
     }
 }
 
@@ -37,22 +34,14 @@ impl Vertex {
                     format: wgpu::VertexFormat::Float32x3, // 6.
                 },
                 wgpu::VertexAttribute {
-                    offset: std::mem::size_of::<[f32; 3]>() as wgpu::BufferAddress,
+                    offset: std::mem::size_of::<[f32;3]>() as wgpu::BufferAddress,
                     shader_location: 1,
                     format: wgpu::VertexFormat::Uint32,
                 },
                 wgpu::VertexAttribute {
-                    offset: (std::mem::size_of::<[f32; 3]>() + std::mem::size_of::<u32>())
+                    offset: (std::mem::size_of::<[f32;3]>() + std::mem::size_of::<u32>())
                         as wgpu::BufferAddress,
                     shader_location: 2,
-                    format: wgpu::VertexFormat::Float32x3,
-                },
-                wgpu::VertexAttribute {
-                    offset: (std::mem::size_of::<[f32; 3]>()
-                        + std::mem::size_of::<u32>()
-                        + std::mem::size_of::<[f32; 3]>())
-                        as wgpu::BufferAddress,
-                    shader_location: 3,
                     format: wgpu::VertexFormat::Uint32,
                 },
             ],

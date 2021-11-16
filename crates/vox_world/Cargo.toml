@@ -21,3 +21,4 @@ noise= {version="0.7", default-features=false}
 rand_distr ="0.4"
 bytemuck = { version = "1.4", features = [ "derive" ] }
 serde-big-array = "0.3"
+arrayvec = "0.7"

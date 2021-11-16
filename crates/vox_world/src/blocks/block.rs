@@ -10,7 +10,7 @@ use vox_render::renderer::vertex::{vertex, vertex_typed, Vertex};
 pub type BlockId = u8;
 
 #[inline]
-pub fn get_blocktype(block_id: BlockId) -> BlockType {
+pub const fn get_blocktype(block_id: BlockId) -> BlockType {
     match block_id {
         0 => BlockType::Grass,
         1 => BlockType::Water,
@@ -23,7 +23,7 @@ pub fn get_blocktype(block_id: BlockId) -> BlockType {
     }
 }
 #[inline]
-pub fn get_blockid(block: BlockType) -> BlockId {
+pub const fn get_blockid(block: BlockType) -> BlockId {
     match block {
         BlockType::Grass => 0,
         BlockType::Water => 1,
@@ -47,11 +47,4 @@ pub fn should_render_against(source_block_id: BlockId, neighbor_block_id: BlockI
         return false;
     }
     return true;
-}
-pub fn get_mesh(
-    block_id: BlockId,
-    pos: &GlobalBlockPos,
-    sides: &BlockSides,
-) -> (Vec<Vertex>, Vec<u32>) {
-    crate::blocks::block_mesh::get_mesh(block_id, pos, sides)
 }

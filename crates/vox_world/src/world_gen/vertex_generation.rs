@@ -1,4 +1,4 @@
-use crate::blocks::block::{get_blocktype, get_mesh, should_render_against, BlockId};
+use crate::blocks::block::{get_blocktype, should_render_against, BlockId};
 use crate::blocks::block_type::BlockType;
 use crate::blocks::blockside::BlockSides;
 use crate::world::small_world::SmallWorld;
@@ -7,6 +7,7 @@ use std::time::Instant;
 use vox_core::constants::{CHUNKSIZE, METACHUNKSIZE};
 use vox_core::positions::{ChunkPos, GlobalBlockPos, LocalBlockPos};
 use vox_render::renderer::vertex::Vertex;
+use crate::blocks::block_mesh::get_mesh;
 
 pub fn get_chunk_vertices(world: &SmallWorld, chunk_pos: &ChunkPos) -> (Vec<Vertex>, Vec<u32>) {
     return match world.get_chunk(chunk_pos) {
@@ -46,8 +47,8 @@ pub fn get_chunk_vertices(world: &SmallWorld, chunk_pos: &ChunkPos) -> (Vec<Vert
                                 .map(|i| i + (&transparant_vertices).len() as u32)
                                 .collect();
                             {
-                                transparant_vertices.append(&mut temp_vertices);
-                                transparant_indices.append(&mut temp_indices);
+                                transparant_vertices.extend_from_slice(&mut temp_vertices);
+                                transparant_indices.extend_from_slice(&mut temp_indices);
                             }
                         } else {
                             temp_indices = temp_indices
@@ -55,8 +56,8 @@ pub fn get_chunk_vertices(world: &SmallWorld, chunk_pos: &ChunkPos) -> (Vec<Vert
                                 .map(|i| i + (&opaque_vertices).len() as u32)
                                 .collect();
                             {
-                                opaque_vertices.append(&mut temp_vertices);
-                                opaque_indices.append(&mut temp_indices);
+                                opaque_vertices.extend_from_slice(&mut temp_vertices);
+                                opaque_indices.extend_from_slice(&mut temp_indices);
                             }
                         }
                     }

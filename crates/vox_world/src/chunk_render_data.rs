@@ -25,7 +25,7 @@ impl ChunkRenderData {
                 num_indices: None,
             };
         }
-        println!("vertex gen time: {}", timer.elapsed().as_micros());
+        println!("vertex gen time: {} ms", timer.elapsed().as_millis());
         let vertices: &[Vertex] = vertices.as_slice();
         let indices: &[u32] = indices.as_slice();
 
