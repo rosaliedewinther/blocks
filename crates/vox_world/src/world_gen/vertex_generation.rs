@@ -16,11 +16,11 @@ pub fn get_chunk_vertices(world: &SmallWorld, chunk_pos: &ChunkPos) -> (Vec<Vert
             if chunk.is_completely_air {
                 return (Vec::new(), Vec::new());
             }
-            let mut transparant_vertices: Vec<Vertex> = Vec::with_capacity(10000);
-            let mut transparant_indices: Vec<u32> = Vec::with_capacity(10000);
+            let mut transparant_vertices: Vec<Vertex> = Vec::new();
+            let mut transparant_indices: Vec<u32> = Vec::new();
 
-            let mut opaque_vertices: Vec<Vertex> = Vec::with_capacity(20000);
-            let mut opaque_indices: Vec<u32> = Vec::with_capacity(20000);
+            let mut opaque_vertices: Vec<Vertex> = Vec::new();
+            let mut opaque_indices: Vec<u32> = Vec::new();
 
             for x in 0..CHUNKSIZE as i32 {
                 for y in 0..CHUNKSIZE as i32 {
