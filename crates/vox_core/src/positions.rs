@@ -205,6 +205,11 @@ impl ObjectPos {
     }
 }
 impl LocalBlockPos {
+    pub fn new(x: i32, y: i32, z: i32) -> Self{
+        Self{
+            x,y,z
+        }
+    }
     pub fn get_diff(&self, x_diff: i32, y_diff: i32, z_diff: i32) -> LocalBlockPos {
         LocalBlockPos {
             x: (self.x + x_diff),

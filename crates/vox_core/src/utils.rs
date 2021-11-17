@@ -69,7 +69,7 @@ pub fn to_sign_of(read: i32, write: i32) -> i32 {
         write.abs()
     };
 }
-
+#[inline]
 pub fn coord_to_array_indice(x: u32, y: u32, z: u32, cubesize: u32) -> usize{
     (x + y*cubesize + z*cubesize*cubesize) as usize
 }
