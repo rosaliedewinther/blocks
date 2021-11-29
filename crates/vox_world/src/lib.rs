@@ -1,5 +1,5 @@
 mod algorithms;
-mod blocks;
+pub mod blocks;
 pub mod chunk_render_data;
 pub mod player;
 mod structures;

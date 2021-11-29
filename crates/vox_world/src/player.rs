@@ -143,7 +143,7 @@ impl Player {
     }
     //pub fn get_collision_points() -> [ObjectPos; 8] {}
     pub fn collides(pos: &ObjectPos, world: &SmallWorld) -> bool {
-        let blockpos = pos.get_block();
+        /*let blockpos = pos.get_block();
         let faceblock = world.get_block(blockpos);
         let feetblock = world.get_block(blockpos.get_diff(0, -1, 0));
         return if (faceblock.is_some() && COLORS[faceblock.unwrap() as usize][3] == 255.0)
@@ -152,7 +152,8 @@ impl Player {
             true
         } else {
             false
-        };
+        };*/
+        return false
     }
 
     pub fn get_view_matrix(&self) -> [[f32; 4]; 4] {

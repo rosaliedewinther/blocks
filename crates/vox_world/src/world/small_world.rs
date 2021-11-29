@@ -1,4 +1,4 @@
-use crate::blocks::block::BlockId;
+use crate::blocks::block::{BlockId, get_blockid};
 use crate::player::Player;
 use crate::world_gen::chunk::Chunk;
 use crate::world_gen::meta_chunk::MetaChunk;
@@ -7,6 +7,7 @@ use std::collections::{HashMap, HashSet};
 use std::time::Instant;
 use vox_core::constants::{METACHUNKSIZE, METACHUNK_GEN_RANGE};
 use vox_core::positions::{ChunkPos, GlobalBlockPos, MetaChunkPos};
+use crate::blocks::block_type::BlockType;
 
 pub struct SmallWorld {
     chunks: Vec<(MetaChunkPos, MetaChunk)>,
@@ -54,14 +55,14 @@ impl SmallWorld {
             .par_sort_unstable_by(|(p1, _), (p2, _)| p1.cmp(p2))
     }
     #[inline]
-    pub fn get_block(&self, pos: GlobalBlockPos) -> Option<BlockId> {
+    pub fn get_block(&self, pos: GlobalBlockPos) -> BlockId {
         return match self.get_chunk(&pos.get_chunk_pos()) {
             Some(c) => c.get_block(&pos.get_local_pos()),
-            None => None,
+            None => get_blockid(BlockType::Unknown),
         };
     }
 
-    pub fn get_chunk_mut(&mut self, pos: &ChunkPos) -> Option<&mut Chunk> {
+    pub fn get_chunk_mut(&mut self, pos: &ChunkPos) -> Option<&mut Chunk<4,2, 8>> {
         if pos.y >= METACHUNKSIZE as i32 {
             return None;
         }
@@ -103,7 +104,7 @@ impl SmallWorld {
     pub fn get_all_chunks(&self) -> &Vec<(MetaChunkPos, MetaChunk)> {
         return &self.chunks;
     }
-    pub fn get_chunk(&self, pos: &ChunkPos) -> Option<&Chunk> {
+    pub fn get_chunk(&self, pos: &ChunkPos) -> Option<&Chunk<4,2, 8>> {
         if pos.y >= METACHUNKSIZE as i32 {
             return None;
         }

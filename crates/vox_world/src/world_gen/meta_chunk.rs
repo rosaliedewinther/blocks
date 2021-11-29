@@ -18,24 +18,17 @@ use vox_core::utils::{to_sign_of, wrap};
 use vox_io::io::file_reader::read_meta_chunk_from_file;
 use vox_io::io::file_writer::write_to_file;
 
-#[derive(Serialize, Deserialize)]
 pub struct MetaChunk {
-    chunks: Vec<Chunk>,
+    chunks: Vec<Chunk<4, 2, 8>>,
     pub pos: MetaChunkPos,
     pub seed: u32,
 }
 
 impl MetaChunk {
     pub fn load_or_gen(pos: MetaChunkPos, seed: u32, force_gen: bool) -> MetaChunk {
-        if !force_gen {
-            let loaded = MetaChunk::load_from_disk(&pos);
-            if loaded.is_some() {
-                return loaded.unwrap();
-            }
-        }
         let chunk_generator = ChunkGenerator::new(seed);
 
-        let mut chunks: Vec<Chunk> =
+        let mut chunks: Vec<Chunk<4,2,8>> =
             Vec::with_capacity(METACHUNKSIZE * METACHUNKSIZE * METACHUNKSIZE);
         for z in 0..METACHUNKSIZE {
             for y in 0..METACHUNKSIZE {
@@ -95,8 +88,8 @@ impl MetaChunk {
                 z: structure_z,
             };
             match chunk.get_block(&tree_pos.get_diff(0, -1, 0)) {
-                None => {}
-                Some(b) => {
+                255 => {}
+                b => {
                     if get_blocktype(b) == BlockType::Grass {
                         place_tree(&tree_pos, &mut chunk);
                     }
@@ -121,7 +114,10 @@ impl MetaChunk {
     }
     pub fn first_above_land_y(&self, x: i32, z: i32) -> i32 {
         let mut y = METACHUNKSIZE as i32 * CHUNKSIZE as i32 - 1;
-        while let Some(b) = self.get_block(&GlobalBlockPos { x, y, z }) {
+        while let b = self.get_block(&GlobalBlockPos { x, y, z }) {
+            if b == 255{
+                return y+1;
+            }
             let b_type = get_blocktype(b);
             if b_type == BlockType::Grass
                 || b_type == BlockType::Water
@@ -135,16 +131,6 @@ impl MetaChunk {
         return y;
     }
 
-    pub fn load_from_disk(pos: &MetaChunkPos) -> Option<MetaChunk> {
-        let filename = format!("{}-{}.txt", pos.x, pos.z);
-        return read_meta_chunk_from_file(filename.as_str());
-    }
-
-    pub fn save_to_disk(&self) {
-        let filename = format!("{}-{}.txt", self.pos.x, self.pos.z);
-        write_to_file(filename.as_str(), self)
-    }
-
     pub fn set_block(&mut self, pos: &GlobalBlockPos, block: BlockId) {
         let chunk_pos = pos.get_local_chunk();
         let chunk = self.get_chunk_mut(&chunk_pos);
@@ -154,22 +140,19 @@ impl MetaChunk {
         }
     }
 
-    pub fn get_block(&self, pos: &GlobalBlockPos) -> Option<BlockId> {
-        if !(pos.x >= self.pos.x * METACHUNKSIZE as i32 * CHUNKSIZE as i32
+    pub fn get_block(&self, pos: &GlobalBlockPos) -> BlockId {
+        debug_assert!(pos.x >= self.pos.x * METACHUNKSIZE as i32 * CHUNKSIZE as i32
             && pos.x < (self.pos.x + 1) * METACHUNKSIZE as i32 * CHUNKSIZE as i32
             && pos.z >= self.pos.z * METACHUNKSIZE as i32 * CHUNKSIZE as i32
-            && pos.z < (self.pos.z + 1) * METACHUNKSIZE as i32 * CHUNKSIZE as i32)
-        {
-            return None;
-        }
+            && pos.z < (self.pos.z + 1) * METACHUNKSIZE as i32 * CHUNKSIZE as i32);
         let chunk_pos = pos.get_local_chunk();
         let chunk = self.get_chunk(&chunk_pos);
         match chunk {
             Some(c) => c.get_block(&pos.get_local_pos()),
-            None => None,
+            None => get_blockid(BlockType::Unknown),
         }
     }
-    pub fn for_each_mut(&mut self, f: impl Fn(&mut Chunk, ChunkPos)) {
+    pub fn for_each_mut(&mut self, f: impl Fn(&mut Chunk<4,2,8>, ChunkPos)) {
         for x in 0..METACHUNKSIZE as i32 {
             for y in 0..METACHUNKSIZE as i32 {
                 for z in 0..METACHUNKSIZE as i32 {
@@ -183,7 +166,7 @@ impl MetaChunk {
             }
         }
     }
-    pub fn for_each(&self, f: fn(&Chunk, ChunkPos)) {
+    pub fn for_each(&self, f: fn(&Chunk<4,2,8>, ChunkPos)) {
         for x in 0..METACHUNKSIZE as i32 {
             for y in 0..METACHUNKSIZE as i32 {
                 for z in 0..METACHUNKSIZE as i32 {
@@ -197,7 +180,7 @@ impl MetaChunk {
             }
         }
     }
-    pub fn get_chunk_mut(&mut self, pos: &LocalChunkPos) -> Option<&mut Chunk> {
+    pub fn get_chunk_mut(&mut self, pos: &LocalChunkPos) -> Option<&mut Chunk<4,2,8>> {
         return Some(
             self.chunks[pos.x as usize
                 + pos.y as usize * METACHUNKSIZE as usize
@@ -205,7 +188,7 @@ impl MetaChunk {
                 .borrow_mut(),
         );
     }
-    pub fn get_chunk(&self, pos: &LocalChunkPos) -> Option<&Chunk> {
+    pub fn get_chunk(&self, pos: &LocalChunkPos) -> Option<&Chunk<4,2,8>> {
         return Some(
             &self.chunks[pos.x as usize
                 + pos.y as usize * METACHUNKSIZE as usize
@@ -246,9 +229,9 @@ pub struct MetaChunkIterator<'a> {
 }
 
 impl<'a> Iterator for MetaChunkIterator<'a> {
-    type Item = (&'a Chunk, ChunkPos);
+    type Item = (&'a Chunk<4,2,8>, ChunkPos);
 
-    fn next(&mut self) -> Option<(&'a Chunk, ChunkPos)> {
+    fn next(&mut self) -> Option<(&'a Chunk<4,2,8>, ChunkPos)> {
         if self.x == (METACHUNKSIZE - 1) as u32
             && self.y == (METACHUNKSIZE - 1) as u32
             && self.z == (METACHUNKSIZE - 1) as u32

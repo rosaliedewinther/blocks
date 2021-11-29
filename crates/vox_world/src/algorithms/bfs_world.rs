@@ -184,11 +184,11 @@ fn update_side(
 ) {
     let b = world.get_block(&pos);
     match b {
-        Some(block) => {
+        255 =>{},
+        block => {
             if f(block) {
                 *side = true;
             }
         }
-        _ => {}
     }
 }

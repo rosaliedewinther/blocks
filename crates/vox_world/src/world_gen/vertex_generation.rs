@@ -13,9 +13,6 @@ pub fn get_chunk_vertices(world: &SmallWorld, chunk_pos: &ChunkPos) -> (Vec<Vert
     return match world.get_chunk(chunk_pos) {
         None => (Vec::new(), Vec::new()),
         Some(chunk) => {
-            if chunk.is_completely_air {
-                return (Vec::new(), Vec::new());
-            }
             let mut transparant_vertices: Vec<Vertex> = Vec::new();
             let mut transparant_indices: Vec<u32> = Vec::new();
 
@@ -31,7 +28,7 @@ pub fn get_chunk_vertices(world: &SmallWorld, chunk_pos: &ChunkPos) -> (Vec<Vert
                             y: y + (chunk_pos.y * CHUNKSIZE as i32),
                             z: z + (chunk_pos.z * CHUNKSIZE as i32),
                         };
-                        let block = chunk.get_block(&LocalBlockPos { x, y, z }).unwrap();
+                        let block = chunk.get_block(&LocalBlockPos { x, y, z });
                         if get_blocktype(block) == BlockType::Air {
                             continue;
                         }
@@ -76,7 +73,7 @@ pub fn get_chunk_vertices(world: &SmallWorld, chunk_pos: &ChunkPos) -> (Vec<Vert
 }
 pub fn sides_to_render(world: &SmallWorld, global_pos: &GlobalBlockPos) -> BlockSides {
     let mut sides = BlockSides::new();
-    let mut reference_block = world.get_block(*global_pos).unwrap();
+    let mut reference_block = world.get_block(*global_pos);
     if should_render_against_block(world, &global_pos.get_diff(1, 0, 0), reference_block) {
         sides.right = true;
     }
@@ -103,11 +100,5 @@ pub fn should_render_against_block(
     pos: &GlobalBlockPos,
     reference_block: BlockId,
 ) -> bool {
-    if pos.y == (METACHUNKSIZE * CHUNKSIZE) as i32 || pos.y < 0 {
-        return true;
-    }
-    return match world.get_block(*pos) {
-        None => true,
-        Some(b) => should_render_against(reference_block, b),
-    };
+    return true;
 }

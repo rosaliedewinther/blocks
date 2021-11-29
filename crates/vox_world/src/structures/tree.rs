@@ -16,8 +16,7 @@ pub fn place_tree(pos: &GlobalBlockPos, world: &mut MetaChunk) {
             for x in -(height - y - 1)..height - y {
                 for z in -(height - y - 1)..height - y {
                     let currect_block = world.get_block(&pos.get_diff(x, y, z));
-                    if currect_block.is_some()
-                        && get_blocktype(currect_block.unwrap()) == BlockType::Air
+                    if get_blocktype(currect_block) == BlockType::Air
                     {
                         world.set_block(&pos.get_diff(x, y, z), get_blockid(BlockType::Leaf));
                     }
