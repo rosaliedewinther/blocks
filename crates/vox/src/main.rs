@@ -21,11 +21,10 @@ fn main() {
 
     let g = ChunkGenerator::new(0);
     let timer = Instant::now();
-    let mut c = Chunk::<4,2,8>::generate(&g, &ChunkPos { x: 0, y: 0, z: 0 });
-    for x in 0..16 {
-        for y in 0..16 {
-            for z in 0..16 {
-                println!("{} {} {}", x,y,z);
+    let mut c = Chunk::<3,2,8>::generate(&g, &ChunkPos { x: 0, y: 0, z: 0 });
+    for x in 0..8 {
+        for y in 0..8 {
+            for z in 0..8 {
                 c.set_block(get_blockid(BlockType::Grass), &LocalBlockPos{
                     x: x,
                     y: y,
@@ -34,10 +33,11 @@ fn main() {
             }
         }
     }
+    c.print_structured();
     let time = timer.elapsed().as_secs_f32();
     println!("new structure size with chunksize 2: {:?}", c.get_structure_size());
     println!("in {} seconds", time);
-
+    return;
     let timer = Instant::now();
     let mut c = Chunk::<2,4,64>::generate(&g, &ChunkPos { x: 0, y: 0, z: 0 });
     for x in 0..16 {
