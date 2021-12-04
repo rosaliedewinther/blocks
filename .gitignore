@@ -1,4 +1,5 @@
 **/target
+.VSCodeCounter/
 /.idea
 *.log
 *.ini

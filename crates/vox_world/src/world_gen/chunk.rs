@@ -1,73 +1,86 @@
-use crate::blocks::block::{get_blocktype, BlockId, get_blockid};
+use crate::blocks::block::{get_blockid, get_blocktype, BlockId};
 use crate::blocks::block_type::BlockType;
 use crate::world_gen::basic::ChunkGenerator;
+use arrayvec::ArrayVec;
 use bytemuck::{Pod, Zeroable};
 use serde::{Deserialize, Serialize};
 use serde_big_array::big_array;
 use vox_core::constants::CHUNKSIZE;
 use vox_core::positions::{ChunkPos, LocalBlockPos};
 use vox_core::utils::coord_to_array_indice;
-use arrayvec::ArrayVec;
 
 #[derive(Copy, Clone, Debug, PartialEq)]
-enum BlockIdOrPointer{
+enum BlockIdOrPointer {
     Id(BlockId),
-    Ptr(u32)
+    Ptr(u32),
 }
 
-pub struct OldChunk{
-    pub data: Vec<BlockId>
+pub struct OldChunk {
+    pub data: Vec<BlockId>,
 }
 
 #[derive(Debug)]
 pub struct Chunk<const Depth: usize, const BlockSize: usize, const BlockSizeCubed: usize> {
-    data_structure: [Vec<([BlockIdOrPointer;BlockSizeCubed], usize)>; Depth],//array of layers where every layer has a vector with sparse data, and all sparse data has a ptr to its owner in the layer above
+    data_structure: [Vec<[BlockIdOrPointer; BlockSizeCubed]>; Depth], //array of layers where every layer has a vector with sparse data, and all sparse data has a ptr to its owner in the layer above
 }
 
-impl<const Depth: usize, const BlockSize: usize, const BlockSizeCubed: usize> Chunk<Depth, BlockSize, BlockSizeCubed> {
-    fn what_index(pos: &LocalBlockPos, depth: usize) -> usize{
+impl<const Depth: usize, const BlockSize: usize, const BlockSizeCubed: usize>
+    Chunk<Depth, BlockSize, BlockSizeCubed>
+{
+    fn what_index(pos: &LocalBlockPos, depth: usize) -> usize {
         let width = BlockSize.pow((Depth - depth) as u32) as u32;
-        let index =         coord_to_array_indice(
-            (pos.x as u32%width)/(width/BlockSize as u32),
-            (pos.y as u32%width)/(width/BlockSize as u32),
-            (pos.z as u32%width)/(width/BlockSize as u32),
-            BlockSize as u32);
+        let index = coord_to_array_indice(
+            (pos.x as u32 % width) / (width / BlockSize as u32),
+            (pos.y as u32 % width) / (width / BlockSize as u32),
+            (pos.z as u32 % width) / (width / BlockSize as u32),
+            BlockSize as u32,
+        );
         return index;
     }
     pub fn generate(chunk_generator: &ChunkGenerator, pos: &ChunkPos) -> Self {
-        debug_assert!(BlockSize == 4 || BlockSize == 2);
+        debug_assert!(BlockSize == 4 || BlockSize == 2 || BlockSize == 8);
         debug_assert!(BlockSize.pow(3) == BlockSizeCubed);
-        let mut c = Self{
-            data_structure: array_init::array_init(|i|{
+        let mut c = Self {
+            data_structure: array_init::array_init(|i| {
                 return if i == 0 {
-                    vec![([BlockIdOrPointer::Id(get_blockid(BlockType::Air)); BlockSizeCubed],0); 1]
+                    vec![[BlockIdOrPointer::Id(get_blockid(BlockType::Air)); BlockSizeCubed]; 1]
                 } else {
                     Vec::new()
-                }
-            } )
+                };
+            }),
         };
 
         return c;
     }
-    pub fn get_structure_size(&self) -> usize{
+    pub fn get_structure_size(&self) -> usize {
         let mut size = 0;
-        size += std::mem::size_of::<[Vec<([BlockIdOrPointer;BlockSizeCubed], u32)>; Depth]>();
+        size += std::mem::size_of::<[Vec<[BlockIdOrPointer; BlockSizeCubed]>; Depth]>();
         println!("sizeof base arrary: {}", size);
-        for i in 0..Depth{
-            if self.data_structure[i].len() > 0{
-                size += self.data_structure[i].len() * std::mem::size_of::<([BlockIdOrPointer;BlockSizeCubed], u32)>();
-                println!("sizeof layer {}: {}", i, self.data_structure[i].len() * std::mem::size_of::<([BlockIdOrPointer;BlockSizeCubed], u32)>());
+        for i in 0..Depth {
+            if self.data_structure[i].len() > 0 {
+                size += self.data_structure[i].len()
+                    * std::mem::size_of::<([BlockIdOrPointer; BlockSizeCubed], u32)>();
+                println!(
+                    "sizeof layer {}: {}",
+                    i,
+                    self.data_structure[i].len()
+                        * std::mem::size_of::<([BlockIdOrPointer; BlockSizeCubed], u32)>()
+                );
             }
         }
         size
     }
-    pub fn print_structured(&self){
-        for i in 0..self.data_structure.len(){
-            println!("layer {} contains {} bricks:", i, self.data_structure[i].len());
-            for j in 0..self.data_structure[i].len(){
-                print!("  brick {} with up_ptr to {}: ", j, self.data_structure[i][j].1);
-                for k in 0..self.data_structure[i][j].0.len(){
-                    print!("\t{:?}", self.data_structure[i][j].0[k]);
+    pub fn print_structured(&self) {
+        for i in 0..self.data_structure.len() {
+            println!(
+                "layer {} contains {} bricks:",
+                i,
+                self.data_structure[i].len()
+            );
+            for j in 0..self.data_structure[i].len() {
+                print!("  brick {}: ", j,);
+                for k in 0..self.data_structure[i][j].len() {
+                    print!("\t{:?}", self.data_structure[i][j][k]);
                 }
                 println!();
             }
@@ -79,57 +92,72 @@ impl<const Depth: usize, const BlockSize: usize, const BlockSizeCubed: usize> Ch
     }
 
     pub fn set_block(&mut self, block: BlockId, pos: &LocalBlockPos) {
-        debug_assert!(pos.x >= 0
-            || pos.x <= (CHUNKSIZE - 1) as i32
-            || pos.y >= 0
-            || pos.y <= (CHUNKSIZE - 1) as i32
-            || pos.z >= 0
-            || pos.z <= (CHUNKSIZE - 1) as i32);
+        debug_assert!(
+            pos.x >= 0
+                || pos.x <= (CHUNKSIZE - 1) as i32
+                || pos.y >= 0
+                || pos.y <= (CHUNKSIZE - 1) as i32
+                || pos.z >= 0
+                || pos.z <= (CHUNKSIZE - 1) as i32
+        );
 
-        let mut ptr = 0usize;
-        for i in 0..Depth as usize{
+        let mut ptrs = [0usize; Depth];
+        for i in 0..Depth as usize {
             let index = Chunk::<Depth, BlockSize, BlockSizeCubed>::what_index(pos, i);
-            let r: BlockIdOrPointer = self.data_structure[i][ptr].0[index];
+            let r: BlockIdOrPointer = self.data_structure[i][ptrs[i]][index];
             if let BlockIdOrPointer::Id(id) = r {
-                if block == id{ //if entire chunk is already block, all is good
+                if block == id {
+                    //if entire chunk is already block, all is good
                     return;
                 } else {
-                    if i == (Depth - 1) { // if we are at the deepest possible layer, just change the block
-                        self.data_structure[i][ptr].0[index] = BlockIdOrPointer::Id(block);
-                        self.fix_tree_upwards(i, ptr, pos);
+                    if i == (Depth - 1) {
+                        // if we are at the deepest possible layer, just change the block
+                        self.data_structure[i][ptrs[i]][index] = BlockIdOrPointer::Id(block);
+                        self.fix_tree_upwards(i, ptrs, pos);
                         return;
-                    } else { // we need to add a new layer of leaf nodes
+                    } else {
+                        // we need to add a new layer of leaf nodes
                         let new_ptr = self.data_structure[i + 1].len();
-                        self.data_structure[i + 1].push(([r; BlockSizeCubed], index));
-                        self.data_structure[i][ptr].0[index] = BlockIdOrPointer::Ptr(new_ptr as u32);
-                        ptr = new_ptr;
+                        self.data_structure[i + 1].push([r; BlockSizeCubed]);
+                        self.data_structure[i][ptrs[i]][index] =
+                            BlockIdOrPointer::Ptr(new_ptr as u32);
+                        ptrs[i + 1] = new_ptr;
                     }
                 }
             } else if let BlockIdOrPointer::Ptr(pointer) = r {
-                ptr = pointer as usize;
+                ptrs[i + 1] = pointer as usize;
             }
         }
         panic!("error in chunk datastructure");
     }
-    pub fn fix_tree_upwards(&mut self, depth: usize, ptr: usize, pos: &LocalBlockPos){
-        let mut dynptr = ptr;
-        for j in (1..depth+1).rev(){                                                                                 //iterate back up to find complete chunks
-            if self.data_structure[j][dynptr].0.iter().all(|x| *x == self.data_structure[j][dynptr].0[0]){    //if all chunks in layer j are the same
-                if let BlockIdOrPointer::Id(b) = self.data_structure[j][dynptr].0[0]{                               //get the homogenious block
-                    let parent_ptr = self.data_structure[j][dynptr].1;
-                    self.data_structure[j].remove(dynptr);                                                            //remove the entire chunk from layer
-                    let index = Chunk::<Depth, BlockSize, BlockSizeCubed>::what_index(pos, j-1);                //get index for removed chunk for layer j-1
-                    self.print_structured();
-                    self.data_structure[j-1][parent_ptr].0[index] = BlockIdOrPointer::Id(b);                                   //set this ptr to be a block instead
-                    for possible_pointer in 0..self.data_structure[j-1][parent_ptr].0.len(){
-                        if let BlockIdOrPointer::Ptr(x) = self.data_structure[j-1][parent_ptr].0[possible_pointer]{
-                            if x > dynptr as u32 {
-                                println!("decreasing in layer {} brick {} ptr {}", j-1, parent_ptr, possible_pointer);
-                                self.data_structure[j-1][parent_ptr].0[possible_pointer] = BlockIdOrPointer::Ptr(x-1);
+    fn fix_tree_upwards(&mut self, depth: usize, ptrs: [usize; Depth], pos: &LocalBlockPos) {
+        for j in (1..depth + 1).rev() {
+            //iterate back up to find complete chunks
+            self.print_structured();
+            if self.data_structure[j][ptrs[depth]]
+                .iter()
+                .all(|x| *x == self.data_structure[j][ptrs[depth]][0])
+            {
+                //if all chunks in layer j are the same
+                if let BlockIdOrPointer::Id(b) = self.data_structure[j][ptrs[depth]][0] {
+                    //get the homogenious block
+                    let parent_ptr = ptrs[j - 1];
+                    self.data_structure[j].remove(ptrs[j]); //remove the entire chunk from layer
+                    let index = Chunk::<Depth, BlockSize, BlockSizeCubed>::what_index(pos, j - 1); //get index for removed chunk for layer j-1
+                    self.data_structure[j - 1][parent_ptr][index] = BlockIdOrPointer::Id(b); //set this ptr to be a block instead
+
+                    for brick_i in 0..self.data_structure[j - 1].len() {
+                        for possible_pointer in 0..self.data_structure[j - 1][brick_i].len() {
+                            if let BlockIdOrPointer::Ptr(x) =
+                                self.data_structure[j - 1][brick_i][possible_pointer]
+                            {
+                                if x > ptrs[depth] as u32 {
+                                    self.data_structure[j - 1][brick_i][possible_pointer] =
+                                        BlockIdOrPointer::Ptr(x - 1);
+                                }
                             }
                         }
                     }
-                    dynptr=parent_ptr;
                 } else {
                     panic!("error in chunk datastructure");
                 }
@@ -137,20 +165,23 @@ impl<const Depth: usize, const BlockSize: usize, const BlockSizeCubed: usize> Ch
                 return;
             }
         }
-
     }
 
     pub fn get_block(&self, pos: &LocalBlockPos) -> BlockId {
-        debug_assert!(pos.x >= 0
-            || pos.x <= (CHUNKSIZE - 1) as i32
-            || pos.y >= 0
-            || pos.y <= (CHUNKSIZE - 1) as i32
-            || pos.z >= 0
-            || pos.z <= (CHUNKSIZE - 1) as i32);
+        debug_assert!(
+            pos.x >= 0
+                || pos.x <= (CHUNKSIZE - 1) as i32
+                || pos.y >= 0
+                || pos.y <= (CHUNKSIZE - 1) as i32
+                || pos.z >= 0
+                || pos.z <= (CHUNKSIZE - 1) as i32
+        );
 
         let mut ptr: usize = 0;
-        for i in 0..Depth as i32{
-            match self.data_structure[i as usize][ptr].0[Chunk::<Depth, BlockSize, BlockSizeCubed>::what_index(pos, i as usize)]{
+        for i in 0..Depth as i32 {
+            match self.data_structure[i as usize][ptr]
+                [Chunk::<Depth, BlockSize, BlockSizeCubed>::what_index(pos, i as usize)]
+            {
                 BlockIdOrPointer::Id(id) => return id,
                 BlockIdOrPointer::Ptr(p) => {
                     ptr = p as usize;
